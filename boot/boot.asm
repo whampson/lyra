@@ -4,7 +4,6 @@
     %assign     STACK_BASE      0x9000
     %assign     BOOTSECT_MAGIC  0xaa55
 
-.section text
 start:
     ; store boot drive id
     mov         [BOOT_DRIVE], dl
@@ -18,10 +17,10 @@ start:
     call        print
     jmp         $               ; halt
 
-    ;%include    "disk.asm"
+    %include    "disk.asm"
     %include    "print.asm"
 
-.section data
+; Data section
 MSG_HELLO:
     db          "Hello, world!", 13, 10, 0
 
