@@ -21,14 +21,50 @@ _print_done:
     ret
 
 ;--
-; Prints a 16-bit number in hexadecimal to the screen
-; at the current cursor position.
+; Prints a carriage return, followed by a line feed
+; to the screen. This causes the cursor to move to
+; the start of the next line.
+;--
+print_newline:
+    push        bx
+    mov         bx, NL_STRING
+    call        print
+    pop         bx
+    ret
+
+;--
+; Prints a zero-terminated string to the screen
+; at the current cursor position, then advances the
+; cursor to the start of the next line.
+;
+; bx    - pointer to string
+;--
+println:
+    call        print
+    call        print_newline
+    ret
+
+;--
+; Prints a 16-bit number (word) to the screen in
+; hexadecimal at the current cursor position.
 ;
 ; dx    - number to print
 ;--
-print_hex:
+print_hexw:
     pusha
     mov         cl, 4               ; loop counter
+    mov         bx, HEX_STRING + 2  ; hex string pointer, skip '0x'
+    jmp         _print_hex_loop
+
+;--
+; Prints an 8-bit number (byte) to the screen in
+; hexadecimal at the current cursor position.
+;
+; dh    - number to print
+;--
+print_hexb:
+    pusha
+    mov         cl, 2               ; loop counter
     mov         bx, HEX_STRING + 2  ; hex string pointer, skip '0x'
 
 _print_hex_loop:
@@ -39,7 +75,7 @@ _print_hex_loop:
     and         al, 0x0f            ; ...and strip off upper 4 bits
     add         al, '0'             ; move number into ASCII 0-9 range
     cmp         al, '9'             ; check for A-F digit
-    jle          _print_hex_store_digit
+    jle         _print_hex_store_digit
     add         al, 'A' - '0' - 10  ; move number into ASCII A-F range
 
 _print_hex_store_digit:
@@ -48,10 +84,39 @@ _print_hex_store_digit:
     jmp         _print_hex_loop
 
 _print_hex_done:
+    mov byte    [bx], 0
     mov         bx, HEX_STRING
     call        print               ; print it!
     popa
     ret
 
+;--
+; Prints a 16-bit number (word) to the screen in
+; hexadecimal at the current cursor position, then
+; advances the cursor to the start of the next line.
+;
+; dx    - number to print
+;--
+println_hexw:
+    call        print_hexw
+    call        print_newline
+    ret
+
+;--
+; Prints an 8-bit number (byte) to the screen in
+; hexadecimal at the current cursor position, then
+; advances the cursor to the start of the next line.
+;
+; dh    - number to print
+;--
+println_hexb:
+    call        print_hexb
+    call        print_newline
+    ret
+
+; Data section
 HEX_STRING:
-    db "0x0000", 0
+    db          "0x", 0, 0, 0, 0, 0
+
+NL_STRING:
+    db          13, 10, 0
