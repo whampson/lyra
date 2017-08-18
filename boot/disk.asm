@@ -1,14 +1,17 @@
 ;--
-; Loads the kernel image from a disk
+; Loads the kernel image from a disk.
 ;
-; dh    - disk id
-; dl    - num sectors to load
+; dh    - num sectors to load
+; dl    - disk id
 ; es:bx - data destination
 ;--
 disk_load_kernel:
     pusha
     push        dx                  ; back up input params
-    
+
+    ; TODO: attempt read 3 times before declaring failure
+    ;       floppy reads may not work on first attempt
+    ;       reset disk before each attempt (mov ah, 0; int 0x13)
     mov         ah, 0x02            ; int 0x13 function (read disk)
     mov         al, dh              ; num sectors (0x01 to 0x80)
     mov         cl, 0x02            ; sector (0x01 to 0x11); 0x01 is boot sector
@@ -25,6 +28,31 @@ disk_load_kernel:
     ret
 
 _disk_error:
+    mov         bx, MSG_DISK_ERROR  ; print disk read error message
+    call        println
+    mov         bx, MSG_DISK
+    shl         dx, 8               ; move disk id into 'dh' for hex print
+    call        print
+    call        println_hexb        ; print disk id
+    mov         bx, MSG_CODE
+    mov         dh, ah              ; error code stored in ah
+    call        print
+    call        println_hexb        ; print error code
+    jmp         boot_fail
+
 _sectors_error:
-    ; TODO
-    jmp $
+    mov         bx, MSG_SECTORS_ERROR
+    call        println
+    jmp         boot_fail
+
+MSG_DISK_ERROR:
+    db          "Disk read error.", 0
+
+MSG_DISK:
+    db          "::  disk = ", 0
+
+MSG_CODE:
+    db          "::  code = ", 0
+
+MSG_SECTORS_ERROR:
+    db          "Incorrect number of sectors read.", 0
