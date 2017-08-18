@@ -5,7 +5,7 @@ LD              := cat  # yes, you read that correctly!
                         # we're just joining binary files
 # Flags
 ASFLAGS         :=
-EMUFLAGS        :=
+EMUFLAGS        := -boot a
 
 # Directories
 SRCDIR          := .
