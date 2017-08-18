@@ -25,7 +25,7 @@ TARGET_IMAGE    := betelgeuse.img
 SOURCES_BOOT    := boot.asm
 SOURCES_BOOT    := $(patsubst %, $(SRCDIR)/boot/%, $(SOURCES_BOOT))
 
-all: directories $(TARGET_BOOT)
+all: directories $(TARGET_BOOT) $(TARGET_IMAGE)
 
 directories:
 	@mkdir -p $(OBJDIR)
@@ -37,7 +37,7 @@ clean:
 tidy: clean
 	@rm -rf $(BINDIR)
 
-run: all $(TARGET_IMAGE)
+run: all
 	$(EMU) $(EMUFLAGS) -fda $(BINDIR)/$(TARGET_IMAGE)
 
 $(TARGET_BOOT): $(SOURCES_BOOT)
