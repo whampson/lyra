@@ -15,6 +15,8 @@ start:
     ; do some funky stuff
     mov         bx, MSG_HELLO
     call        print
+    mov         dx, 0x9f71
+    call        print_hex
     jmp         $               ; halt
 
     %include    "disk.asm"
