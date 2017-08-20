@@ -10,7 +10,7 @@
     %assign     STACK_BASE      0x9000
     %assign     BOOTSECT_MAGIC  0xaa55
 
-start:
+start_boot:
     ; store boot drive id
     mov         [BOOT_DRIVE], dl
 
@@ -42,6 +42,7 @@ halt:
     jmp         $
 
     %include    "disk.asm"
+    %include    "gdt.asm"
     %include    "print.asm"
 
 ; Data section
