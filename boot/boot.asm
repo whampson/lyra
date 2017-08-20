@@ -1,3 +1,9 @@
+;===============================================================================
+;        File: boot.asm
+;      Author: Wes Hampson
+; Description: OS bootstrap sequence.
+;===============================================================================
+
     bits        16
     org         0x7c00              ; entry point after BIOS execution
 
@@ -9,10 +15,10 @@ start:
     mov         [BOOT_DRIVE], dl
 
     ; set up the stack
-    mov         bp, 0x9000
+    mov         bp, STACK_BASE
     mov         sp, bp
 
-    ; do some funky stuff
+    ; load the kernel from disk
     mov         bx, 0xA000          ; data destination
     mov         dl, [BOOT_DRIVE]    ; disk id
     mov         dh, 2               ; num sectors to read

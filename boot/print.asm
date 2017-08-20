@@ -1,3 +1,9 @@
+;===============================================================================
+;        File: print.asm
+;      Author: Wes Hampson
+; Description: Routines for printing text to the screen during bootstrapping.
+;===============================================================================
+
 ;--
 ; Prints a zero-terminated string to the screen
 ; at the current cursor position.

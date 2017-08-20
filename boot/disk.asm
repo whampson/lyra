@@ -1,3 +1,9 @@
+;===============================================================================
+;        File: disk.asm
+;      Author: Wes Hampson
+; Description: Handles disk I/O operations during bootstrapping.
+;===============================================================================
+
 ;--
 ; Loads the kernel image from a disk.
 ;
