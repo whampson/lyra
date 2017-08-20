@@ -23,7 +23,7 @@ gdt_code:
     db          0x00        ; segment base      bits 23:16
     db          0b10011010  ; access flags
     db          0b11001111  ; other flags
-    dw          0x00        ; segment base      bits 31:24
+    db          0x00        ; segment base      bits 31:24
 
 gdt_data:
     ; add GDT entry for data section
@@ -32,7 +32,7 @@ gdt_data:
     db          0x00        ; segment base      bits 23:16
     db          0b10010010  ; access flags
     db          0b11001111  ; other flags
-    dw          0x00        ; segment base      bits 31:24
+    db          0x00        ; segment base      bits 31:24
 
 gdt_end:
     ; dummy label; keep for computing offsets!!
