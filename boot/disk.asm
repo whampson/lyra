@@ -30,6 +30,8 @@ disk_load_kernel:
     cmp         al, dh              ; compare num sectors read w/ desired num
     jne         _sectors_error      ;     ('al' set by BIOS to num sectors read)
 
+    mov         bx, MSG_KERNEL_LOADED
+    call        println
     popa
     ret
 
@@ -62,3 +64,6 @@ MSG_CODE:
 
 MSG_SECTORS_ERROR:
     db          "Incorrect number of sectors read.", 0
+
+MSG_KERNEL_LOADED:
+    db          "Kernel loaded!", 0
