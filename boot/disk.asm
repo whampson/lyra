@@ -4,6 +4,8 @@
 ; Description: Handles disk I/O operations during bootstrapping.
 ;===============================================================================
 
+    bits        16
+
 ;--
 ; Loads the kernel image from a disk.
 ;
@@ -30,19 +32,17 @@ disk_load_kernel:
     cmp         al, dh              ; compare num sectors read w/ desired num
     jne         _sectors_error      ;     ('al' set by BIOS to num sectors read)
 
-    mov         bx, MSG_KERNEL_LOADED
-    call        println
     popa
     ret
 
 _disk_error:
     mov         bx, MSG_DISK_ERROR  ; print disk read error message
     call        println
-    mov         bx, MSG_DISK
+    mov         bx, MSG_DISK_ERROR_DISK
     shl         dx, 8               ; move disk id into 'dh' for hex print
     call        print
     call        println_hexb        ; print disk id
-    mov         bx, MSG_CODE
+    mov         bx, MSG_DISK_ERROR_CODE
     mov         dh, ah              ; error code stored in ah
     call        print
     call        println_hexb        ; print error code
@@ -52,18 +52,3 @@ _sectors_error:
     mov         bx, MSG_SECTORS_ERROR
     call        println
     jmp         boot_fail
-
-MSG_DISK_ERROR:
-    db          "Disk read error.", 0
-
-MSG_DISK:
-    db          "::  disk = ", 0
-
-MSG_CODE:
-    db          "::  code = ", 0
-
-MSG_SECTORS_ERROR:
-    db          "Incorrect number of sectors read.", 0
-
-MSG_KERNEL_LOADED:
-    db          "Kernel loaded!", 0
