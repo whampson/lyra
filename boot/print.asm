@@ -4,7 +4,10 @@
 ; Description: Routines for printing text to the screen during bootstrapping.
 ;===============================================================================
 
+    bits        16
+
 ;--
+;           REAL MODE ONLY
 ; Prints a zero-terminated string to the screen
 ; at the current cursor position.
 ;
@@ -27,6 +30,7 @@ _print_done:
     ret
 
 ;--
+;           REAL MODE ONLY
 ; Prints a carriage return, followed by a line feed
 ; to the screen. This causes the cursor to move to
 ; the start of the next line.
@@ -39,6 +43,7 @@ print_newline:
     ret
 
 ;--
+;           REAL MODE ONLY
 ; Prints a zero-terminated string to the screen
 ; at the current cursor position, then advances the
 ; cursor to the start of the next line.
@@ -51,6 +56,7 @@ println:
     ret
 
 ;--
+;           REAL MODE ONLY
 ; Prints a 16-bit number (word) to the screen in
 ; hexadecimal at the current cursor position.
 ;
@@ -63,6 +69,7 @@ print_hexw:
     jmp         _print_hex_loop
 
 ;--
+;           REAL MODE ONLY
 ; Prints an 8-bit number (byte) to the screen in
 ; hexadecimal at the current cursor position.
 ;
@@ -97,6 +104,7 @@ _print_hex_done:
     ret
 
 ;--
+;           REAL MODE ONLY
 ; Prints a 16-bit number (word) to the screen in
 ; hexadecimal at the current cursor position, then
 ; advances the cursor to the start of the next line.
@@ -109,6 +117,7 @@ println_hexw:
     ret
 
 ;--
+;           REAL MODE ONLY
 ; Prints an 8-bit number (byte) to the screen in
 ; hexadecimal at the current cursor position, then
 ; advances the cursor to the start of the next line.
