@@ -7,7 +7,7 @@
     bits        16
     org         0x7c00              ; entry point after BIOS execution
 
-    %assign     STACK_BASE      0x9000
+    %assign     STACK_BASE      0x09000
     %assign     STACK_BASE_PM   0x90000
     %assign     KERNEL_BASE     0x1000
     %assign     BOOTSECT_MAGIC  0xaa55
@@ -20,13 +20,23 @@ start_boot:
     mov         bp, STACK_BASE
     mov         sp, bp
 
+    ; set up segment registers
+    mov         ax, 0
+    mov         es, ax
+
+    ; load kernel and switch to 32-bit mode
+    call        kernel_load
+    jmp         pm_switch
+
+kernel_load:
     ; load the kernel from disk
     mov         bx, KERNEL_BASE     ; data destination
     mov         dl, [BOOT_DRIVE]    ; disk id
-    mov         dh, 2               ; num sectors to read
+    mov         dh, 16              ; num sectors to read
     call        disk_load_kernel
+    ret
 
-    ; switch into protected mode
+pm_switch:
     cli                             ; clear interrupts... no more BIOS calls!
     lgdt        [THE_GDT]           ; load the GDT
     mov         eax, cr0
@@ -40,15 +50,8 @@ boot_fail:
     call        println
     jmp         $
 
-    %include    "disk.asm"
-    %include    "gdt.asm"
-    %include    "print.asm"
-
-;===============================================================================
-
-    bits        32
-
 kernel_start:
+    bits        32
     ; update segment registers
     mov         ax, DATA_SEGMENT
     mov         ds, ax
@@ -61,12 +64,27 @@ kernel_start:
     mov         ebp, STACK_BASE_PM
     mov         esp, ebp
 
+clear_screen:
+    mov         eax, 0xb8000
+    mov         ecx, 25 * 80
+
+clear_screen_loop:
+    mov    byte [eax], 0x00        ; char
+    mov    byte [eax + 1], 0x07    ; attr
+    add         eax, 2
+    sub         ecx, 1
+    jz          halt
+    jmp         clear_screen_loop
+
+halt:
     jmp         $
 
-; Data section
-MSG_BOOT_FAIL:
-    db          "BOOT FAILED", 0
+    %include    "disk.asm"
+    %include    "gdt.asm"
+    %include    "print.asm"
+    %include    "strings.asm"
 
+; Data section
 BOOT_DRIVE:
     ; placeholder
     db          0
@@ -74,9 +92,3 @@ BOOT_DRIVE:
 PADDING_MAGIC:
     times       510 - ($ - $$) db 0
     dw          BOOTSECT_MAGIC
-
-; onto the next sector!
-    dd          0xcafebabe
-    dd          0x0badbeef
-    dd          0xba5eba77
-    dd          0x00c0ffee
