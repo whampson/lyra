@@ -12,7 +12,7 @@ void fill_screen(char ch)
 
 void kernel_main(void)
 {
-    char ch = 'a';
+    char ch = '\0';
 
     fill_screen(ch);
 }
