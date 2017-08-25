@@ -17,7 +17,7 @@ BINDIR          := bin
 
 # Extensions
 SRCEXT_ASM      := asm
-SRCEXT_C		:= c
+SRCEXT_C        := c
 OBJEXT          := o
 
 # Target executables
@@ -29,11 +29,13 @@ TARGET_IMAGE    := betelgeuse.img
 
 SOURCES_BOOT    := boot/boot.$(SRCEXT_ASM)
 
-SOURCES_KERN_ASM := $(shell find $(SRCDIR)/kernel -type f -name "*.$(SRCEXT_ASM)")
-OBJECTS_KERN_ASM := $(patsubst $(SRCDIR)/%, $(OBJDIR)/%, $(SOURCES_KERN_ASM:.$(SRCEXT_ASM)=.$(OBJEXT)))
+SOURCES_KERNEL  := $(SRCDIR)/boot/kernel_loader.$(SRCEXT_ASM)
+SOURCES_KERNEL	+= $(shell find $(SRCDIR)/kernel -type f -name "*.$(SRCEXT_C)")
+OBJECTS_KERNEL  := $(patsubst $(SRCDIR)/%, $(OBJDIR)/%, $(SOURCES_KERNEL))
+OBJECTS_KERNEL  := $(OBJECTS_KERNEL:.$(SRCEXT_C)=.$(OBJEXT))
+OBJECTS_KERNEL  := $(OBJECTS_KERNEL:.$(SRCEXT_ASM)=.$(OBJEXT))
 
-SOURCES_KERN_C  := $(shell find $(SRCDIR)/kernel -type f -name "*.$(SRCEXT_C)")
-OBJECTS_KERN_C  := $(patsubst $(SRCDIR)/%, $(OBJDIR)/%, $(SOURCES_KERN_C:.$(SRCEXT_C)=.$(OBJEXT)))
+KERNEL_BASE     := 0x1000
 
 all: directories $(TARGET_IMAGE)
 
@@ -51,13 +53,14 @@ run: all
 	$(EMU) $(EMUFLAGS) -fda $(BINDIR)/$(TARGET_IMAGE)
 
 $(TARGET_IMAGE): $(TARGET_BOOT) $(TARGET_KERNEL)
-	cat $(BINDIR)/$(TARGET_BOOT) $(BINDIR)/$(TARGET_KERNEL) > $(BINDIR)/$@
+	$(eval OBJ = $(addprefix $(BINDIR)/, $^))
+	cat $(OBJ) > $(BINDIR)/$@
 
 $(TARGET_BOOT): $(SOURCES_BOOT)
 	$(AS) $(ASFLAGS) -i boot/ -f bin -o $(BINDIR)/$@ $^
 
-$(TARGET_KERNEL): $(OBJECTS_KERN_ASM) $(OBJECTS_KERN_C)
-	$(LD) $(LDFLAGS) -Ttext 0x1000 --oformat binary -o $(BINDIR)/$@ $^
+$(TARGET_KERNEL): $(OBJECTS_KERNEL)
+	$(LD) $(LDFLAGS) -Ttext $(KERNEL_BASE) --oformat binary -o $(BINDIR)/$@ $^
 
 $(OBJDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT_ASM)
 	@mkdir -p $(dir $@)
