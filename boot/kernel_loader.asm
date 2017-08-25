@@ -1,7 +1,7 @@
-    section     .text
+    bits        32
     global      _start
     extern      kernel_main
-    bits        32
+    section     .text
 
 _start:
     call        kernel_main
