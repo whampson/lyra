@@ -8,18 +8,18 @@ SECT_COUNT  = 1
 RETRY_COUNT = 3
 
 # TODO: (bootloader)
-#       enable prot. mode
-#           enable A20
-#           setup GDT
-#           disable interrupts (NMI)
-#           write cr0
-#           reset segment registers
-#       load kernel
-#           floppy disk driver
-#       jump to kernel entry point
+#   [-] enable prot. mode
+#       [x] enable A20
+#       [ ] setup GDT
+#       [ ] disable interrupts (NMI)
+#       [ ] write cr0
+#       [ ] reset segment registers
+#   [ ] load kernel
+#       [ ] floppy disk driver
+#   [ ] jump to kernel entry point
 # TODO: (kernel)
-#       load IDT and other x86 structures
-#       enable paging
+#   [ ] load IDT and other x86 structures
+#   [ ] enable paging
 
 ##
 # Bootloader entry point -- where it all begins!
@@ -34,23 +34,70 @@ entry:
     call    a20_enable
     jmp     stage2
 
+##
+# Enables the A20 address line.
+#
+# The following methods are used to try to enable the A20 line:
+#   BIOS interrupt
+#   PS/2 controller
+#
+#   Inputs: (none)
+#  Outputs: (none)
+# Clobbers: (none)
+##
 a20_enable:
     # Actually, let's disable it first (as a test).
     # QEMU (or rather, SeaBIOS) seems to enable A20 by default.
     call    a20_disable
+    movw    _a20_enable_jmptbl_count, %cx
 
+_a20_enable_loop:
     call    a20_test_enabled
-    cmpw    $0, %ax
-    je      _a20_enable_i8042
-    leaw    s_a20_enabled, %bx
-    jmp     _dbg_a20_enable_done
+    cmpw    $1, %ax
+    je      _a20_enable_done
 
-    # TODO: enable A20 (keyboard)
+    decw    %cx
+    js      _a20_enable_fail
+
+    # Use loop counter as index into jumptable.
+    # Keep trying methods to enable A20 until it works!
+    call    *_a20_enable_jmptbl(, %ecx, 2)
+    jmp     _a20_enable_loop
+
+_a20_enable_fail:
+    leaw    s_a20_en_fail, %bx
+    call    print
+    jmp     halt
+
+_a20_enable_done:
+    ret
+
+s_a20_en_fail:
+    .ascii "Failed to enable A20 line!"
+    .byte 13, 10, 0
+
 _a20_enable_jmptbl:
-    .word   _a20_enable_i8042
+    # TODO: add other A20 enable funcs here!
+    .word   a20_enablefunc_i8042, a20_enablefunc_bios
+_a20_enable_jmptbl_count:
+    .word   (. - _a20_enable_jmptbl) / 2
 
-_a20_enable_i8042:
-    pushw   %ax
+##
+# Enables the A20 address line using a BIOS interrupt.
+#
+# Not supported on some systems.
+##
+a20_enablefunc_bios:
+    mov     $0x2401, %ax
+    int     $0x15
+    ret
+
+##
+# Enables the A20 address line using the PS/2 controller.
+#
+# Supported on most (all?) systems.
+##
+a20_enablefunc_i8042:
     call    i8042_out_p
     movb    $0xD0, %al      # cmd: read PS/2 output port
     outb    %al, $0x64      # send cmd
@@ -64,33 +111,16 @@ _a20_enable_i8042:
     orb     $0x02, %ah      # set A20 bit
     movb    %ah, %al        # data out: old output port status w/ A20 cleared
     outb    %al, $0x60      # send data
-    popw    %ax
     ret
-
-_dbg_a20_disabled:
-    leaw    s_a20_disabled, %bx
-
-_dbg_a20_enable_done:
-    call    print
-    ret
-
-s_a20_disabled:
-    .ascii "A20 line disabled!"
-    .byte 13, 10, 0
-
-s_a20_enabled:
-    .ascii "A20 line enabled!"
-    .byte 13, 10, 0
 
 ##
-# Disables the A20 address line (PS/2 keyboard method).
+# Disables the A20 address line (PS/2 controller method).
 #
 #   Inputs: (none)
 #  Outputs: (none)
-# Clobbers: (none)
+# Clobbers: ax
 ##
 a20_disable:
-    pushw   %ax
     call    i8042_out_p
     movb    $0xD0, %al      # cmd: read PS/2 output port
     outb    %al, $0x64      # send cmd
@@ -111,7 +141,6 @@ a20_disable:
     outb    %al, $0x60      # send data
 
 _a20_disable_done:
-    popw    %ax
     ret
 
 ##
@@ -207,10 +236,9 @@ s_disk_err:
 #
 #   Inputs: bx - address of string to print
 #  Outputs: (none)
-# Clobbers: bx
+# Clobbers: ax, bx
 ##
 print:
-    pushw   %ax
     movb    $0x0e, %ah          # 0x0e - TTY mode
 
 _print_loop:
@@ -222,7 +250,6 @@ _print_loop:
     jmp     _print_loop
 
 _print_done:
-    popw    %ax
     ret
 
 ##
@@ -261,26 +288,28 @@ _delay_loop:
 
 ##
 # Wait for PS/2 controller to be ready before reading from data port.
+#
+#   Inputs: (none)
+#  Outputs: (none)
+# Clobbers: al
 ##
 i8042_in_p:
-    pushw   %ax
-_i8042_in_p_loop:
     call    delay
     inb     $0x64, %al
     test    $0x01, %al          # check output buffer status (1 = ready)
-    jz      _i8042_in_p_loop
-    popw    %ax
+    jz      i8042_in_p
     ret
 
 ##
 # Wait for PS/2 controller to be ready before writing to command or data port.
+#
+#   Inputs: (none)
+#  Outputs: (none)
+# Clobbers: al
 ##
 i8042_out_p:
-    pushw   %ax
-_i8042_out_p_loop:
     call    delay
     inb     $0x64, %al
     test    $0x02, %al          # check input buffer status (0 = ready)
-    jnz     _i8042_out_p_loop
-    popw    %ax
+    jnz     i8042_out_p
     ret
