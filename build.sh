@@ -1,8 +1,7 @@
 #!/bin/bash
 
-BOOT_FILE=boot
-BOOT_LINK=bootsect.ld
-
-as --32 -o $BOOT_FILE.o $BOOT_FILE.S
-ld -melf_i386 -T $BOOT_LINK -o $BOOT_FILE.elf $BOOT_FILE.o
-objcopy -O binary $BOOT_FILE.elf $BOOT_FILE.bin
+as --32 -o a20.o a20.S
+as --32 -o boot.o boot.S
+as --32 -o i8042.o i8042.S
+ld -T bootloader.ld -o boot.elf a20.o boot.o i8042.o
+objcopy -O binary boot.elf boot.bin
