@@ -4,33 +4,114 @@
 STACK_BASE  = 0x7C00
 STAGE2_SEG  = 0x07E0
 STAGE2_OFF  = 0x0000
-SECT_COUNT  = 4
+SECT_COUNT  = 1
 RETRY_COUNT = 3
+
+# TODO: (bootloader)
+#       enable prot. mode
+#           enable A20
+#           setup GDT
+#           disable interrupts (NMI)
+#           write cr0
+#           reset segment registers
+#       load kernel
+#           floppy disk driver
+#       jump to kernel entry point
+# TODO: (kernel)
+#       load IDT and other x86 structures
+#       enable paging
 
 ##
 # Bootloader entry point -- where it all begins!
 ##
 .globl entry
 entry:
+    cli
     movw    $STACK_BASE, %bp
     movw    %bp, %sp
 
+    call    a20_enable
     call    load_stage2
     jmp     stage2
 
-    jmp     halt
+a20_enable:
+    call    a20_test_enabled
+    cmpw    $0, %ax
+    je      _dbg_a20_disabled
+    leaw    s_a20_enabled, %bx
+    jmp     _dbg_a20_enable_done
 
-    # TODO: (bootloader)
-    #       enable A20
-    #       setup GDT
-    #       enable prot. mode
-    #       load kernel
-    #           floppy disk driver
-    #       jump to kernel entry point
-    # TODO: (kernel)
-    #       load IDT and other x86 structures
-    #       enable paging
+_dbg_a20_disabled:
+    leaw    s_a20_disabled, %bx
 
+_dbg_a20_enable_done:
+    call    print
+    ret
+
+s_a20_disabled:
+    .ascii "A20 line disabled!"
+    .byte 13, 10, 0
+
+s_a20_enabled:
+    .ascii "A20 line enabled!"
+    .byte 13, 10, 0
+
+##
+# Tests whether the A20 address line is enabled.
+#
+# Methodology:
+#   Test whether memory "wraps around" when using a 21-bit segmented
+#   address. We can use the bootsector identifier as a marker. If A20 is NOT
+#   enabled, segment addresses 0000:7CFE and FFFF:7EOE will map to the same
+#   physical address (whose value is 0xAA55, i.e. the bootsector ID). If
+#   the values at these two addresses are different, then the A20 line is
+#   enabled.
+#
+#   Inputs: (none)
+#  Outputs: ax set to 1 if enabled,
+#           ax set to 0 if disabled
+# Clobbers: ax, es
+##
+a20_test_enabled:
+    pushw   %bx
+    pushw   %cx
+    movw    $1, %cx
+
+_a20_test_loop:
+    movw    $0xFFFF, %ax
+    movw    %ax, %es
+    movw    %es:0x7E0E, %bx         # read "wrapped around" address
+    xorw    %ax, %ax
+    movw    %ax, %es
+    cmpw    %bx, %es:0x7DFE         # compare with bootsect ID
+    jne     _a20_test_true
+
+    # The values were equal! Ensure it wasn't a fluke.
+    # Alter the bootsector ID and recompare.
+    cmpw    $0, %cx
+    je      _a20_test_done
+    decw    %cx
+    rorw    $8, %bx
+    movw    %bx, %es:0x7DFE
+    jmp     _a20_test_loop
+
+_a20_test_true:
+    movw    $1, %ax
+
+_a20_test_done:
+    popw    %cx
+    popw    %bx
+    ret
+
+##
+# Loads the second stage of the bootloader from the boot floppy.
+# If the load fails, an error message will be displayed and execution will
+# cease.
+#
+#   Inputs: (none)
+#  Outputs: Stage 2 boot code starting at STAGE2_SEG:STAGE2_OFF.
+# Clobbers: ax, bx, cx, dx, es, si
+##
 load_stage2:
     movw    $STAGE2_SEG, %ax
     movw    $STAGE2_OFF, %bx
@@ -68,10 +149,11 @@ s_disk_err:
 #
 #   Inputs: bx - address of string to print
 #  Outputs: (none)
-# Clobbers: ax
+# Clobbers: bx
 ##
 print:
-    movb    $0x0e, %ah      # 0x0e - TTY mode
+    pushw   %ax
+    movb    $0x0e, %ah          # 0x0e - TTY mode
 
 _print_loop:
     movb    (%bx), %al
@@ -82,6 +164,7 @@ _print_loop:
     jmp     _print_loop
 
 _print_done:
+    popw    %ax
     ret
 
 ##
