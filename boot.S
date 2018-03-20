@@ -78,7 +78,9 @@ s_a20_en_fail:
 
 _a20_enable_jmptbl:
     # TODO: add other A20 enable funcs here!
-    .word   a20_enablefunc_i8042, a20_enablefunc_bios
+    .word   a20_enablefunc_fast
+    .word   a20_enablefunc_i8042
+    .word   a20_enablefunc_bios
 _a20_enable_jmptbl_count:
     .word   (. - _a20_enable_jmptbl) / 2
 
@@ -114,6 +116,22 @@ a20_enablefunc_i8042:
     ret
 
 ##
+# Enables the A20 address line using the "fast" method (a single outb).
+#
+# Supported on some systems.
+##
+a20_enablefunc_fast:
+    inb     $0x92, %al
+    testb   $0x02, %al
+    jnz     _a20_enablefunc_fast_done
+    orb     $0x02, %al
+    outb    %al, $0x92
+
+_a20_enablefunc_fast_done:
+    ret
+
+
+##
 # Disables the A20 address line (PS/2 controller method).
 #
 #   Inputs: (none)
@@ -128,7 +146,7 @@ a20_disable:
     inb     $0x60, %al      # data in: output port status
 
     # Check if A20 is already disabled
-    test    $0x02, %al
+    testb   $0x02, %al
     jz      _a20_disable_done
     movb    %al, %ah
 
@@ -296,7 +314,7 @@ _delay_loop:
 i8042_in_p:
     call    delay
     inb     $0x64, %al
-    test    $0x01, %al          # check output buffer status (1 = ready)
+    testb   $0x01, %al          # check output buffer status (1 = ready)
     jz      i8042_in_p
     ret
 
@@ -310,6 +328,6 @@ i8042_in_p:
 i8042_out_p:
     call    delay
     inb     $0x64, %al
-    test    $0x02, %al          # check input buffer status (0 = ready)
+    testb   $0x02, %al          # check input buffer status (0 = ready)
     jnz     i8042_out_p
     ret
