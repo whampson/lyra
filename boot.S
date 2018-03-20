@@ -30,16 +30,42 @@ entry:
     movw    $STACK_BASE, %bp
     movw    %bp, %sp
 
-    call    a20_enable
     call    load_stage2
+    call    a20_enable
     jmp     stage2
 
 a20_enable:
+    # Actually, let's disable it first (as a test).
+    # QEMU (or rather, SeaBIOS) seems to enable A20 by default.
+    call    a20_disable
+
     call    a20_test_enabled
     cmpw    $0, %ax
-    je      _dbg_a20_disabled
+    je      _a20_enable_i8042
     leaw    s_a20_enabled, %bx
     jmp     _dbg_a20_enable_done
+
+    # TODO: enable A20 (keyboard)
+_a20_enable_jmptbl:
+    .word   _a20_enable_i8042
+
+_a20_enable_i8042:
+    pushw   %ax
+    call    i8042_out_p
+    movb    $0xD0, %al      # cmd: read PS/2 output port
+    outb    %al, $0x64      # send cmd
+    call    i8042_in_p
+    inb     $0x60, %al      # data in: output port status
+    movb    %al, %ah
+    call    i8042_out_p
+    movb    $0xD1, %al      # cmd: write PS/2 output port
+    outb    %al, $0x64      # send cmd
+    call    i8042_out_p
+    orb     $0x02, %ah      # set A20 bit
+    movb    %ah, %al        # data out: old output port status w/ A20 cleared
+    outb    %al, $0x60      # send data
+    popw    %ax
+    ret
 
 _dbg_a20_disabled:
     leaw    s_a20_disabled, %bx
@@ -55,6 +81,38 @@ s_a20_disabled:
 s_a20_enabled:
     .ascii "A20 line enabled!"
     .byte 13, 10, 0
+
+##
+# Disables the A20 address line (PS/2 keyboard method).
+#
+#   Inputs: (none)
+#  Outputs: (none)
+# Clobbers: (none)
+##
+a20_disable:
+    pushw   %ax
+    call    i8042_out_p
+    movb    $0xD0, %al      # cmd: read PS/2 output port
+    outb    %al, $0x64      # send cmd
+    call    i8042_in_p
+    inb     $0x60, %al      # data in: output port status
+
+    # Check if A20 is already disabled
+    test    $0x02, %al
+    jz      _a20_disable_done
+    movb    %al, %ah
+
+    call    i8042_out_p
+    movb    $0xD1, %al      # cmd: write PS/2 output port
+    outb    %al, $0x64      # send cmd
+    call    i8042_out_p
+    andb    $0xFD, %ah      # clear A20 bit
+    movb    %ah, %al        # data out: old output port status w/ A20 cleared
+    outb    %al, $0x60      # send data
+
+_a20_disable_done:
+    popw    %ax
+    ret
 
 ##
 # Tests whether the A20 address line is enabled.
@@ -168,7 +226,7 @@ _print_done:
     ret
 
 ##
-# Spins indefinitely.
+# Spin indefinitely.
 ##
 halt:
     hlt
@@ -177,6 +235,7 @@ halt:
 
 .section .stage2, "ax", @progbits
 stage2:
+    # PLACEHOLDER
     leaw    s_hello, %bx
     call    print
     jmp     halt
@@ -184,3 +243,44 @@ stage2:
 s_hello:
     .ascii "Hello, stage 2 world!"
     .byte 13, 10, 0
+
+
+#### Misc. stuff
+
+##
+# Delay execution for a jiffy.
+##
+delay:
+    pushw   %cx
+    movw    $0xFFFF, %cx
+_delay_loop:
+    decw    %cx
+    jnz     _delay_loop
+    popw    %cx
+    ret
+
+##
+# Wait for PS/2 controller to be ready before reading from data port.
+##
+i8042_in_p:
+    pushw   %ax
+_i8042_in_p_loop:
+    call    delay
+    inb     $0x64, %al
+    test    $0x01, %al          # check output buffer status (1 = ready)
+    jz      _i8042_in_p_loop
+    popw    %ax
+    ret
+
+##
+# Wait for PS/2 controller to be ready before writing to command or data port.
+##
+i8042_out_p:
+    pushw   %ax
+_i8042_out_p_loop:
+    call    delay
+    inb     $0x64, %al
+    test    $0x02, %al          # check input buffer status (0 = ready)
+    jnz     _i8042_out_p_loop
+    popw    %ax
+    ret
