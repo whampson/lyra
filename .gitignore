@@ -1,0 +1,10 @@
+##
+# .gitignore for OS project.
+##
+
+# Object files and executables
+*.o
+*.elf
+
+# Raw binary files
+*.bin
