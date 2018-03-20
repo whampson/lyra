@@ -1,8 +1,8 @@
 #-------------------------------------------------------------------------------
 # Copyright (C) 2018 Wes Hampson
 #
-#        File: a20.S
-# Description: A20 address line initialization.
+# File: a20.S
+# Desc: A20 address line initialization.
 #-------------------------------------------------------------------------------
 
 .code16
@@ -11,7 +11,7 @@
 ##
 # Attempts to enable the A20 address line using several methods.
 # If all attempts fail, an error message will be displayed and the boot process
-# will not continue.
+# will halt.
 #
 # The following methods are used to try to enable the A20 line:
 #   BIOS interrupt
@@ -39,24 +39,24 @@ _a20_enable_loop:
     jmp     _a20_enable_loop
 
 _a20_enable_fail:
-    leaw    s_a20_en_fail, %bx
+    leaw    s_a20_enable_fail, %bx
     call    print
     jmp     halt
 
 _a20_enable_done:
     ret
 
-s_a20_en_fail:
+s_a20_enable_fail:
     .ascii "Failed to enable A20 line!"
     .byte 13, 10, 0
 
 _a20_enable_jmptbl:
-    # TODO: add other A20 enable funcs here!
     .word   a20_enablefunc_fast
     .word   a20_enablefunc_i8042
     .word   a20_enablefunc_bios
 _a20_enable_jmptbl_count:
     .word   (. - _a20_enable_jmptbl) / 2
+
 
 ##
 # Enables the A20 address line using a BIOS interrupt.
@@ -70,6 +70,7 @@ a20_enablefunc_bios:
     mov     $0x2401, %ax
     int     $0x15
     ret
+
 
 ##
 # Enables the A20 address line using the PS/2 controller.
@@ -94,6 +95,7 @@ a20_enablefunc_i8042:
     movb    %ah, %al        # data out: old output port status w/ A20 cleared
     outb    %al, $0x60      # send data
     ret
+
 
 ##
 # Enables the A20 address line using the "fast" method (a single outb).
@@ -144,6 +146,7 @@ a20_disable:
 
 _a20_disable_done:
     ret
+
 
 ##
 # Tests whether the A20 address line is enabled.
