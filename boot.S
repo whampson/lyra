@@ -41,8 +41,7 @@ entry:
     movw    %bp, %sp
 
     call    load_stage2
-    call    a20_enable
-    jmp     stage2
+    jmp     pm_switch
 
 
 ##
@@ -83,8 +82,8 @@ _stage2_error:
     jmp     halt
 
 s_disk_err:
-    .ascii "Disk read error!"
-    .byte 10, 13, 0
+    .ascii  "Disk read error!"
+    .byte   10, 13, 0
 
 
 ##
@@ -131,15 +130,3 @@ _delay_loop:
 halt:
     hlt
     jmp     halt
-
-
-# PLACEHOLDER
-.section .stage2, "ax", @progbits
-stage2:
-    leaw    s_hello, %bx
-    call    print
-    jmp     halt
-
-s_hello:
-    .ascii "Hello, stage 2 world!"
-    .byte 13, 10, 0
