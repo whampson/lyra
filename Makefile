@@ -5,20 +5,20 @@
 # Desc: Bootloader build script.
 #-------------------------------------------------------------------------------
 
-AS 			:= gcc
-ASFLAGS 	:= -m32 -ffreestanding
-LD 			:= ld
-LDSCRIPT	:=
-LDFLAGS 	:= -T bootloader.ld
+AS          := gcc
+ASFLAGS     := -m32 -ffreestanding
+LD          := ld
+LDSCRIPT    := bootloader.ld
+LDFLAGS     := -T $(LDSCRIPT)
 
-ASMEXT		:= S
-SOURCES		:= $(wildcard *.$(ASMEXT))
-OBJECTS		:= $(patsubst %.$(ASMEXT), %.o, $(SOURCES))
+ASM_SOURCES := $(wildcard *.S)
+OBJECTS     := $(ASM_SOURCES:.S=.o)
 
-ELFTARGET	:= boot.elf
-BINTARGET	:= boot.bin
+ELFTARGET   := boot.elf
+BINTARGET   := boot.bin
 
-.PHONY: all
+.PHONY: all debug clean remake
+
 all: $(BINTARGET)
 
 $(BINTARGET): $(ELFTARGET)
@@ -30,6 +30,10 @@ $(ELFTARGET): $(OBJECTS)
 %.o: %.S
 	$(AS) $(ASFLAGS) -c -o $@ $<
 
-.PHONY: clean
+debug: ASFLAGS += -g
+debug: remake
+
 clean:
 	@rm -f *.o *.elf *.bin
+
+remake: clean all
