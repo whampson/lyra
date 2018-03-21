@@ -47,8 +47,8 @@ _a20_enable_done:
     ret
 
 s_a20_enable_fail:
-    .ascii "Failed to enable A20 line!"
-    .byte 13, 10, 0
+    .ascii  "Failed to enable A20 line!"
+    .byte   13, 10, 0
 
 _a20_enable_jmptbl:
     .word   a20_enablefunc_fast
