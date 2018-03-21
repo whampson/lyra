@@ -7,12 +7,15 @@
 
 AS          := gcc
 ASFLAGS     := -m32 -ffreestanding
+CC          := gcc
+CCFLAGS     := -m32 -ffreestanding
 LD          := ld
 LDSCRIPT    := bootloader.ld
 LDFLAGS     := -T $(LDSCRIPT)
 
 ASM_SOURCES := $(wildcard *.S)
-OBJECTS     := $(ASM_SOURCES:.S=.o)
+C_SOURCES	:= $(wildcard *.c)
+OBJECTS     := $(ASM_SOURCES:.S=.o) $(C_SOURCES:.c=.o)
 
 ELFTARGET   := boot.elf
 BINTARGET   := boot.bin
@@ -29,6 +32,9 @@ $(ELFTARGET): $(OBJECTS)
 
 %.o: %.S
 	$(AS) $(ASFLAGS) -c -o $@ $<
+
+%.o: %.c
+	$(CC) $(CCFLAGS) -c -o $@ $<
 
 debug: ASFLAGS += -g
 debug: remake
