@@ -1,6 +1,17 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# Copyright (C) 2018 Wes Hampson. All Rights Reserved.                         #
+#                                                                              #
+# This file is part of the Lyra operating system.                              #
+#                                                                              #
+# Lyra is free software: you can redistribute it and/or modify                 #
+# it under the terms of version 2 of the GNU General Public License            #
+# as published by the Free Software Foundation.                                #
+#                                                                              #
+# See LICENSE in the top-level directory for a copy of the license.            #
+# You may also visit <https://www.gnu.org/licenses/gpl-2.0.txt>.               #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
 #-------------------------------------------------------------------------------
-# Copyright (C) 2018 Wes Hampson
-#
 # File: boot.S
 # Desc: Stage 1 boot code (a.k.a. the bootsector). The primary purpose of this
 #       code is to load the second stage, which is responsible for getting the
