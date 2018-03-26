@@ -48,7 +48,7 @@ load_stage2:
 load_kernel:
     movw    $KERNEL_TEMP_BASE, %bx
     movb    $KERNEL_START_SECTOR, %cl
-    movb    (KERNEL_NUM_SECTORS), %ch   # value and address determined by linker
+    movb    $KERNEL_NUM_SECTORS, %ch
     call    read_sectors
     cmpb    $0, %ah
     jnz     disk_err
