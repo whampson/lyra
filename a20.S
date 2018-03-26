@@ -92,19 +92,28 @@ a20_enablefunc_bios:
 # Clobbers: ax
 ##
 a20_enablefunc_i8042:
-    call    i8042_out_p
+    call    i8042_disable
+
+    call    i8042_io_p
     movb    $0xD0, %al      # cmd: read PS/2 output port
     outb    %al, $0x64      # send cmd
-    call    i8042_in_p
+
+    call    i8042_io_p
     inb     $0x60, %al      # data in: output port status
-    movb    %al, %ah
-    call    i8042_out_p
+    pushw   %ax
+
+    call    i8042_io_p
     movb    $0xD1, %al      # cmd: write PS/2 output port
     outb    %al, $0x64      # send cmd
-    call    i8042_out_p
-    orb     $0x02, %ah      # set A20 bit
-    movb    %ah, %al        # data out: old output port status w/ A20 cleared
+
+    call    i8042_io_p
+    popw    %ax
+    orb     $0x02, %al      # set A20 bit
+#   movb    $0xDF, %al
     outb    %al, $0x60      # send data
+
+    call    i8042_enable
+    call    i8042_io_p
     ret
 
 
@@ -136,24 +145,31 @@ _a20_enablefunc_fast_done:
 ##
 .globl a20_disable
 a20_disable:
-    call    i8042_out_p
+    call    i8042_disable
+
+    call    i8042_io_p
     movb    $0xD0, %al      # cmd: read PS/2 output port
     outb    %al, $0x64      # send cmd
-    call    i8042_in_p
+
+    call    i8042_io_p
     inb     $0x60, %al      # data in: output port status
 
     # Check if A20 is already disabled
     testb   $0x02, %al
     jz      _a20_disable_done
-    movb    %al, %ah
+    pushw   %ax
 
-    call    i8042_out_p
+    call    i8042_io_p
     movb    $0xD1, %al      # cmd: write PS/2 output port
     outb    %al, $0x64      # send cmd
-    call    i8042_out_p
-    andb    $0xFD, %ah      # clear A20 bit
-    movb    %ah, %al        # data out: old output port status w/ A20 cleared
+
+    call    i8042_io_p
+    popw    %ax
+    andb    $0xFD, %al      # clear A20 bit
     outb    %al, $0x60      # send data
+
+    call    i8042_enable
+    call    i8042_io_p
 
 _a20_disable_done:
     ret
