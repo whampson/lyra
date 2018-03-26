@@ -56,8 +56,28 @@ i8042_enable:
 ##
 .globl i8042_io_p
 i8042_io_p:
-    call    delay
+    call    i8042_delay
     inb     $0x64, %al
     testb   $0x03, %al
     jnz     i8042_io_p
+    ret
+
+##
+# Wait some time before next transaction.
+##
+i8042_delay:
+    pushw   %bx
+    pushw   %cx
+    movw    $0x40, %bx
+
+_i8042_delay_loop_outer:
+    movw    $0xFFFF, %cx
+
+_i8042_delay_loop:
+    decw    %cx
+    jnz     _i8042_delay_loop
+    decw    %bx
+    jnz     _i8042_delay_loop_outer
+    popw    %cx
+    popw    %bx
     ret
