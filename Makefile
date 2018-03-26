@@ -17,9 +17,9 @@
 #-------------------------------------------------------------------------------
 
 AS          := gcc
-ASFLAGS     := -m32 -ffreestanding
+ASFLAGS     := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
 CC          := gcc
-CCFLAGS     := -m32 -ffreestanding
+CCFLAGS     := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
 LD          := ld
 LDFLAGS     :=
 
@@ -29,7 +29,7 @@ LDSCRIPTS       := $(wildcard *.ld)
 LDSCRIPTS_GEN   := $(LDSCRIPTS:.ld=.ld.gen)
 OBJECTS         := $(ASM_SOURCES:.S=_asm.o) $(C_SOURCES:.c=.o)
 
-.PHONY: all debug clean remake
+.PHONY: all debug clean remake install
 
 all: boot.bin
 
@@ -56,3 +56,6 @@ clean:
 	@rm -f *.o *.gen *.elf *.bin
 
 remake: clean all
+
+install: boot.bin
+	dd if=boot.bin of=/dev/fd0
