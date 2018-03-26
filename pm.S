@@ -44,7 +44,7 @@ pm_entry:
 #    jmp     kmain
 
 move_kernel:
-    movzbl  (KERNEL_NUM_SECTORS), %ecx
+    movl    $KERNEL_NUM_SECTORS, %ecx
     shll    $9, %ecx
     movl    $KERNEL_TEMP_BASE, %esi
     movl    $0x00400000, %edi
