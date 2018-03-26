@@ -26,7 +26,7 @@
 pm_switch:
     call    a20_enable
 
-    #call    nmi_disable
+    call    nmi_disable
     lgdt    gdt_desc
 
     # Here we go...!
@@ -36,6 +36,12 @@ pm_switch:
     orw     $0x01, %ax
     movl    %eax, %cr0
     ljmp    $0x08, $pm_entry
+
+nmi_disable:
+    inb     $0x70, %al
+    orb     $0x80, %al
+    outb    %al, $0x70
+    ret
 
 .code32
 pm_entry:
