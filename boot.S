@@ -14,33 +14,15 @@
 #-------------------------------------------------------------------------------
 # File: boot.S
 # Desc: Stage 1 boot code (a.k.a. the bootsector). The primary purpose of this
-#       code is to load the second stage, which is responsible for getting the
-#       system into Protected Mode. This file also contains miscellaneous
-#       routines used throughout the stage 1 and stage 2 boot phases.
+#       code is to load the second stage and kernel code. This file also
+#       contains miscellaneous routines used throughout the stage 1 and stage 2
+#       boot phases.
 #-------------------------------------------------------------------------------
+
+#include "boot.h"
 
 .code16
 .section .stage1, "ax", @progbits
-
-STACK_BASE  = 0x7C00
-STAGE2_SEG  = 0x07E0
-STAGE2_OFF  = 0x0000
-SECT_COUNT  = 1
-RETRY_COUNT = 3
-
-# TODO: (bootloader)
-#   [-] enable prot. mode
-#       [x] enable A20
-#       [ ] setup GDT
-#       [ ] disable interrupts (NMI)
-#       [ ] write cr0
-#       [ ] reset segment registers
-#   [ ] load kernel
-#       [ ] floppy disk driver
-#   [ ] jump to kernel entry point
-# TODO: (kernel)
-#   [ ] load IDT and other x86 structures
-#   [ ] enable paging
 
 ##
 # Bootloader entry point -- where it all begins!
@@ -48,52 +30,83 @@ RETRY_COUNT = 3
 .globl entry
 entry:
     cli
-    movw    $STACK_BASE, %bp
+    movw    %cs, %ax
+    movw    %ax, %ds
+    xorw    %ax, %ax
+    movw    %ax, %ss
+    movw    $BOOT_STACK_BASE, %bp
     movw    %bp, %sp
 
-    call    load_stage2
+load_stage2:
+    movw    $STAGE2_BASE, %bx
+    movb    $STAGE2_START_SECTOR, %cl
+    movb    $STAGE2_NUM_SECTORS, %ch
+    call    read_sectors
+    cmpb    $0, %ah
+    jnz     disk_err
+
+load_kernel:
+    movw    $KERNEL_TEMP_BASE, %bx
+    movb    $KERNEL_START_SECTOR, %cl
+    movb    (KERNEL_NUM_SECTORS), %ch   # value and address determined by linker
+    call    read_sectors
+    cmpb    $0, %ah
+    jnz     disk_err
     jmp     pm_switch
 
 
 ##
-# Loads the second stage of the bootloader from the boot floppy.
-# If the load fails, an error message will be displayed and execution will
-# cease.
+# Loads sectors of contiguous data from the boot disk to the address specified
+# by 0000:bx.
+# Each sector is 512 bytes.
 #
-#   Inputs: (none)
-#  Outputs: Stage 2 boot code starting at STAGE2_SEG:STAGE2_OFF.
-# Clobbers: ax, bx, cx, dx, es, si
+# LIMITATIONS:
+#   As of now, this routine only loads sectors from the first track of the
+#   first head of the floppy. Therefore, only 18 sectors can be loaded at a
+#   time.
+#
+#   Inputs: bx - destination address
+#           cl - starting sector
+#           ch - number of sectors
+#  Outputs: ah - 0 for success, nonzero if an error occurred
+# Clobbers: ax, ch, dx, es, si
 ##
-load_stage2:
-    movw    $STAGE2_SEG, %ax
-    movw    $STAGE2_OFF, %bx
+read_sectors:
+    xorw    %ax, %ax
     movw    %ax, %es
-    movw    $RETRY_COUNT, %si
+    movw    $FLOPPY_NUM_RETRIES, %si
+    movb    %ch, %al
 
-_stage2_loop:
+_read_sectors_loop:
     decw    %si
-    movb    $0x02, %ah          # func: read floppy
-    movb    $SECT_COUNT, %al    # number of sectors to read
-    movb    $0, %ch             # cylinder number
-    movb    $2, %cl             # sector number
-    movb    $0, %dh             # head number
-    movb    $0, %dl             # drive number
+    movb    $0x02, %ah                  # func: read floppy
+    movb    $0, %ch                     # cylinder number
+    movb    $0, %dh                     # head number
+    movb    $0, %dl                     # drive number
     int     $0x13
-    jc      _stage2_retry
+    jc      _read_sectors_retry
+    cmpb    $0, %ah
+    jnz     _read_sectors_retry
     ret
 
-_stage2_retry:
+_read_sectors_retry:
     cmpw    $0, %si
-    je      _stage2_error
-    jmp     _stage2_loop
+    je      _read_sectors_error
+    jmp     _read_sectors_loop
 
-_stage2_error:
+_read_sectors_error:
+    ret
+
+##
+# Prints a disk read error message and halts.
+##
+disk_err:
     leaw    s_disk_err, %bx
     call    print
     jmp     halt
 
 s_disk_err:
-    .ascii  "Disk read error!"
+    .ascii  "Disk read error! Unable to boot."
     .byte   10, 13, 0
 
 
