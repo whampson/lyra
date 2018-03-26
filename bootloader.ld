@@ -18,12 +18,11 @@
  * Desc: Linker script for the boot code.
  *----------------------------------------------------------------------------*/
 
+#include "boot.h"
+
 OUTPUT_FORMAT("elf32-i386")
 OUTPUT_ARCH(i386)
 ENTRY(entry)
-
-STAGE1_BASE = 0x7C00;
-STAGE2_BASE = 0x7E00;
 
 SECTIONS
 {
@@ -38,4 +37,13 @@ SECTIONS
     {
         *(.stage2)
     }
+
+    .text (0x8000) :
+    {
+        __KERNEL_CODE_START = .;
+        *(.text)
+        . = ALIGN(512 * 2);
+        __KERNEL_CODE_END = .;
+    }
+    KERNEL_NUM_SECTORS = (__KERNEL_CODE_END - __KERNEL_CODE_START) / 512;
 }
