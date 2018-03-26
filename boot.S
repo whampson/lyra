@@ -37,6 +37,9 @@ entry:
     movw    $BOOT_STACK_BASE, %bp
     movw    %bp, %sp
 
+    leaw    s_boot, %bx
+    call    print
+
 load_stage2:
     movw    $STAGE2_BASE, %bx
     movb    $STAGE2_START_SECTOR, %cl
@@ -134,23 +137,19 @@ _print_done:
 
 
 ##
-# Delay execution for a jiffy.
-##
-.globl delay
-delay:
-    pushw   %cx
-    movw    $0xFFFF, %cx
-_delay_loop:
-    decw    %cx
-    jnz     _delay_loop
-    popw    %cx
-    ret
-
-
-##
 # Spin forever.
 ##
 .globl halt
 halt:
     hlt
     jmp     halt
+
+.globl s_boot
+s_boot:
+    .ascii  "Booting Lyra..."
+    .byte   13, 10, 0
+
+.globl s_to_pm
+s_to_pm:
+    .ascii "Switching to protected mode..."
+    .byte   13, 10, 0
