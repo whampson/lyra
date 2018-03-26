@@ -20,31 +20,44 @@
 .section .stage2, "ax", @progbits
 
 ##
-# Wait for PS/2 controller to be ready before reading from data port.
+# Disables the keyboard.
 #
 #   Inputs: (none)
-#  Outputs: al - PS/2 status register
+#  Outputs: (none)
 # Clobbers: al
 ##
-.globl i8042_in_p
-i8042_in_p:
-    call    delay
-    inb     $0x64, %al
-    testb   $0x01, %al          # check output buffer status (1 = ready)
-    jz      i8042_in_p
+.globl i8042_disable
+i8042_disable:
+    call    i8042_io_p
+    movb    $0xAD, %al
+    outb    %al, $0x64
     ret
 
 ##
-# Wait for PS/2 controller to be ready before writing to command or data port.
+# Enables the keyboard.
 #
 #   Inputs: (none)
-#  Outputs: al - PS/2 status register
+#  Outputs: (none)
 # Clobbers: al
 ##
-.globl i8042_out_p
-i8042_out_p:
+.globl i8042_enable
+i8042_enable:
+    call    i8042_io_p
+    movb    $0xAE, %al
+    outb    %al, $0x64
+    ret
+
+##
+# Pause until PS/2 control is ready for another command or data read/write.
+#
+#   Inputs: (none)
+#  Outputs: (none)
+# Clobbers: al
+##
+.globl i8042_io_p
+i8042_io_p:
     call    delay
     inb     $0x64, %al
-    testb   $0x02, %al          # check input buffer status (0 = ready)
-    jnz     i8042_out_p
+    testb   $0x03, %al
+    jnz     i8042_io_p
     ret
