@@ -36,13 +36,14 @@ SECTIONS
     .stage2 (STAGE2_BASE) :
     {
         *(.stage2)
+        . = ALIGN(SECTOR_SIZE);
     }
 
     .text (0x8000) :
     {
         __KERNEL_CODE_START = .;
         *(.text)
-        . = ALIGN(512 * 2);
+        . = ALIGN(SECTOR_SIZE);
         __KERNEL_CODE_END = .;
     }
     KERNEL_NUM_SECTORS = (__KERNEL_CODE_END - __KERNEL_CODE_START) / 512;
