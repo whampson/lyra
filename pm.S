@@ -25,10 +25,13 @@
 .globl pm_switch
 pm_switch:
     call    a20_enable
+
     #call    nmi_disable
     lgdt    gdt_desc
 
     # Here we go...!
+    leaw    s_to_pm, %bx
+    call    print
     movl    %cr0, %eax
     orw     $0x01, %ax
     movl    %eax, %cr0
@@ -41,7 +44,7 @@ pm_entry:
     movw    %ax, %es
     movw    %ax, %fs
     movw    %ax, %gs
-#    jmp     kmain
+    jmp     pm_halt
 
 move_kernel:
     movl    $KERNEL_NUM_SECTORS, %ecx
