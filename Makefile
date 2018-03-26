@@ -21,25 +21,30 @@ ASFLAGS     := -m32 -ffreestanding
 CC          := gcc
 CCFLAGS     := -m32 -ffreestanding
 LD          := ld
-LDSCRIPT    := bootloader.ld
-LDFLAGS     := -T $(LDSCRIPT)
+LDFLAGS     :=
 
-ASM_SOURCES := $(wildcard *.S)
-C_SOURCES   := $(wildcard *.c)
-OBJECTS     := $(ASM_SOURCES:.S=_asm.o) $(C_SOURCES:.c=.o)
-
-ELFTARGET   := boot.elf
-BINTARGET   := boot.bin
+ASM_SOURCES     := $(wildcard *.S)
+C_SOURCES       := $(wildcard *.c)
+LDSCRIPTS       := $(wildcard *.ld)
+LDSCRIPTS_GEN   := $(LDSCRIPTS:.ld=.ld.gen)
+OBJECTS         := $(ASM_SOURCES:.S=_asm.o) $(C_SOURCES:.c=.o)
 
 .PHONY: all debug clean remake
 
-all: $(BINTARGET)
+all: boot.bin
 
-$(BINTARGET): $(ELFTARGET)
+debug: ASFLAGS += -g
+debug: CCFLAGS += -g
+debug: remake
+
+boot.bin: boot.elf
 	objcopy -O binary $< $@
 
-$(ELFTARGET): $(OBJECTS)
-	$(LD) $(LDFLAGS) -o $@ $^
+boot.elf: $(OBJECTS) $(LDSCRIPTS_GEN)
+	$(LD) $(LDFLAGS) -T $(LDSCRIPTS_GEN) -o $@ $(OBJECTS)
+
+$(LDSCRIPTS_GEN): $(LDSCRIPTS)
+	scripts/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN)
 
 %_asm.o: %.S
 	$(AS) $(ASFLAGS) -c -o $@ $<
@@ -47,10 +52,7 @@ $(ELFTARGET): $(OBJECTS)
 %.o: %.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
 
-debug: ASFLAGS += -g
-debug: remake
-
 clean:
-	@rm -f *.o *.elf *.bin
+	@rm -f *.o *.gen *.elf *.bin
 
 remake: clean all
