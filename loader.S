@@ -5,13 +5,16 @@
 
 .globl pm_entry
 pm_entry:
-    movl    $0x7C00, %esp
     movw    $0x18, %ax
-    movw    %ax, %ss
     movw    %ax, %ds
+    movw    %ax, %ss
     movw    %ax, %es
     movw    %ax, %fs
     movw    %ax, %gs
+
+    movl    $0x7C00, %ebp
+    movl    %ebp, %esp
+
     jmp     kmain
 
 move_kernel:
@@ -29,4 +32,5 @@ kmain:
     movw    $0x0261, 0xB8800
 
 pm_halt:
+    hlt
     jmp     pm_halt
