@@ -22,6 +22,30 @@
 .code16
 .section .stage2, "ax", @progbits
 
+.align 16
+gdt_start:
+    .quad   0x0000000000000000
+    .quad   0x0000000000000000
+    .quad   0x00CF9A000000FFFF      # 0x10 -- KERNEL_CS
+    .quad   0x00CF92000000FFFF      # 0x18 -- KERNEL_DS
+    .quad   0x00CFFA000000FFFF      # 0x20 -- USER_CS
+    .quad   0x00CFF2000000FFFF      # 0x28 -- USER_DS
+    .quad   0x0000000000000000
+    .quad   0x0000000000000000
+gdt_end:
+
+.align 4
+gdt_desc:
+    .word   gdt_end - gdt_start - 1
+    .long   gdt_start
+.align  4
+
+nmi_disable:
+    inb     $0x70, %al
+    orb     $0x80, %al
+    outb    %al, $0x70
+    ret
+
 .globl pm_switch
 pm_switch:
     call    a20_enable
@@ -35,54 +59,5 @@ pm_switch:
     movl    %cr0, %eax
     orw     $0x01, %ax
     movl    %eax, %cr0
-    ljmp    $0x08, $pm_entry
 
-nmi_disable:
-    inb     $0x70, %al
-    orb     $0x80, %al
-    outb    %al, $0x70
-    ret
-
-.code32
-pm_entry:
-    movw    %cs, %ax
-    movw    %ax, %ds
-    movw    %ax, %es
-    movw    %ax, %fs
-    movw    %ax, %gs
-    jmp     pm_halt
-
-move_kernel:
-    movl    $KERNEL_NUM_SECTORS, %ecx
-    shll    $9, %ecx
-    movl    $KERNEL_TEMP_BASE, %esi
-    movl    $0x00400000, %edi
-rep movsb   (%esi), (%edi)
-
-    jmp     0x00400000
-
-
-.section .text
-kmain:
-    # Put a green 'a' on the screen to prove it worked!
-    movw    $0x0261, 0xB8800
-
-pm_halt:
-    hlt
-    jmp     pm_halt
-
-
-.section .stage2, "ax", @progbits
-gdt_start:
-    .quad   0x0000000000000000
-    .quad   0x00CF9A000000FFFF      # 0x08 -- KERNEL_CS
-    .quad   0x00CF92000000FFFF      # 0x10 -- KERNEL_DS
-    .quad   0x00CFFA000000FFFF      # 0x18 -- USER_CS
-    .quad   0x00CFF2000000FFFF      # 0x20 -- USER_DS
-    .quad   0x0000000000000000
-    .quad   0x0000000000000000
-gdt_end:
-
-gdt_desc:
-    .word   gdt_end - gdt_start - 1
-    .long   gdt_start
+    ljmpl   $0x10, $pm_entry
