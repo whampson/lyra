@@ -34,11 +34,10 @@ gdt_start:
     .quad   0x0000000000000000
 gdt_end:
 
-.align 4
 gdt_desc:
     .word   gdt_end - gdt_start - 1
     .long   gdt_start
-.align  4
+    .word   0
 
 nmi_disable:
     inb     $0x70, %al
@@ -49,15 +48,15 @@ nmi_disable:
 .globl pm_switch
 pm_switch:
     call    a20_enable
-
     call    nmi_disable
     lgdt    gdt_desc
 
-    # Here we go...!
     leaw    s_to_pm, %bx
     call    print
+
     movl    %cr0, %eax
     orw     $0x01, %ax
     movl    %eax, %cr0
 
+    # Here we go...!
     ljmpl   $0x10, $pm_entry
