@@ -35,11 +35,14 @@ SECTIONS
 
     .stage2 (STAGE2_BASE) :
     {
+        __STAGE2_START = .;
         *(.stage2)
         . = ALIGN(SECTOR_SIZE);
+        __STAGE2_END = .;
     }
+    STAGE2_NUM_SECTORS = (__STAGE2_END - __STAGE2_START) / 512;
 
-    .text (0x8000) :
+    .text (KERNEL_TEMP_BASE) :
     {
         __KERNEL_CODE_START = .;
         *(.text)

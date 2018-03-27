@@ -18,10 +18,10 @@
 
 #define STAGE1_BASE         0x7C00
 #define STAGE2_BASE         0x7E00
-#define KERNEL_TEMP_BASE    0x8000  /* loaded here before prot. mode enabled */
+#define KERNEL_TEMP_BASE    0x8200  /* loaded here before prot. mode enabled */
 
 #define FLOPPY_NUM_RETRIES  3
-#define STAGE2_NUM_SECTORS  1
+/*#define STAGE2_NUM_SECTORS  3*/
 #define STAGE2_START_SECTOR 2
 #define KERNEL_START_SECTOR (STAGE2_START_SECTOR + STAGE2_NUM_SECTORS)
 #define SECTOR_SIZE         512
