@@ -39,6 +39,23 @@ gdt_desc:
     .long   gdt_start
     .word   0
 
+.align 16
+idt_start:
+    .rept   32
+    .word   intr_handler    # offset[15:0]
+    .word   0x10            # segment selector
+    .byte   0x00            # reserved
+    .byte   0x8E            # flags
+    .word   0x0000          # offset[31:16]
+    .endr
+idt_end:
+
+.globl idt_desc
+idt_desc:
+    .word   idt_end - idt_start - 1
+    .long   idt_start
+    .word   0
+
 nmi_disable:
     inb     $0x70, %al
     orb     $0x80, %al
