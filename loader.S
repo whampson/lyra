@@ -15,6 +15,8 @@ pm_entry:
     movl    $0x7C00, %ebp
     movl    %ebp, %esp
 
+    lidtl   idt_desc
+
     jmp     kmain
 
 move_kernel:
@@ -30,7 +32,13 @@ rep movsb   (%esi), (%edi)
 kmain:
     # Put a green 'a' on the screen to prove it worked!
     movw    $0x0261, 0xB8800
+    sti
 
 pm_halt:
     hlt
     jmp     pm_halt
+
+.globl intr_handler
+intr_handler:
+    incb    0xB8900
+    iret
