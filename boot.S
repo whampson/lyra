@@ -55,8 +55,11 @@ load_kernel:
     call    read_sectors
     cmpb    $0, %ah
     jnz     disk_err
-    jmp     pm_switch
 
+continue_boot:
+    call    intr_disable
+    call    a20_enable
+    jmp     pm_switch
 
 ##
 # Loads sectors of contiguous data from the boot disk to the address specified
@@ -114,6 +117,22 @@ s_disk_err:
 
 
 ##
+# Masks all PIC interrupts and disables non-maskable interrupts (NMIs).
+##
+intr_disable:
+    # Mask PIC interrupts
+    movb    $0xff, %al          # mask all IRQs
+    outb    %al, $0xa1          # send mask to slave PIC
+    outb    %al, $0x21          # send mask to master PIC
+
+    # Disable non-maskable interrupts
+    inb     $0x70, %al          # read CMOS register
+    orb     $0x80, %al          # set NMI disable bit
+    outb    %al, $0x70          # write CMOS register
+
+    ret
+
+##
 # Prints a zero-terminated string to the screen at the current cursor position.
 #
 #   Inputs: bx - address of string to print
@@ -147,9 +166,4 @@ halt:
 .globl s_boot
 s_boot:
     .ascii  "Booting Lyra..."
-    .byte   13, 10, 0
-
-.globl s_to_pm
-s_to_pm:
-    .ascii "Switching to protected mode..."
     .byte   13, 10, 0
