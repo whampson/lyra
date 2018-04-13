@@ -42,12 +42,13 @@ SECTIONS
     }
     STAGE2_NUM_SECTORS = (__STAGE2_END - __STAGE2_START) / 512;
 
-    .text (KERNEL_TEMP_BASE) :
+    /*.text (KERNEL_TEMP_BASE) :
     {
         __KERNEL_CODE_START = .;
         *(.text)
         . = ALIGN(SECTOR_SIZE);
         __KERNEL_CODE_END = .;
-    }
-    KERNEL_NUM_SECTORS = (__KERNEL_CODE_END - __KERNEL_CODE_START) / 512;
+    }*/
+    /*KERNEL_NUM_SECTORS = (__KERNEL_CODE_END - __KERNEL_CODE_START) / 512;*/
+    KERNEL_NUM_SECTORS = 1;
 }
