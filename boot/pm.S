@@ -70,4 +70,8 @@ move_kernel:
     movl    $0x00400000, %edi
 rep movsb   (%esi), (%edi)
 
-    jmp     0x00400000
+    call    0x00400000
+
+pm_halt:
+    hlt
+    jmp     pm_halt
