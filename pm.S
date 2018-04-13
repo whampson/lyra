@@ -13,7 +13,8 @@
 
 #-------------------------------------------------------------------------------
 # File: pm.S
-# Desc: Contains code for switching the CPU into protected mode.
+# Desc: Contains code for switching the CPU into protected mode and calling the
+#       kernel.
 #       Also contains the Global Descriptor Table.
 #-------------------------------------------------------------------------------
 
@@ -28,8 +29,8 @@ gdt_start:
     .quad   0x0000000000000000
     .quad   0x00CF9A000000FFFF      # 0x10 -- KERNEL_CS
     .quad   0x00CF92000000FFFF      # 0x18 -- KERNEL_DS
-    .quad   0x00CFFA000000FFFF      # 0x20 -- USER_CS
-    .quad   0x00CFF2000000FFFF      # 0x28 -- USER_DS
+    .quad   0x00CFFA000000FFFF      # 0x23 -- USER_CS
+    .quad   0x00CFF2000000FFFF      # 0x2b -- USER_DS
     .quad   0x0000000000000000
     .quad   0x0000000000000000
 gdt_end:
@@ -39,37 +40,9 @@ gdt_desc:
     .long   gdt_start
     .word   0
 
-.align 16
-idt_start:
-    .rept   32
-    .word   intr_handler    # offset[15:0]
-    .word   0x10            # segment selector
-    .byte   0x00            # reserved
-    .byte   0x8E            # flags
-    .word   0x0000          # offset[31:16]
-    .endr
-idt_end:
-
-.globl idt_desc
-idt_desc:
-    .word   idt_end - idt_start - 1
-    .long   idt_start
-    .word   0
-
-nmi_disable:
-    inb     $0x70, %al
-    orb     $0x80, %al
-    outb    %al, $0x70
-    ret
-
 .globl pm_switch
 pm_switch:
-    call    a20_enable
-    call    nmi_disable
     lgdt    gdt_desc
-
-    leaw    s_to_pm, %bx
-    call    print
 
     movl    %cr0, %eax
     orw     $0x01, %ax
@@ -77,3 +50,24 @@ pm_switch:
 
     # Here we go...!
     ljmpl   $0x10, $pm_entry
+
+.code32
+pm_entry:
+    movw    $0x18, %ax
+    movw    %ax, %ds
+    movw    %ax, %ss
+    movw    %ax, %es
+    movw    %ax, %fs
+    movw    %ax, %gs
+
+    movl    $0x7C00, %ebp
+    movl    %ebp, %esp
+
+move_kernel:
+    movl    $KERNEL_NUM_SECTORS, %ecx
+    shll    $9, %ecx
+    movl    $KERNEL_TEMP_BASE, %esi
+    movl    $0x00400000, %edi
+rep movsb   (%esi), (%edi)
+
+    jmp     0x00400000
