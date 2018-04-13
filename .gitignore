@@ -4,6 +4,7 @@
 
 # Raw binary files
 *.bin
+*.img
 
 # Generated files
 *.gen
