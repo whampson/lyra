@@ -14,7 +14,14 @@
 #ifndef _FLOPPY_H_
 #define _FLOPPY_H_
 
-#define RETRY_COUNT 3
-#define SECTOR_SIZE 512
+/* Properties of a 1.4 MiB, 3.5in floppy disks. */
+#define HEAD_COUNT          2
+#define CYL_COUNT           80
+#define SECTOR_COUNT        17
+#define SECTOR_SIZE         512
+
+#define RETRY_COUNT         3
+
+#define BIOS_READ_FLOPPY    0x02
 
 #endif /* _FLOPPY_H_ */
