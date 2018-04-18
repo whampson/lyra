@@ -15,3 +15,6 @@ clean:
 	$(MAKE) -C boot/ clean
 	(cd kernel/; rm -f *.o *.elf *.bin)
 	rm -f lyra.img
+
+install: img
+	dd if=lyra.img of=/dev/fd0
