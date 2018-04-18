@@ -56,6 +56,7 @@ load_kernel_early:
     jnz     boot_err
 
 go_to_pm:
+    call    a20_disable         # for debugging
     call    kill_interrupts
     call    a20_enable
     lgdt    gdt_ptr
