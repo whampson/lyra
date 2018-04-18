@@ -9,5 +9,6 @@ SECTIONS
     {
         LONG(kmain);
         *(.text)
+        . = ALIGN(512);
     }
 }
