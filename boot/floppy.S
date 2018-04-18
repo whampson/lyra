@@ -1,3 +1,21 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# Copyright (C) 2018 Wes Hampson. All Rights Reserved.                         #
+#                                                                              #
+# This file is part of the Lyra operating system.                              #
+#                                                                              #
+# Lyra is free software: you can redistribute it and/or modify                 #
+# it under the terms of version 2 of the GNU General Public License            #
+# as published by the Free Software Foundation.                                #
+#                                                                              #
+# See LICENSE in the top-level directory for a copy of the license.            #
+# You may also visit <https://www.gnu.org/licenses/gpl-2.0.txt>.               #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+#-------------------------------------------------------------------------------
+# File: (TODO)
+# Desc: (TODO)
+#-------------------------------------------------------------------------------
+
 #include "floppy.h"
 
 .section .stage1, "ax", @progbits
@@ -15,44 +33,57 @@
 #
 #   Inputs: bx - destination address
 #           cl - starting sector
-#           ch - number of sectors
-#  Outputs: ah - 0 for success, nonzero if an error occurred
+#           ch - number of sectors to read
+#  Outputs: ax - 0 for success, -1 if an error occurred
 # Clobbers: ax, ch, dx, es, si
 ##
+.globl read_sectors
 read_sectors:
     xorw    %ax, %ax
     movw    %ax, %es
-    movw    $FLOPPY_NUM_RETRIES, %si
-    movb    %ch, %al
+    movw    $RETRY_COUNT, %si
 
-_read_sectors_loop:
+_bounds_check:
+    movb    %cl, %al
+    addb    %ch, %ax
+    subw    %ax, $1
+    cmpw    $SECTOR_COUNT, %ax
+    ja      _support_err
+    movw    %ch, %al
+
+_read_loop:
     decw    %si
-    movb    $0x02, %ah                  # func: read floppy
-    movb    $0, %ch                     # cylinder number
-    movb    $0, %dh                     # head number
-    movb    $0, %dl                     # drive number
+    movb    $BIOS_READ_FLOPPY, %ah
+    movb    $0, %ch         # cylinder number
+    movb    $0, %dh         # head number
+    movb    $0, %dl         # drive number
     int     $0x13
-    jc      _read_sectors_retry
+    jc      _read_retry
     cmpb    $0, %ah
-    jnz     _read_sectors_retry
+    jnz     _read_retry
     ret
 
-_read_sectors_retry:
+_read_retry:
     cmpw    $0, %si
-    je      _read_sectors_error
-    jmp     _read_sectors_loop
+    je      _read_error
+    jmp     _read_loop
 
-_read_sectors_error:
+_read_error:
+    leaw    s_disk_err
+    call    print
+    movb    $-1, %ax
     ret
 
-##
-# Prints a disk read error message and halts.
-##
-disk_err:
-    leaw    s_disk_err, %bx
+_support_err:
+    leaw    s_cyl_support
     call    print
-    jmp     halt
+    movb    $-1, %ax
+    ret
 
 s_disk_err:
-    .ascii  "Disk read error! Unable to boot."
+    .ascii  "Disk read error!"
+    .byte   10, 13, 0
+
+s_cyl_support:
+    .ascii "Reading more than one cylinder is not supported yet!"
     .byte   10, 13, 0
