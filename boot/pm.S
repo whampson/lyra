@@ -49,7 +49,7 @@ move_kernel:
 rep movsb   (%esi), (%edi)
 
 invoke_kernel:
-    call    kernel_entry
+    call    *KERNEL_START
 
 idle:
     hlt
