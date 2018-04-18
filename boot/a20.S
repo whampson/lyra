@@ -96,25 +96,24 @@ a20_enablefunc_bios:
 a20_enablefunc_i8042:
     call    i8042_disable
 
-    call    i8042_io_p
+    call    i8042_out_delay
     movb    $0xD0, %al      # cmd: read PS/2 output port
     outb    %al, $0x64      # send cmd
 
-    call    i8042_io_p
+    call    i8042_in_delay
     inb     $0x60, %al      # data in: output port status
     pushw   %ax
 
-    call    i8042_io_p
+    call    i8042_out_delay
     movb    $0xD1, %al      # cmd: write PS/2 output port
     outb    %al, $0x64      # send cmd
 
-    call    i8042_io_p
+    call    i8042_out_delay
     popw    %ax
     orb     $0x02, %al      # set A20 bit
     outb    %al, $0x60      # send data
 
     call    i8042_enable
-    call    i8042_io_p
     ret
 
 
@@ -148,11 +147,11 @@ _a20_enablefunc_fast_done:
 a20_disable:
     call    i8042_disable
 
-    call    i8042_io_p
+    call    i8042_out_delay
     movb    $0xD0, %al      # cmd: read PS/2 output port
     outb    %al, $0x64      # send cmd
 
-    call    i8042_io_p
+    call    i8042_in_delay
     inb     $0x60, %al      # data in: output port status
 
     # Check if A20 is already disabled
@@ -160,17 +159,16 @@ a20_disable:
     jz      _a20_disable_done
     pushw   %ax
 
-    call    i8042_io_p
+    call    i8042_out_delay
     movb    $0xD1, %al      # cmd: write PS/2 output port
     outb    %al, $0x64      # send cmd
 
-    call    i8042_io_p
+    call    i8042_out_delay
     popw    %ax
     andb    $0xFD, %al      # clear A20 bit
     outb    %al, $0x60      # send data
 
     call    i8042_enable
-    call    i8042_io_p
 
 _a20_disable_done:
     ret
