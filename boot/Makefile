@@ -28,6 +28,7 @@ C_SOURCES       := $(wildcard *.c)
 LDSCRIPTS       := $(wildcard *.ld)
 LDSCRIPTS_GEN   := $(LDSCRIPTS:.ld=.ld.gen)
 OBJECTS         := $(ASM_SOURCES:.S=_asm.o) $(C_SOURCES:.c=.o)
+OBJECTS         := $(filter-out boot_asm.o, $(OBJECTS))
 
 .PHONY: all debug clean remake install
 
@@ -40,8 +41,8 @@ debug: remake
 boot.bin: boot.elf
 	objcopy -O binary $< $@
 
-boot.elf: $(OBJECTS) $(LDSCRIPTS_GEN)
-	$(LD) $(LDFLAGS) -T $(LDSCRIPTS_GEN) -o $@ $(OBJECTS)
+boot.elf: boot_asm.o $(OBJECTS) $(LDSCRIPTS_GEN)
+	$(LD) $(LDFLAGS) -T $(LDSCRIPTS_GEN) -o $@ $< $(OBJECTS)
 
 $(LDSCRIPTS_GEN): $(LDSCRIPTS)
 	scripts/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN)
