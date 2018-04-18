@@ -14,16 +14,22 @@
 #ifndef _BOOT_H_
 #define _BOOT_H_
 
-#define BOOT_STACK_BASE     0x7C00  /* first item at 0x7BFE, grows towards 0 */
+/* Starting addresses of global data. */
+#define STACK_BASE          0x7C00  /* first item at 0x7BFE, grows towards 0 */
 
-#define STAGE1_BASE         0x7C00
-#define STAGE2_BASE         0x7E00
-#define KERNEL_TEMP_BASE    0x8200  /* loaded here before prot. mode enabled */
+/* Starting addresses of code. */
+#define STAGE1_START        0x7C00
+#define STAGE2_START        0x0500
+#define KERNEL_START_EARLY  0x7E00
+#define KERNEL_START        0x400000    /* 4 MiB */
 
-#define FLOPPY_NUM_RETRIES  3
-/*#define STAGE2_NUM_SECTORS  3*/
-#define STAGE2_START_SECTOR 2
-#define KERNEL_START_SECTOR (STAGE2_START_SECTOR + STAGE2_NUM_SECTORS)
-#define SECTOR_SIZE         512
+/* Segment selectors. */
+#define BOOT_CS             0x10
+#define BOOT_DS             0x18
+
+/* Disk layout information.
+   STAGE2_NUM_SECTORS and KERNEL_NUM_SECTORS defined during linking. */
+#define STAGE2_SECTOR       2
+#define KERNEL_SECTOR       (STAGE2_SECTOR + STAGE2_NUM_SECTORS)
 
 #endif /* _BOOT_H_ */
