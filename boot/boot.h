@@ -27,6 +27,9 @@
 #define BOOT_CS             0x10
 #define BOOT_DS             0x18
 
+/* Boot sector signature for MBR. */
+#define BOOTSECT_MAGIC      0xAA55
+
 /* Disk layout information.
    STAGE2_NUM_SECTORS and KERNEL_NUM_SECTORS defined during linking. */
 #define STAGE2_SECTOR       2
