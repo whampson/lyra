@@ -19,6 +19,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "boot.h"
+#include "floppy.h"
 
 OUTPUT_FORMAT("elf32-i386")
 OUTPUT_ARCH(i386)
@@ -26,29 +27,22 @@ ENTRY(entry)
 
 SECTIONS
 {
-    .stage1 (STAGE1_BASE) :
+    .stage1 STAGE1_START :
+        AT ( 0x00 )
     {
         *(.stage1)
-        . = 0x1FE;
-        SHORT(0xAA55)
+        . = SECTOR_SIZE - 2;
+        SHORT(BOOTSECT_MAGIC)
     }
 
-    .stage2 (STAGE2_BASE) :
+    .stage2 STAGE2_START :
+        AT ( (STAGE2_SECTOR - 1) * SECTOR_SIZE )
     {
-        __STAGE2_START = .;
         *(.stage2)
         . = ALIGN(SECTOR_SIZE);
-        __STAGE2_END = .;
     }
-    STAGE2_NUM_SECTORS = (__STAGE2_END - __STAGE2_START) / 512;
+    __STAGE2_END = .;
 
-    /*.text (KERNEL_TEMP_BASE) :
-    {
-        __KERNEL_CODE_START = .;
-        *(.text)
-        . = ALIGN(SECTOR_SIZE);
-        __KERNEL_CODE_END = .;
-    }*/
-    /*KERNEL_NUM_SECTORS = (__KERNEL_CODE_END - __KERNEL_CODE_START) / 512;*/
+    STAGE2_NUM_SECTORS = (__STAGE2_END - STAGE2_START) / SECTOR_SIZE;
     KERNEL_NUM_SECTORS = 1;
 }
