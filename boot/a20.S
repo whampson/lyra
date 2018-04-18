@@ -39,7 +39,7 @@ a20_enable:
 _a20_enable_loop:
     call    a20_test_enabled
     cmpw    $1, %ax
-    je      _a20_enable_done
+    je      _a20_enable_success
 
     decw    %cx
     js      _a20_enable_fail
@@ -52,13 +52,15 @@ _a20_enable_loop:
 _a20_enable_fail:
     leaw    s_a20_enable_fail, %bx
     call    print
-    jmp     halt
+    movw    $-1, %ax
+    ret
 
-_a20_enable_done:
+_a20_enable_success:
+    movw    $0, %ax
     ret
 
 s_a20_enable_fail:
-    .ascii  "Failed to enable A20 line! Unable to boot."
+    .ascii  "Failed to enable A20 line!"
     .byte   13, 10, 0
 
 _a20_enable_jmptbl:
