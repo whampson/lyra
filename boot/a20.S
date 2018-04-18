@@ -109,7 +109,6 @@ a20_enablefunc_i8042:
     call    i8042_io_p
     popw    %ax
     orb     $0x02, %al      # set A20 bit
-#   movb    $0xDF, %al
     outb    %al, $0x60      # send data
 
     call    i8042_enable
