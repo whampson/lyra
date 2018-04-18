@@ -45,11 +45,11 @@ read_sectors:
 
 _bounds_check:
     movb    %cl, %al
-    addb    %ch, %ax
-    subw    %ax, $1
+    addb    %ch, %al        # TODO: test overflow
+    subw    $1, %ax
     cmpw    $SECTOR_COUNT, %ax
     ja      _support_err
-    movw    %ch, %al
+    movb    %ch, %al
 
 _read_loop:
     decw    %si
@@ -61,23 +61,27 @@ _read_loop:
     jc      _read_retry
     cmpb    $0, %ah
     jnz     _read_retry
-    ret
+    jmp     _read_done
 
 _read_retry:
     cmpw    $0, %si
     je      _read_error
     jmp     _read_loop
 
+_read_done:
+    movw    $0, %ax
+    ret
+
 _read_error:
-    leaw    s_disk_err
+    leaw    s_disk_err, %bx
     call    print
-    movb    $-1, %ax
+    movw    $-1, %ax
     ret
 
 _support_err:
-    leaw    s_cyl_support
+    leaw    s_cyl_support, %bx
     call    print
-    movb    $-1, %ax
+    movw    $-1, %ax
     ret
 
 s_disk_err:

@@ -44,7 +44,7 @@ load_stage2:
     movb    $STAGE2_SECTOR, %cl
     movb    $STAGE2_NUM_SECTORS, %ch
     call    read_sectors
-    cmpb    $0, %ax
+    cmpw    $0, %ax
     jnz     boot_err
 
 load_kernel_early:
@@ -52,7 +52,7 @@ load_kernel_early:
     movb    $KERNEL_SECTOR, %cl
     movb    $KERNEL_NUM_SECTORS, %ch
     call    read_sectors
-    cmpb    $0, %ax
+    cmpw    $0, %ax
     jnz     boot_err
 
 go_to_pm:
@@ -74,7 +74,7 @@ kill_interrupts:
     ret
 
 boot_err:
-    leaw    s_boot_fail
+    leaw    s_boot_fail, %bx
     call    print
     jmp     halt
 
@@ -82,7 +82,7 @@ halt:
     hlt
     jmp     halt
 
-s_greeting:
+s_hello:
     .ascii  "Booting Lyra..."
     .byte   13, 10, 0
 
