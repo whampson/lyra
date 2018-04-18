@@ -39,7 +39,7 @@ SECTIONS
         AT ( (STAGE2_SECTOR - 1) * SECTOR_SIZE )
     {
         *(.stage2)
-        . = ALIGN(SECTOR_SIZE);
+        . = ALIGN(256);     /* Not sure why this only works with 256... */
     }
     __STAGE2_END = .;
 
