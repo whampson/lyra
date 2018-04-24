@@ -13,50 +13,42 @@
 
 #-------------------------------------------------------------------------------
 # File: Makefile
-# Desc: Lyra OS build script.
+# Desc: Lyra kernel build script.
 #-------------------------------------------------------------------------------
 
-.PHONY: all debug clean remake img boot kernel 
+ASM_SOURCES     := $(wildcard *.S)
+C_SOURCES       := $(wildcard *.c)
+LDSCRIPTS       := $(wildcard *.ld)
+LDSCRIPTS_GEN   := $(LDSCRIPTS:.ld=.ld.gen)
+OBJECTS         := $(ASM_SOURCES:.S=_asm.o) $(C_SOURCES:.c=.o)
 
-export AS       := gcc
-export ASFLAGS  := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
-export CC       := gcc
-export CCFLAGS  := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
-export LD       := ld
-export LDFLAGS  :=
+TARGET          := kernel
 
-export BIN      := bin
-export OBJ      := obj
-export SCRIPTS  := scripts
+.PHONY: all debug clean remake
 
-BOOT            := boot
-KERNEL          := kernel
-BOOTIMG         := $(BOOT)/boot.bin
-KERNELIMG       := $(KERNEL)/kernel.bin
-OSIMG           := lyra.img
+all: $(TARGET).bin
 
-all: img
+debug: ASFLAGS += -g
+debug: CCFLAGS += -g
+debug: remake
 
-img: boot kernel
-	cat $(BOOTIMG) $(KERNELIMG) > $(OSIMG)
+$(TARGET).bin: $(TARGET).elf
+	objcopy -O binary $< $@
 
-boot:
-	$(MAKE) -C $(BOOT)
+$(TARGET).elf: $(OBJECTS) $(LDSCRIPTS_GEN)
+	$(LD) $(LDFLAGS) -T $(LDSCRIPTS_GEN) -o $@ $<
 
-kernel:
-	$(MAKE) -C $(KERNEL)
+$(LDSCRIPTS_GEN): $(LDSCRIPTS)
+	../scripts/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN)
 
-debug:
-	$(MAKE) -C $(BOOT) debug
-	$(MAKE) -C $(KERNEL) debug
+%_asm.o: %.S
+	$(AS) $(ASFLAGS) -c -o $@ $<
+
+%.o: %.c
+	$(CC) $(CCFLAGS) -c -o $@ $<
 
 clean:
-	$(MAKE) -C $(BOOT) clean
-	$(MAKE) -C $(KERNEL) clean
-	rm -f $(OSIMG)
+	@rm -f *.o *.gen *.elf *.bin
 
 remake: clean all
 
-install: img
-	# WARNING: check yer floppies!
-	dd if=$(OSIMG) of=/dev/fd0 bs=512
