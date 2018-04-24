@@ -16,6 +16,7 @@
  *
  * File: bootloader.ld
  * Desc: Linker script for the boot code.
+ *       Run through scripts/gen-lds.sh to resolve preprocessor directives.
  *----------------------------------------------------------------------------*/
 
 #include "boot.h"
@@ -28,21 +29,26 @@ ENTRY(entry)
 SECTIONS
 {
     .stage1 STAGE1_START :
-        AT ( 0x00 )
+        AT (0x0000)
     {
         *(.stage1)
-        . = SECTOR_SIZE - 2;
-        SHORT(BOOTSECT_MAGIC)
+        ASSERT(. <= SECTOR_SIZE - 4, "ERROR: Stage 1 does not fit within bootsector.");
+        . = SECTOR_SIZE - 4;
+        
+        /* Reserve space for kernel image sector count. */
+        SHORT(0);
+
+        /* MBR magic number. */
+        SHORT(BOOTSECT_MAGIC);
     }
 
     .stage2 STAGE2_START :
-        AT ( (STAGE2_SECTOR - 1) * SECTOR_SIZE )
+        AT ((STAGE2_SECTOR - 1) * SECTOR_SIZE)
     {
         *(.stage2)
-        . = ALIGN(256);     /* Not sure why this only works with 256... */
+        . = ALIGN(512);     /* Not sure why this only works with 256... */
     }
     __STAGE2_END = .;
 
     STAGE2_NUM_SECTORS = (__STAGE2_END - STAGE2_START) / SECTOR_SIZE;
-    KERNEL_NUM_SECTORS = 2;
 }
