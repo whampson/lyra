@@ -42,10 +42,10 @@ pm_entry:
     movw    %ax, %gs
 
 move_kernel:
-    movl    $KERNEL_START_EARLY, %esi   # src
-    movl    $KERNEL_START, %edi         # dest
-    movl    $KERNEL_NUM_SECTORS, %ecx   # count
-    shll    $9, %ecx                    #   multiply by 512 (sector size)
+    movl    $KERNEL_START_EARLY, %esi       # src
+    movl    $KERNEL_START, %edi             # dest
+    movzwl  KERNEL_NUM_SECTORS_PTR, %ecx    # count
+    shll    $9, %ecx                        #   multiply by 512 (sector size)
 rep movsb   (%esi), (%edi)
 
 invoke_kernel:
