@@ -50,7 +50,7 @@ load_stage2:
 load_kernel_early:
     movw    $KERNEL_START_EARLY, %bx
     movb    $KERNEL_SECTOR, %cl
-    movb    $KERNEL_NUM_SECTORS, %ch
+    movb    KERNEL_NUM_SECTORS_PTR, %ch
     call    read_sectors
     cmpw    $0, %ax
     jnz     boot_err
