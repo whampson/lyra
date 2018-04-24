@@ -15,24 +15,25 @@
 #define _BOOT_H_
 
 /* Starting addresses of global data. */
-#define STACK_BASE          0x7C00  /* first item at 0x7BFE, grows towards 0 */
+#define STACK_BASE              0x7C00  /* first item at 0x7BFE, grows to 0 */
 
 /* Starting addresses of code. */
-#define STAGE1_START        0x7C00
-#define STAGE2_START        0x0500
-#define KERNEL_START_EARLY  0x7E00
-#define KERNEL_START        0x400000    /* 4 MiB */
+#define STAGE1_START            0x7C00
+#define STAGE2_START            0x0500
+#define KERNEL_START_EARLY      0x7E00
+#define KERNEL_START            0x400000
 
-/* Segment selectors. */
-#define BOOT_CS             0x10
-#define BOOT_DS             0x18
+/* Segment selectors for protected mode. */
+#define BOOT_CS                 0x10
+#define BOOT_DS                 0x18
 
 /* Boot sector signature for MBR. */
-#define BOOTSECT_MAGIC      0xAA55
+#define BOOTSECT_MAGIC          0xAA55
 
 /* Disk layout information.
-   STAGE2_NUM_SECTORS and KERNEL_NUM_SECTORS defined during linking. */
-#define STAGE2_SECTOR       2
-#define KERNEL_SECTOR       (STAGE2_SECTOR + STAGE2_NUM_SECTORS)
+   STAGE2_NUM_SECTORS defined during linking (see bootloader.ld). */
+#define STAGE2_SECTOR           2
+#define KERNEL_SECTOR           (STAGE2_SECTOR + STAGE2_NUM_SECTORS)
+#define KERNEL_NUM_SECTORS_PTR  0x7DFC
 
 #endif /* _BOOT_H_ */
