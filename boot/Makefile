@@ -16,13 +16,6 @@
 # Desc: Bootloader build script.
 #-------------------------------------------------------------------------------
 
-AS          := gcc
-ASFLAGS     := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
-CC          := gcc
-CCFLAGS     := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
-LD          := ld
-LDFLAGS     :=
-
 ASM_SOURCES     := $(wildcard *.S)
 C_SOURCES       := $(wildcard *.c)
 LDSCRIPTS       := $(wildcard *.ld)
@@ -30,22 +23,24 @@ LDSCRIPTS_GEN   := $(LDSCRIPTS:.ld=.ld.gen)
 OBJECTS         := $(ASM_SOURCES:.S=_asm.o) $(C_SOURCES:.c=.o)
 OBJECTS         := $(filter-out boot_asm.o, $(OBJECTS))
 
-.PHONY: all debug clean remake install
+TARGET          := boot
 
-all: boot.bin
+.PHONY: all debug clean remake
+
+all: $(TARGET).bin
 
 debug: ASFLAGS += -g
 debug: CCFLAGS += -g
 debug: remake
 
-boot.bin: boot.elf
+$(TARGET).bin: $(TARGET).elf
 	objcopy -O binary $< $@
 
-boot.elf: boot_asm.o $(OBJECTS) $(LDSCRIPTS_GEN)
+$(TARGET).elf: boot_asm.o $(OBJECTS) $(LDSCRIPTS_GEN)
 	$(LD) $(LDFLAGS) -T $(LDSCRIPTS_GEN) -o $@ $< $(OBJECTS)
 
 $(LDSCRIPTS_GEN): $(LDSCRIPTS)
-	scripts/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN)
+	../scripts/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN)
 
 %_asm.o: %.S
 	$(AS) $(ASFLAGS) -c -o $@ $<
@@ -57,6 +52,3 @@ clean:
 	@rm -f *.o *.gen *.elf *.bin
 
 remake: clean all
-
-install: boot.bin
-	dd if=boot.bin of=/dev/fd0
