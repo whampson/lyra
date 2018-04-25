@@ -16,7 +16,7 @@
 # Desc: Lyra OS build script.
 #-------------------------------------------------------------------------------
 
-.PHONY: all debug clean remake img boot kernel 
+.PHONY: all debug clean remake img boot kernel
 
 export AS       := gcc
 export ASFLAGS  := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
@@ -27,7 +27,7 @@ export LDFLAGS  :=
 
 export BIN      := bin
 export OBJ      := obj
-export SCRIPTS  := scripts
+export SCRIPTS  := $(PWD)/scripts
 
 BOOT            := boot
 KERNEL          := kernel
