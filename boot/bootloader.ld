@@ -46,7 +46,7 @@ SECTIONS
         KERNEL_SECTOR = .;
         SHORT(__KERNEL_SECTOR)
         KERNEL_NUM_SECTORS = .;
-        SHORT(3)    // Written during final creation of disk image.
+        SHORT(0)    // Written during final creation of disk image.
 
         FILL(0x5748)
 
