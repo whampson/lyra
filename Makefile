@@ -38,7 +38,7 @@ OSIMG           := lyra.img
 all: img
 
 img: boot kernel
-	cat $(BOOTIMG) $(KERNELIMG) > $(OSIMG)
+	$(SCRIPTS)/create-img.sh $(BOOTIMG) $(KERNELIMG) $(OSIMG)
 
 boot:
 	$(MAKE) -C $(BOOT)
