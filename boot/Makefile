@@ -40,7 +40,7 @@ $(TARGET).elf: boot_asm.o $(OBJECTS) $(LDSCRIPTS_GEN)
 	$(LD) $(LDFLAGS) -T $(LDSCRIPTS_GEN) -o $@ $< $(OBJECTS)
 
 $(LDSCRIPTS_GEN): $(LDSCRIPTS)
-	../scripts/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN)
+	$(SCRIPTS)/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN)
 
 %_asm.o: %.S
 	$(AS) $(ASFLAGS) -c -o $@ $<
