@@ -17,7 +17,7 @@
 /* Properties of a 1.4 MiB, 3.5in floppy disks. */
 #define HEAD_COUNT          2
 #define CYL_COUNT           80
-#define SECTOR_COUNT        17
+#define SECTOR_COUNT        18
 #define SECTOR_SIZE         512
 
 #define RETRY_COUNT         3

@@ -28,8 +28,7 @@
 #
 # LIMITATIONS:
 #   As of now, this routine only loads sectors from the first track of the
-#   first head of the floppy. Therefore, only 18 sectors can be loaded at a
-#   time.
+#   first head of the floppy. Therefore, a maximum of 18 sectors can be loaded.
 #
 #   Inputs: bx - destination address
 #           cl - starting sector
