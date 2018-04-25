@@ -41,16 +41,16 @@ entry:
 
 load_stage2:
     movw    $STAGE2_START, %bx
-    movb    $STAGE2_SECTOR, %cl
-    movb    $STAGE2_NUM_SECTORS, %ch
+    movb    STAGE2_SECTOR, %cl
+    movb    STAGE2_NUM_SECTORS, %ch
     call    read_sectors
     cmpw    $0, %ax
     jnz     boot_err
 
 load_kernel_early:
     movw    $KERNEL_START_EARLY, %bx
-    movb    $KERNEL_SECTOR, %cl
-    movb    KERNEL_NUM_SECTORS_PTR, %ch
+    movb    KERNEL_SECTOR, %cl
+    movb    KERNEL_NUM_SECTORS, %ch
     call    read_sectors
     cmpw    $0, %ax
     jnz     boot_err
