@@ -28,27 +28,45 @@ ENTRY(entry)
 
 SECTIONS
 {
-    .stage1 STAGE1_START :
-        AT (0x0000)
+    .stage1 STAGE1_START : AT (0x0000)
     {
+        __DISK_INFO_START = SECTOR_SIZE - 16;
+        __MAGIC_START = SECTOR_SIZE - 2;
+
         *(.stage1)
-        ASSERT(. <= SECTOR_SIZE - 4, "ERROR: Stage 1 does not fit within bootsector.");
-        . = SECTOR_SIZE - 4;
-        
-        /* Reserve space for kernel image sector count. */
-        SHORT(0);
+
+        ASSERT(. <= __DISK_INFO_START,
+            "ERROR: Stage 1 code does not fit within bootsector!");
+
+        . = __DISK_INFO_START;
+        STAGE2_SECTOR = .;
+        SHORT(__STAGE2_SECTOR)
+        STAGE2_NUM_SECTORS = .;
+        SHORT(__STAGE2_NUM_SECTORS)
+        KERNEL_SECTOR = .;
+        SHORT(__KERNEL_SECTOR)
+        KERNEL_NUM_SECTORS = .;
+        SHORT(3)    // Written during final creation of disk image.
+
+        FILL(0x5748)
 
         /* MBR magic number. */
-        SHORT(BOOTSECT_MAGIC);
+        . = __MAGIC_START;
+        SHORT(BOOTSECT_MAGIC)
     }
 
-    .stage2 STAGE2_START :
-        AT ((STAGE2_SECTOR - 1) * SECTOR_SIZE)
+    __STAGE2_SECTOR = 2;
+
+    .stage2 STAGE2_START : AT ((__STAGE2_SECTOR - 1) * SECTOR_SIZE)
     {
         *(.stage2)
-        . = ALIGN(512);     /* Not sure why this only works with 256... */
+        . = ALIGN(SECTOR_SIZE);
+        __STAGE2_END = .;
     }
-    __STAGE2_END = .;
 
-    STAGE2_NUM_SECTORS = (__STAGE2_END - STAGE2_START) / SECTOR_SIZE;
+    __STAGE2_NUM_SECTORS = (__STAGE2_END - STAGE2_START) / SECTOR_SIZE;
+    __KERNEL_SECTOR = __STAGE2_SECTOR + __STAGE2_NUM_SECTORS;
+
+    ASSERT(__STAGE2_NUM_SECTORS < SECTOR_COUNT - 1,
+        "Error: Stage 2 too large for current floppy disk driver!")
 }
