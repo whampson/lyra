@@ -19,7 +19,7 @@
 
 /* Starting addresses of code. */
 #define STAGE1_START            0x7C00
-#define STAGE2_START            0x0500
+#define STAGE2_START            0x0600
 #define KERNEL_START_EARLY      0x7E00
 #define KERNEL_START            0x400000
 
@@ -31,9 +31,12 @@
 #define BOOTSECT_MAGIC          0xAA55
 
 /* Disk layout information.
-   STAGE2_NUM_SECTORS defined during linking (see bootloader.ld). */
-#define STAGE2_SECTOR           2
-#define KERNEL_SECTOR           (STAGE2_SECTOR + STAGE2_NUM_SECTORS)
-#define KERNEL_NUM_SECTORS_PTR  0x7DFC
+   The following symbols are defined during linking and are stored on-disk
+   (see bootloader.ld):
+       STAGE2_SECTOR        -- first sector of stage 2
+       STAGE2_NUM_SECTORS   -- number of sectors used by stage 2 code/data
+       KERNEL_SECTOR        -- first sector of kernel image
+       KERNEL_NUM_SECTORS   -- number of sectors used by kernel image
+*/
 
 #endif /* _BOOT_H_ */
