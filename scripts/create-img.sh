@@ -20,7 +20,7 @@
 
 SECTOR_SIZE=512
 MAX_SECTOR_COUNT=18
-KERNEL_NUM_SECTORS=502
+KERNEL_NUM_SECTORS_ADDR=502
 
 if [ $# -lt 3 ]; then
     echo "$0: usage: boot_img kernel_img out_img"
@@ -45,7 +45,7 @@ fi
 
 # Update KERNEL_NUM_SECTORS value in disk image
 printf "\x$(printf %02x $num_sectors)" |\
-    dd of=$out_img bs=1 seek=$KERNEL_NUM_SECTORS conv=notrunc status=none
+    dd of=$out_img bs=1 seek=$KERNEL_NUM_SECTORS_ADDR conv=notrunc status=none
 if [ $? -ne 0 ]; then
     exit 1
 fi
