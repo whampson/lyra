@@ -16,7 +16,7 @@
 # Desc: Lyra OS build script.
 #-------------------------------------------------------------------------------
 
-.PHONY: all debug clean remake img boot kernel
+.PHONY: all img boot kernel debug clean remake floppy
 
 export AS       := gcc
 export ASFLAGS  := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
@@ -57,6 +57,6 @@ clean:
 
 remake: clean all
 
-install: img
+floppy: img
 	# WARNING: check yer floppies!
 	dd if=$(OSIMG) of=/dev/fd0 bs=512
