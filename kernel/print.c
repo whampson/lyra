@@ -27,7 +27,7 @@
 /* VGA text mode properties */
 #define SCREEN_WIDTH    80
 #define SCREEN_HEIGHT   25
-#define SCREEN_SIZE     (SCREEN_WIDTH * SCREEN_SIZE)
+#define SCREEN_SIZE     (SCREEN_WIDTH * SCREEN_HEIGHT)
 
 #define XY2POS(x, y)    (y * SCREEN_WIDTH + x)
 
