@@ -18,16 +18,17 @@
 
 .PHONY: all img boot kernel debug clean remake floppy
 
+export BIN      := bin
+export OBJ      := obj
+export SCRIPTS  := $(PWD)/scripts
+export INCLUDE  := $(PWD)/include
+
 export AS       := gcc
 export ASFLAGS  := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
 export CC       := gcc
 export CCFLAGS  := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
 export LD       := ld
 export LDFLAGS  :=
-
-export BIN      := bin
-export OBJ      := obj
-export SCRIPTS  := $(PWD)/scripts
 
 BOOT            := boot
 KERNEL          := kernel
