@@ -8,3 +8,6 @@
 
 # Generated files
 *.gen
+
+# Workspace configuration
+.vscode/
