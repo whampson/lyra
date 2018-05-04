@@ -36,16 +36,16 @@ $(TARGET).bin: $(TARGET).elf
 	objcopy -O binary $< $@
 
 $(TARGET).elf: $(OBJECTS) $(LDSCRIPTS_GEN)
-	$(LD) $(LDFLAGS) -T $(LDSCRIPTS_GEN) -o $@ $<
+	$(LD) $(LDFLAGS) -T $(LDSCRIPTS_GEN) -o $@ $^
 
 $(LDSCRIPTS_GEN): $(LDSCRIPTS)
-	$(SCRIPTS)/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN)
+	$(SCRIPTS)/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN) -I$(INCLUDE)
 
 %_asm.o: %.S
 	$(AS) $(ASFLAGS) -c -o $@ $<
 
 %.o: %.c
-	$(CC) $(CCFLAGS) -c -o $@ $<
+	$(CC) $(CCFLAGS) -I$(INCLUDE) -c -o $@ $<
 
 clean:
 	@rm -f *.o *.gen *.elf *.bin
