@@ -11,6 +11,12 @@
  * You may also visit <https://www.gnu.org/licenses/gpl-2.0.txt>.             *
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+/*-----------------------------------------------------------------------------
+ * File: boot.h
+ * Desc: Important memory addresses and other macros used during initial
+ *       bootstrapping.
+ *----------------------------------------------------------------------------*/
+
 #ifndef _BOOT_H_
 #define _BOOT_H_
 

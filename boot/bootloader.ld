@@ -12,8 +12,6 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * Copyright (C) 2018 Wes Hampson
- *
  * File: bootloader.ld
  * Desc: Linker script for the boot code.
  *       Run through scripts/gen-lds.sh to resolve preprocessor directives.

@@ -47,24 +47,13 @@ i8042_enable:
     outb    %al, $0x64
     ret
 
-###
-## Pause until PS/2 control is ready for another command or data read/write.
 ##
-##   Inputs: (none)
-##  Outputs: (none)
-## Clobbers: al
-###
-#.globl i8042_io_p
-#i8042_io_p:
-#    call    i8042_delay
-#    inb     $0x64, %al
-#    testb   $0x01, %al  # output status, must be set before next read
-#    jz      i8042_io_p
-#    inb     $0x64, %al
-#    testb   $0x02, %al
-#    jnz     i8042_io_p  # input status, must be clear before next write
-#    ret
-
+# Wait until input buffer is available for read.
+#
+#   Inputs: (none)
+#  Outputs: (none)
+# Clobbers: al
+##
 .globl i8042_in_delay
 i8042_in_delay:
     call    i8042_delay
@@ -73,6 +62,13 @@ i8042_in_delay:
     jz      i8042_in_delay
     ret
 
+##
+# Wait until output buffer is available for write.
+#
+#   Inputs: (none)
+#  Outputs: (none)
+# Clobbers: al
+##
 .globl i8042_out_delay
 i8042_out_delay:
     call    i8042_delay

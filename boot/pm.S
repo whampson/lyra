@@ -15,7 +15,6 @@
 # File: pm.S
 # Desc: Contains code for switching the CPU into protected mode and calling the
 #       kernel.
-#       Also contains the Global Descriptor Table.
 #-------------------------------------------------------------------------------
 
 #include "boot.h"
