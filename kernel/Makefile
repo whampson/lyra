@@ -29,19 +29,10 @@ OBJECTS         := $(patsubst %.o, $(OBJ)/%.o, $(OBJECTS))
 
 .PHONY: all dirs
 
-all: dirs $(BIN)/kernel.bin
+all: dirs $(OBJECTS)
 
 dirs:
 	mkdir -p $(OBJ)
-
-$(BIN)/kernel.bin: $(BIN)/kernel.elf
-	objcopy -O binary $< $@
-
-$(BIN)/kernel.elf: $(OBJECTS) $(OBJ)/$(LDSCRIPTS_GEN)
-	$(LD) $(LDFLAGS) -T $(OBJ)/$(LDSCRIPTS_GEN) -o $@ $^
-
-$(OBJ)/$(LDSCRIPTS_GEN): $(LDSCRIPTS)
-	$(SCRIPTS)/gen-lds.sh $^ $@ -I$(INCLUDE)
 
 $(OBJ)/%_asm.o: %.S
 	$(AS) $(ASFLAGS) -c -o $@ $<

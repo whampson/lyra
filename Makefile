@@ -56,11 +56,17 @@ boot: dirs
 
 kernel: dirs
 	$(MAKE) -C $(KERNEL)
+	$(eval FOO := abcd)
+	echo $(FOO)
+	#$(SCRIPTS)/gen-lds.sh kernel.ld kernel.ld.gen -I$(INCLUDE)
+	#$(LD) $(LDFLAGS) -T kernel.ld.gen -o $(BIN)/kernel.elf
+	#objcopy -O binary $(BIN)/kernel.elf $(BIN)/kernel.bin
 
 clean:
 	rm -rf $(BIN)
 	rm -rf $(OBJ)
 	rm -rf $(OBJ_BOOT)
+	rm -f *.gen
 
 remake: clean all
 
