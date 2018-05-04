@@ -16,39 +16,35 @@
 # Desc: Lyra kernel build script.
 #-------------------------------------------------------------------------------
 
+# Append current directory to objects dir to avoid naming conflicts
+CUR_DIR         := $(notdir $(shell pwd))
+OBJ             := $(OBJ)/$(CUR_DIR)
+
 ASM_SOURCES     := $(wildcard *.S)
 C_SOURCES       := $(wildcard *.c)
 LDSCRIPTS       := $(wildcard *.ld)
 LDSCRIPTS_GEN   := $(LDSCRIPTS:.ld=.ld.gen)
 OBJECTS         := $(ASM_SOURCES:.S=_asm.o) $(C_SOURCES:.c=.o)
+OBJECTS         := $(patsubst %.o, $(OBJ)/%.o, $(OBJECTS))
 
-TARGET          := kernel
+.PHONY: all dirs
 
-.PHONY: all debug clean remake
+all: dirs $(BIN)/kernel.bin
 
-all: $(TARGET).bin
+dirs:
+	mkdir -p $(OBJ)
 
-debug: ASFLAGS += -g
-debug: CCFLAGS += -g
-debug: remake
-
-$(TARGET).bin: $(TARGET).elf
+$(BIN)/kernel.bin: $(BIN)/kernel.elf
 	objcopy -O binary $< $@
 
-$(TARGET).elf: $(OBJECTS) $(LDSCRIPTS_GEN)
-	$(LD) $(LDFLAGS) -T $(LDSCRIPTS_GEN) -o $@ $^
+$(BIN)/kernel.elf: $(OBJECTS) $(OBJ)/$(LDSCRIPTS_GEN)
+	$(LD) $(LDFLAGS) -T $(OBJ)/$(LDSCRIPTS_GEN) -o $@ $^
 
-$(LDSCRIPTS_GEN): $(LDSCRIPTS)
-	$(SCRIPTS)/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN) -I$(INCLUDE)
+$(OBJ)/$(LDSCRIPTS_GEN): $(LDSCRIPTS)
+	$(SCRIPTS)/gen-lds.sh $^ $@ -I$(INCLUDE)
 
-%_asm.o: %.S
+$(OBJ)/%_asm.o: %.S
 	$(AS) $(ASFLAGS) -c -o $@ $<
 
-%.o: %.c
+$(OBJ)/%.o: %.c
 	$(CC) $(CCFLAGS) -I$(INCLUDE) -c -o $@ $<
-
-clean:
-	@rm -f *.o *.gen *.elf *.bin
-
-remake: clean all
-
