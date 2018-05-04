@@ -22,33 +22,23 @@ LDSCRIPTS       := $(wildcard *.ld)
 LDSCRIPTS_GEN   := $(LDSCRIPTS:.ld=.ld.gen)
 OBJECTS         := $(ASM_SOURCES:.S=_asm.o) $(C_SOURCES:.c=.o)
 OBJECTS         := $(filter-out boot_asm.o, $(OBJECTS))
+OBJECTS         := $(patsubst %.o, $(OBJ_BOOT)/%.o, $(OBJECTS))
 
-TARGET          := boot
+.PHONY: all
 
-.PHONY: all debug clean remake
+all: $(BIN)/boot.bin
 
-all: $(TARGET).bin
-
-debug: ASFLAGS += -g
-debug: CCFLAGS += -g
-debug: remake
-
-$(TARGET).bin: $(TARGET).elf
+$(BIN)/boot.bin: $(BIN)/boot.elf
 	objcopy -O binary $< $@
 
-$(TARGET).elf: boot_asm.o $(OBJECTS) $(LDSCRIPTS_GEN)
-	$(LD) $(LDFLAGS) -T $(LDSCRIPTS_GEN) -o $@ $< $(OBJECTS)
+$(BIN)/boot.elf: $(OBJ_BOOT)/boot_asm.o $(OBJECTS) $(OBJ_BOOT)/$(LDSCRIPTS_GEN)
+	$(LD) $(LDFLAGS) -T $(OBJ_BOOT)/$(LDSCRIPTS_GEN) -o $@ $< $(OBJECTS)
 
-$(LDSCRIPTS_GEN): $(LDSCRIPTS)
-	$(SCRIPTS)/gen-lds.sh $(LDSCRIPTS) $(LDSCRIPTS_GEN)
+$(OBJ_BOOT)/$(LDSCRIPTS_GEN): $(LDSCRIPTS)
+	$(SCRIPTS)/gen-lds.sh $^ $@ -I$(INCLUDE)
 
-%_asm.o: %.S
+$(OBJ_BOOT)/%_asm.o: %.S
 	$(AS) $(ASFLAGS) -c -o $@ $<
 
-%.o: %.c
+$(OBJ_BOOT)/%.o: %.c
 	$(CC) $(CCFLAGS) -c -o $@ $<
-
-clean:
-	@rm -f *.o *.gen *.elf *.bin
-
-remake: clean all

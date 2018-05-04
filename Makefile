@@ -18,10 +18,11 @@
 
 .PHONY: all img boot kernel debug clean remake floppy
 
-export BIN      := bin
-export OBJ      := obj
-export SCRIPTS  := $(PWD)/scripts
+export BIN      := $(PWD)/bin
+export OBJ      := $(PWD)/obj
+export OBJ_BOOT := $(PWD)/obj_boot
 export INCLUDE  := $(PWD)/include
+export SCRIPTS  := $(PWD)/scripts
 
 export AS       := gcc
 export ASFLAGS  := -Wall -Werror -Wextra -Wpedantic -m32 -ffreestanding
@@ -32,29 +33,34 @@ export LDFLAGS  :=
 
 BOOT            := boot
 KERNEL          := kernel
-BOOTIMG         := $(BOOT)/boot.bin
-KERNELIMG       := $(KERNEL)/kernel.bin
-OSIMG           := lyra.img
+BOOTIMG         := $(BIN)/boot.bin
+KERNELIMG       := $(BIN)/kernel.bin
+OSIMG           := $(BIN)/lyra.img
 
 all: img
 
 img: boot kernel
 	$(SCRIPTS)/create-img.sh $(BOOTIMG) $(KERNELIMG) $(OSIMG)
 
-boot:
+dirs:
+	mkdir -p $(BIN)
+	mkdir -p $(OBJ)
+	mkdir -p $(OBJ_BOOT)
+
+debug: ASFLAGS += -g
+debug: CCFLAGS += -g
+debug: img
+
+boot: dirs
 	$(MAKE) -C $(BOOT)
 
-kernel:
+kernel: dirs
 	$(MAKE) -C $(KERNEL)
 
-debug:
-	$(MAKE) -C $(BOOT) debug
-	$(MAKE) -C $(KERNEL) debug
-
 clean:
-	$(MAKE) -C $(BOOT) clean
-	$(MAKE) -C $(KERNEL) clean
-	rm -f $(OSIMG)
+	rm -rf $(BIN)
+	rm -rf $(OBJ)
+	rm -rf $(OBJ_BOOT)
 
 remake: clean all
 
