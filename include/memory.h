@@ -16,8 +16,8 @@
  * Desc:
  *----------------------------------------------------------------------------*/
 
-#ifndef _MEMORY_H_
-#define _MEMORY_H_
+#ifndef __MEMORY_H__
+#define __MEMORY_H__
 
 void mem_init(void);
 

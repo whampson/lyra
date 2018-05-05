@@ -17,8 +17,8 @@
  *       bootstrapping.
  *----------------------------------------------------------------------------*/
 
-#ifndef _BOOT_H_
-#define _BOOT_H_
+#ifndef __BOOT_H__
+#define __BOOT_H__
 
 /* Starting addresses of global data. */
 #define STACK_BASE              0x7C00  /* first item at 0x7BFE, grows to 0 */
@@ -45,4 +45,4 @@
        KERNEL_NUM_SECTORS   -- number of sectors used by kernel image
 */
 
-#endif /* _BOOT_H_ */
+#endif /* __BOOT_H__ */
