@@ -33,6 +33,14 @@ export LDFLAGS  :=
 
 BOOT            := boot
 KERNEL          := kernel
+MEM             := mem
+
+KERNEL_DIRS     := $(KERNEL) $(MEM)
+KERNEL_OBJS     := $(foreach dir, $(KERNEL_DIRS), \
+                       $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(dir)/*.c)))\
+                   $(foreach dir, $(KERNEL_DIRS), \
+                       $(patsubst %.S, $(OBJ)/%_asm.o, $(wildcard $(dir)/*.S)))
+
 BOOTIMG         := $(BIN)/boot.bin
 KERNELIMG       := $(BIN)/kernel.bin
 OSIMG           := $(BIN)/lyra.img
@@ -52,15 +60,14 @@ debug: CCFLAGS += -g
 debug: img
 
 boot: dirs
-	$(MAKE) -C $(BOOT)
+	@$(MAKE) -C $(BOOT)
 
 kernel: dirs
-	$(MAKE) -C $(KERNEL)
-	$(eval FOO := abcd)
-	echo $(FOO)
-	#$(SCRIPTS)/gen-lds.sh kernel.ld kernel.ld.gen -I$(INCLUDE)
-	#$(LD) $(LDFLAGS) -T kernel.ld.gen -o $(BIN)/kernel.elf
-	#objcopy -O binary $(BIN)/kernel.elf $(BIN)/kernel.bin
+	@$(MAKE) -C $(KERNEL)
+	@$(MAKE) -C $(MEM)
+	$(SCRIPTS)/gen-lds.sh kernel.ld kernel.ld.gen -I$(INCLUDE)
+	$(LD) $(LDFLAGS) -T kernel.ld.gen -o $(BIN)/kernel.elf $(KERNEL_OBJS)
+	objcopy -O binary $(BIN)/kernel.elf $(BIN)/kernel.bin
 
 clean:
 	rm -rf $(BIN)

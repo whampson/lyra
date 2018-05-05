@@ -13,8 +13,11 @@
 
 #-------------------------------------------------------------------------------
 # File: Makefile
-# Desc: Bootloader build script.
+# Desc: Lyra bootloader build script.
 #-------------------------------------------------------------------------------
+
+CUR_DIR         := $(notdir $(shell pwd))
+OBJ             := $(OBJ)/$(CUR_DIR)
 
 ASM_SOURCES     := $(wildcard *.S)
 C_SOURCES       := $(wildcard *.c)
@@ -38,7 +41,9 @@ $(OBJ_BOOT)/$(LDSCRIPTS_GEN): $(LDSCRIPTS)
 	$(SCRIPTS)/gen-lds.sh $^ $@ -I$(INCLUDE)
 
 $(OBJ_BOOT)/%_asm.o: %.S
-	$(AS) $(ASFLAGS) -c -o $@ $<
+	@echo $(AS) $(ASFLAGS) $(CUR_DIR)/$<
+	@$(AS) $(ASFLAGS) -c -o $@ $<
 
 $(OBJ_BOOT)/%.o: %.c
-	$(CC) $(CCFLAGS) -c -o $@ $<
+	@echo $(CC) $(CCFLAGS) $(CUR_DIR)/$<
+	@$(CC) $(CCFLAGS) -c -o $@ $<
