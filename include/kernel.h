@@ -16,8 +16,8 @@
  * Desc: Common function prototyyes and macros.
  *----------------------------------------------------------------------------*/
 
-#ifndef _KERNEL_H_
-#define _KERNEL_H_
+#ifndef __KERNEL_H__
+#define __KERNEL_H__
 
 #define KERNEL_START        0x400000
 
@@ -27,4 +27,4 @@ void clear(void);
 
 extern void kmain(void);
 
-#endif  /* _KERNEL_H_ */
+#endif  /* __KERNEL_H__ */
