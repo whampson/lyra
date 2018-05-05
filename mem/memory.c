@@ -12,21 +12,14 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: init.c
- * Desc: Kernel entry point and initialization.
+ * File: memory.c
+ * Desc: Memory initialization.
  *----------------------------------------------------------------------------*/
 
 #include <kernel.h>
 #include <memory.h>
 
-void kmain(void)
+void mem_init(void)
 {
-    clear();
-    mem_init();
-
-    /* TODO:
-        init paging
-        init idt
-        create __simple__ terminal driver
-    */
+     puts("Initializing memory...");
 }
