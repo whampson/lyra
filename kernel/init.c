@@ -18,15 +18,20 @@
 
 #include <kernel.h>
 #include <memory.h>
+#include <types.h>
 
-void kmain(void)
+/**
+ * "Fire 'er up, man!"
+ */
+void kernel_init(void)
 {
     clear();
-    mem_init();
+    puts("Hello, world!\n");
 
     /* TODO:
-        init paging
         init idt
+        init tss
+        init paging
         create __simple__ terminal driver
     */
 }
