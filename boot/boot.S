@@ -30,6 +30,7 @@
 .globl entry
 entry:
     cli
+    cld
     xorw    %ax, %ax
     movw    %ax, %ds
     movw    %ax, %ss
