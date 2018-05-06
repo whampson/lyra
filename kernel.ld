@@ -12,22 +12,22 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * Copyright (C) 2018 Wes Hampson
- *
  * File: kernel.ld
  * Desc: Linker script for the kernel code.
  *       Run through scripts/gen-lds.sh to resolve preprocessor directives.
  *----------------------------------------------------------------------------*/
 
+#include <init.h>
+
 OUTPUT_FORMAT("elf32-i386")
 OUTPUT_ARCH(i386)
-ENTRY(kmain)
+ENTRY(ENTRY_POINT)
 
 SECTIONS
 {
-    .text 0x400000 :
+    .text KERNEL_START :
     {
-        LONG(kmain);
+        LONG(ENTRY_POINT);
         __TEXT_START = .;
         *(.text)
         __TEXT_END = .;
