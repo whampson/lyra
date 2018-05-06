@@ -23,6 +23,11 @@
 /* Page directory base address */
 #define PD_BASE     0x100000    /* 1 MiB */
 
+#define PAGING_ENABLE_BIT   (1 << 31)
+
+static void load_cr3(uint32_t pdba);
+static void paging_enable(void);
+
 /* ===== Intel i386 Paging Structures ===== */
 /* See Chapter 3 of the Intel Software Developers Manual, Volume 3 for more
    information about i386 memory paging structures.
@@ -46,7 +51,7 @@ typedef union {
         uint32_t base_addr  : 10; /* page base address (4 MiB aligned) */
     } fields;
     uint32_t value;
-} pde_4m;
+} pde4m_t;
 
 /* Page Directory Entry (PDE) for a page table of 4 KiB pages. */
 typedef union {
@@ -64,7 +69,7 @@ typedef union {
         uint32_t base_addr  : 20; /* page table base address (4 KiB aligned) */
     } fields;
     uint32_t value;
-} pde_4k;
+} pde4k_t;
 
 /* Page Table Entry (PTE) for a 4 KiB page. */
 typedef union {
@@ -82,9 +87,72 @@ typedef union {
         uint32_t base_addr  : 20; /* page base address (4 KiB aligned) */
     } fields;
     uint32_t value;
-} pte;
+} pte_t;
 
 void mem_init(void)
 {
      puts("Initializing memory...");
+
+    //  pde4m_t *page_dir = (pde4m_t *) PD_BASE;
+    //  for (int i = 0; i < 1024; i++) {
+    //      page_dir[i].value = 0;
+    //  }
+
+    //  page_dir[0].fields.p = 1;
+    //  page_dir[0].fields.rw = 1;
+    //  page_dir[0].fields.ps = 1;
+    //  page_dir[0].fields.base_addr = 0;
+    //  page_dir[1].fields.p = 1;
+    //  page_dir[1].fields.rw = 1;
+    //  page_dir[1].fields.ps = 1;
+    //  page_dir[1].fields.base_addr = 1;
+
+    //  load_cr3(PD_BASE);
+    //  paging_enable();
+}
+
+void flush_tlb(void)
+{
+    __asm__ volatile (
+        "                           \n\
+        movl    %%cr3, %%eax        \n\
+        movl    %%eax, %%cr3        \n\
+        "
+        : /* no outputs */
+        : /* no inputs */
+        : "eax"
+    );
+}
+
+/**
+ * Loads CR3 with the page directory base address.
+ *
+ * @param pdba - page directory base address.
+ */
+static void load_cr3(uint32_t pdba)
+{
+    __asm__ volatile (
+        "movl   %0, %%cr3"
+        : /* no outputs */
+        : "r"(pdba)
+    );
+}
+
+/**
+ * Turns paging on or off.
+ *
+ * @param status - 0 to disable paging, nonzero to enable paging.
+ */
+static void paging_enable(void)
+{
+    __asm__ volatile (
+        "                       \n\
+        movl    %%cr0, %%eax    \n\
+        orl     %0, %%eax       \n\
+        movl    %%eax, %%cr0    \n\
+        "
+        : /* no outputs */
+        : "r"(PAGING_ENABLE_BIT)
+        : "eax"
+    );
 }

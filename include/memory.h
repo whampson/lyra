@@ -19,6 +19,11 @@
 #ifndef __MEMORY_H__
 #define __MEMORY_H__
 
-void mem_init(void);
+/* Segment selectors. */
+#define KERNEL_CS   0x10
+#define KERNEL_DS   0x18
 
-#endif /* _MEMORY_H_ */
+void mem_init(void);
+void flush_tlb(void);
+
+#endif /* __MEMORY_H__ */
