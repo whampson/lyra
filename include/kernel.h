@@ -19,12 +19,53 @@
 #ifndef __KERNEL_H__
 #define __KERNEL_H__
 
-#define KERNEL_START        0x400000
+/**
+ * Clear interrupt flag.
+ */
+#define cli()               \
+__asm__ volatile (          \
+    "cli"                   \
+    :                       \
+    :                       \
+    : "memory", "cc"        \
+);
+
+/**
+ * Set interrupt flag.
+ */
+#define sti()               \
+__asm__ volatile (          \
+    "sti"                   \
+    :                       \
+    :                       \
+    : "memory", "cc"        \
+);
+
+#define cli_save(flags)     \
+__asm__ volatile (          \
+    "                       \n\
+    pushfl                  \n\
+    popl %0                 \n\
+    cli                     \n\
+    "                       \
+    : "=r"(flags)           \
+    :                       \
+    : "memory", "cc"        \
+);
+
+#define set_flags(flags)    \
+__asm__ volatile (          \
+    "                       \n\
+    push %0                 \n\
+    popfl                   \n\
+    "                       \
+    :                       \
+    : "r"(flags)            \
+    : "memory", "cc"        \
+);
 
 void putc(char c);
 void puts(const char *s);
 void clear(void);
-
-extern void kmain(void);
 
 #endif  /* __KERNEL_H__ */
