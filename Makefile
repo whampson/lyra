@@ -25,7 +25,7 @@ export INCLUDE  := $(PWD)/include
 export SCRIPTS  := $(PWD)/scripts
 
 export AS       := gcc
-export ASFLAGS  := -Wall -Wextra -Wpedantic -m32 -ffreestanding
+export ASFLAGS  := -D__ASM__ -Wall -Wextra -Wpedantic -m32 -ffreestanding
 export CC       := gcc
 export CCFLAGS  := -Wall -Wextra -Wpedantic -m32 -ffreestanding
 export LD       := ld
