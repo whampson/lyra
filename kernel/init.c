@@ -17,8 +17,12 @@
  *----------------------------------------------------------------------------*/
 
 #include <kernel.h>
+#include <descriptor.h>
 #include <memory.h>
 #include <types.h>
+
+static void ldt_init(void);
+static void tss_init(void);
 
 /**
  * "Fire 'er up, man!"
@@ -26,12 +30,77 @@
 void kernel_init(void)
 {
     clear();
-    puts("Hello, world!\n");
+    ldt_init();
+    tss_init();
 
     /* TODO:
         init idt
-        init tss
         init paging
         create __simple__ terminal driver
     */
+}
+
+static void ldt_init(void)
+{
+    desc_reg_t gdt_ptr;
+    seg_desc_t *gdt;
+    seg_desc_t *ldt_desc;
+    uint32_t ldt_base;
+    size_t ldt_size;
+    int ldt_desc_idx;
+    size_t i;
+
+    puts("Initializing the LDT...\n");
+
+    ldt_base = (uint32_t) ldt;
+    ldt_size = sizeof(ldt);
+
+    /* Zero-out the LDT. */
+    for (i = 0; i < ldt_size / sizeof(seg_desc_t); i++) {
+        ldt[i].value = 0;
+    }
+
+    /* Get GDT pointer */
+    sgdt(gdt_ptr);
+    gdt = (seg_desc_t *) gdt_ptr.fields.base;
+
+    /* Get LDT descriptor from GDT */
+    ldt_desc_idx = get_gdt_index(KERNEL_LDT);
+    ldt_desc = &gdt[ldt_desc_idx];
+
+    /* Set up the LDT descriptor and load the LDTR */
+    SET_SYS_DESC_PARAMS(ldt_desc, ldt_base, ldt_size, DESC_LDT);
+    lldt(KERNEL_LDT);
+}
+
+static void tss_init(void)
+{
+    desc_reg_t gdt_ptr;
+    seg_desc_t *gdt;
+    seg_desc_t *tss_desc;
+    uint32_t tss_base;
+    size_t tss_size;
+    int tss_desc_idx;
+
+    puts("Initializing the TSS...\n");
+
+    /* Get GDT pointer */
+    sgdt(gdt_ptr);
+    gdt = (seg_desc_t *) gdt_ptr.fields.base;
+
+    /* Get TSS descriptor from GDT */
+    tss_desc_idx = get_gdt_index(KERNEL_TSS);
+    tss_desc = &gdt[tss_desc_idx];
+
+    tss_base = (uint32_t) &tss;
+    tss_size = sizeof(struct tss_struct);
+
+    /* Set up the TSS descriptor */
+    SET_SYS_DESC_PARAMS(tss_desc, tss_base, tss_size, DESC_TSS32);
+
+    /* Populate TSS params and load task register */
+    tss.ldt_selector = KERNEL_LDT;
+    tss.esp0 = KERNEL_STACK_BASE;
+    tss.ss0 = KERNEL_DS;
+    ltr(KERNEL_TSS);
 }
