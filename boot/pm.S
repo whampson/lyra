@@ -18,6 +18,7 @@
 #-------------------------------------------------------------------------------
 
 #include "boot.h"
+#include <init.h>
 
 .code16
 .section .stage2, "ax", @progbits
@@ -39,6 +40,9 @@ pm_entry:
     movw    %ax, %es
     movw    %ax, %fs
     movw    %ax, %gs
+
+    movl    $KERNEL_STACK_BASE, %ebp
+    movl    %ebp, %esp
 
 move_kernel:
     movl    $KERNEL_START_EARLY, %esi   # src
