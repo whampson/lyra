@@ -23,12 +23,12 @@
 gdt_start:
     .quad   0x0000000000000000
     .quad   0x0000000000000000
-    .quad   0x00CF9A000000FFFF
-    .quad   0x00CF92000000FFFF
-    .quad   0x00CFFA000000FFFF
-    .quad   0x00CFF2000000FFFF
-    .quad   0x0000000000000000
-    .quad   0x0000000000000000
+    .quad   0x00CF9A000000FFFF      # KERNEL_CS     - 0x10
+    .quad   0x00CF92000000FFFF      # KERNEL_DS     - 0x18
+    .quad   0x00CFFA000000FFFF      # USER_CS       - 0x23
+    .quad   0x00CFF2000000FFFF      # USER_DS       - 0x2B
+    .quad   0x0000000000000000      # KERNEL_TSS    - 0x30
+    .quad   0x0000000000000000      # KERNEL_LDT    - 0x38
 gdt_end:
 
 .globl gdt_ptr
