@@ -42,8 +42,8 @@ $(OBJ_BOOT)/$(LDSCRIPTS_GEN): $(LDSCRIPTS)
 
 $(OBJ_BOOT)/%_asm.o: %.S
 	@echo $(AS) $(ASFLAGS) $(CUR_DIR)/$<
-	@$(AS) $(ASFLAGS) -c -o $@ $<
+	@$(AS) $(ASFLAGS) -I$(INCLUDE) -c -o $@ $<
 
 $(OBJ_BOOT)/%.o: %.c
 	@echo $(CC) $(CCFLAGS) $(CUR_DIR)/$<
-	@$(CC) $(CCFLAGS) -c -o $@ $<
+	@$(CC) $(CCFLAGS) -I$(INCLUDE) -c -o $@ $<

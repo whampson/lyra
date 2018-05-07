@@ -34,7 +34,7 @@ dirs:
 
 $(OBJ)/%_asm.o: %.S
 	@echo $(AS) $(ASFLAGS) $(CUR_DIR)/$<
-	@$(AS) $(ASFLAGS) -c -o $@ $<
+	@$(AS) $(ASFLAGS) -I$(INCLUDE) -c -o $@ $<
 
 $(OBJ)/%.o: %.c
 	@echo $(CC) $(CCFLAGS) $(CUR_DIR)/$<
