@@ -29,4 +29,6 @@ typedef unsigned long int uint32_t;
 typedef long long int int64_t;
 typedef unsigned long long int uint64_t;
 
+typedef unsigned long int size_t;
+
 #endif /* __TYPES_H__ */
