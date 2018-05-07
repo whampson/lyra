@@ -58,18 +58,18 @@
 #define DESC_TSS32  0x09
 
 /* Descriptor register structure (for GDTR and IDTR). */
-typedef union {
-    struct {
-        uint32_t base;                  /* table base address */
-        uint16_t limit;                 /* table length in bytes */
-        uint16_t padding;               /* padding, set to 0 */
+typedef union desc_reg {
+    struct reg_fields {
+        uint64_t limit      : 16;       /* table length in bytes */
+        uint64_t base       : 32;       /* table base address */
+        uint64_t padding    : 16;       /* padding, set to 0 */
     } fields;
     uint64_t value;
 } desc_reg_t;
 
 /* IDT entry. */
-typedef union {
-    struct {
+typedef union idt_gate {
+    struct gate_fields {
         uint64_t offset_lo      : 16;   /* bits 15:0 of function address */
         uint64_t seg_selector   : 16;   /* code segment selector */
         uint64_t reserved       : 8;    /* reserved, set to 0 */
@@ -82,8 +82,8 @@ typedef union {
 } idt_gate_t;
 
 /* GDT/LDT entry. */
-typedef union {
-    struct {
+typedef union seg_desc {
+    struct segment_fields {
         uint64_t limit_lo       : 16;   /* bits 15:0 of segment size */
         uint64_t base_lo        : 24;   /* bits 23:0 of segment base */
         uint64_t seg_type       : 4;    /* segment type (see above macros) */
@@ -155,6 +155,12 @@ struct tss_struct {
     uint16_t io_base_addr;
 };
 
+/* The TSS. */
+struct tss_struct tss = { 0 };
+
+/* The LDT. */
+seg_desc_t ldt[2];
+
 /**
  * Load the Global Descriptor Table Register.
  *
@@ -165,6 +171,14 @@ __asm__ volatile (          \
     "lgdt %0"               \
     :                       \
     : "g"(desc)             \
+    : "memory", "cc"        \
+);
+
+#define sgdt(desc)          \
+__asm__ volatile (          \
+    "sgdt %0"               \
+    : "=g"(desc)            \
+    :                       \
     : "memory", "cc"        \
 );
 
@@ -206,5 +220,26 @@ __asm__ volatile (          \
     : "r"(selector)         \
     : "memory", "cc"        \
 );
+
+#define SET_SYS_DESC_PARAMS(desc, base, limit, type)    \
+{                                                       \
+    desc->fields.base_lo = base & 0x00FFFFFF;           \
+    desc->fields.base_hi = (base & 0xFF000000) >> 24;   \
+    desc->fields.limit_lo = limit & 0x0000FFFF;         \
+    desc->fields.limit_hi = (limit & 0x000F0000) >> 16; \
+    desc->fields.seg_type = type;                       \
+    desc->fields.desc_type = 0;                         \
+    desc->fields.dpl = 0;                               \
+    desc->fields.present = 1;                           \
+    desc->fields.avail = 0;                             \
+    desc->fields.reserved = 0;                          \
+    desc->fields.op_size = 1;                           \
+    desc->fields.granularity = 0;                       \
+}
+
+static inline int get_gdt_index(int desc)
+{
+    return (desc & 0xF8) / sizeof(seg_desc_t);
+}
 
 #endif /* __DESCRIPTOR_H__ */
