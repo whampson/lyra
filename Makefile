@@ -24,10 +24,13 @@ export OBJ_BOOT := $(PWD)/obj_boot
 export INCLUDE  := $(PWD)/include
 export SCRIPTS  := $(PWD)/scripts
 
+WARN            := -Wall -Wextra -Wpedantic
+
 export AS       := gcc
-export ASFLAGS  := -D__ASM__ -Wall -Wextra -Wpedantic -m32 -ffreestanding
+export ASFLAGS  := $(WARN) -D__ASM__ -m32
 export CC       := gcc
-export CCFLAGS  := -Wall -Wextra -Wpedantic -m32 -ffreestanding
+export CCFLAGS  := $(WARN) -m32 -ffreestanding\
+                   -fno-unwind-tables -fno-asynchronous-unwind-tables
 export LD       := ld
 export LDFLAGS  :=
 
