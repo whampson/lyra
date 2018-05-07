@@ -27,7 +27,6 @@
 #define STAGE1_START            0x7C00
 #define STAGE2_START            0x0600
 #define KERNEL_START_EARLY      0x7E00
-#define KERNEL_START            0x400000
 
 /* Segment selectors for protected mode. */
 #define BOOT_CS                 0x10
