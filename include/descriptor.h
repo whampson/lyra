@@ -14,6 +14,7 @@
 /*-----------------------------------------------------------------------------
  * File: descriptor.h
  * Desc: i386 descriptor structure definitions and macros.
+ *       Also contains references to the TSS and LDT.
  *----------------------------------------------------------------------------*/
 
 #ifndef __DESCRIPTOR_H__
@@ -158,13 +159,15 @@ struct tss_struct {
 /* The TSS. */
 struct tss_struct tss = { 0 };
 
-/* The LDT. */
+/* The LDT.
+   We're not using LDTs on our system, but we need one
+   to keep the CPU happy. */
 seg_desc_t ldt[2];
 
 /**
  * Load the Global Descriptor Table Register.
  *
- * desc - a pointer to a desc_reg_t structure
+ * @param desc - a pointer to a desc_reg_t structure
  */
 #define lgdt(desc)          \
 __asm__ volatile (          \
@@ -185,7 +188,7 @@ __asm__ volatile (          \
 /**
  * Load the Interrupt Descriptor Table Register.
  *
- * desc - a pointer to a desc_reg_t structure
+ * @param desc - a pointer to a desc_reg_t structure
  */
 #define lidt(desc)          \
 __asm__ volatile (          \
@@ -198,7 +201,7 @@ __asm__ volatile (          \
 /**
  * Load the Local Descriptor Table Register.
  *
- * selector - a 16-bit segment selector for the LDT
+ * @param selector - a 16-bit segment selector for the LDT
  */
 #define lldt(selector)      \
 __asm__ volatile (          \
@@ -211,7 +214,7 @@ __asm__ volatile (          \
 /**
  * Load the Task Register.
  *
- * selector - a 16-bit segment selector for the TSS
+ * @param selector - a 16-bit segment selector for the TSS
  */
 #define ltr(selector)       \
 __asm__ volatile (          \
@@ -221,6 +224,14 @@ __asm__ volatile (          \
     : "memory", "cc"        \
 );
 
+/**
+ * Sets up a seg_desc_t structure for use as a system descriptor.
+ *
+ * @param desc  - a pointer to the seg_desc_t structure
+ * @param base  - the segment base address
+ * @param limit - the segment limit in bytes
+ * @param type  - the descriptor type (see above macros)
+ */
 #define SET_SYS_DESC_PARAMS(desc, base, limit, type)    \
 {                                                       \
     desc->fields.base_lo = base & 0x00FFFFFF;           \
@@ -237,9 +248,18 @@ __asm__ volatile (          \
     desc->fields.granularity = 0;                       \
 }
 
-static inline int get_gdt_index(int desc)
+/**
+ * Returns the index of a descriptor in the GDT.
+ *
+ * @param selector - the segment selector
+ * @return the index in the GDT of the descriptor that the segment selector
+ *         points to
+ */
+static inline int get_gdt_index(int selector)
 {
-    return (desc & 0xF8) / sizeof(seg_desc_t);
+    /* Mask off the DPL and table indicator, then divide by the size of
+       a descriptor */
+    return (selector & 0xF8) / sizeof(seg_desc_t);
 }
 
 #endif /* __DESCRIPTOR_H__ */

@@ -55,7 +55,9 @@ static void ldt_init(void)
     ldt_base = (uint32_t) ldt;
     ldt_size = sizeof(ldt);
 
-    /* Zero-out the LDT. */
+    /* Zero-out the LDT.
+       We're not using LDTs on our system, but we need one
+       to keep the CPU happy, so just zero it. */
     for (i = 0; i < ldt_size / sizeof(seg_desc_t); i++) {
         ldt[i].value = 0;
     }
