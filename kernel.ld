@@ -33,21 +33,21 @@ SECTIONS
         __TEXT_END = .;
     }
 
-    .data : ALIGN(512)
+    .data :
     {
         __DATA_START = .;
         *(.data)
         __DATA_END = .;
     }
 
-    .bss : ALIGN(512)
+    .bss :
     {
         __BSS_START = .;
         *(.bss)
         __BSS_END = .;
     }
 
-    .rodata : ALIGN(512)
+    .rodata :
     {
         __RODATA_START = .;
         *(.rodata)
