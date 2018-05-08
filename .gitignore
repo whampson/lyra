@@ -1,3 +1,7 @@
+# Build directories
+bin/
+obj*/
+
 # Object files and executables
 *.o
 *.elf
