@@ -12,16 +12,13 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: init.h
- * Desc: Early kernel initialization macros; shared between bootloader and
- *       kernel.
+ * File: intr.h
+ * Desc:
  *----------------------------------------------------------------------------*/
 
-#ifndef __INIT_H__
-#define __INIT_H__
+#ifndef __INTR_H__
+#define __INTR_H__
 
-#define KERNEL_START        0x400000    /* 4 MiB */
-#define KERNEL_STACK_BASE   0x800000    /* 8 MiB */
-#define ENTRY_POINT         kernel_init
+#define NUM_VEC 256
 
-#endif /* __INIT_H__ */
+#endif /* __INTR_H__ */

@@ -17,7 +17,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <kernel.h>
-#include <descriptor.h>
+#include <desc.h>
+#include <intr.h>
 #include <memory.h>
 #include <types.h>
 
