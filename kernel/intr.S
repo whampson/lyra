@@ -12,11 +12,12 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: interrupt.S
+# File: intr.S
 # Desc:
 #-------------------------------------------------------------------------------
 
-#include <init.h>
+#include <intr.h>
+#include <except.h>
 
 #define GEN_EXCEPT_HANDLER(handl_name, vec_num)                 \
 .globl handl_name;                                              \
@@ -83,24 +84,24 @@ s_syscall:
     .ascii  "Handling system call..."
     .byte   10, 0
 
-GEN_EXCEPT_HANDLER(except_de, 0x00)     /* Divide Error */
-GEN_EXCEPT_HANDLER(except_db, 0x01)     /* Debug */
-GEN_EXCEPT_HANDLER(except_nmi, 0x02)    /* Non-Maskable Interrupts */
-GEN_EXCEPT_HANDLER(except_bp, 0x03)     /* Breakpoint */
-GEN_EXCEPT_HANDLER(except_of, 0x04)     /* Overflow */
-GEN_EXCEPT_HANDLER(except_br, 0x05)     /* Bound Range Exceeded */
-GEN_EXCEPT_HANDLER(except_ud, 0x06)     /* Invalid Opcode */
-GEN_EXCEPT_HANDLER(except_nm, 0x07)     /* No Math Coprocessor */
-GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_df, 0x08)     /* Double Fault */
-GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_ts, 0x0A)     /* Invalid TSS */
-GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_np, 0x0B)     /* Segment Not Present */
-GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_ss, 0x0C)     /* Stack-Segment Fault */
-GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_gp, 0x0D)     /* General Protection Fault */
-GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_pf, 0x0E)     /* Page Fault */
-GEN_EXCEPT_HANDLER(except_mf, 0x10)     /* Math Fault */
-GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_ac, 0x11)     /* Alignment Check */
-GEN_EXCEPT_HANDLER(except_mc, 0x12)     /* Machine Check */
-GEN_EXCEPT_HANDLER(except_xf, 0x13)     /* SIMD Floating-Point Exception */
+GEN_EXCEPT_HANDLER(except_de, EXCEPT_DE)
+GEN_EXCEPT_HANDLER(except_db, EXCEPT_DB)
+GEN_EXCEPT_HANDLER(except_nmi, EXCEPT_NMI)
+GEN_EXCEPT_HANDLER(except_bp, EXCEPT_BP)
+GEN_EXCEPT_HANDLER(except_of, EXCEPT_OF)
+GEN_EXCEPT_HANDLER(except_br, EXCEPT_BR)
+GEN_EXCEPT_HANDLER(except_ud, EXCEPT_UD)
+GEN_EXCEPT_HANDLER(except_nm, EXCEPT_NM)
+GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_df, EXCEPT_DF)
+GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_ts, EXCEPT_TS)
+GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_np, EXCEPT_NP)
+GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_ss, EXCEPT_SS)
+GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_gp, EXCEPT_GP)
+GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_pf, EXCEPT_PF)
+GEN_EXCEPT_HANDLER(except_mf, EXCEPT_MF)
+GEN_EXCEPT_HANDLER_WITH_ERRORCODE(except_ac, EXCEPT_AC)
+GEN_EXCEPT_HANDLER(except_mc, EXCEPT_MC)
+GEN_EXCEPT_HANDLER(except_xf, EXCEPT_XF)
 
 GEN_IRQ_HANDLER(irq_00, 0x00)
 
