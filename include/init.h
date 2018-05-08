@@ -24,4 +24,6 @@
 #define KERNEL_STACK_BASE   0x800000    /* 8 MiB */
 #define ENTRY_POINT         kernel_init
 
+#define NUM_VEC 256
+
 #endif /* __INIT_H__ */
