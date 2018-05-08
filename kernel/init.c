@@ -50,7 +50,7 @@ static void ldt_init(void)
     int ldt_desc_idx;
     size_t i;
 
-    puts("Initializing the LDT...\n");
+    puts("Initializing the LDT...");
 
     ldt_base = (uint32_t) ldt;
     ldt_size = sizeof(ldt);
@@ -73,6 +73,8 @@ static void ldt_init(void)
     /* Set up the LDT descriptor and load the LDTR */
     SET_SYS_DESC_PARAMS(ldt_desc, ldt_base, ldt_size, DESC_LDT);
     lldt(KERNEL_LDT);
+
+    puts(" done.\n");
 }
 
 static void tss_init(void)
@@ -84,7 +86,7 @@ static void tss_init(void)
     size_t tss_size;
     int tss_desc_idx;
 
-    puts("Initializing the TSS...\n");
+    puts("Initializing the TSS...");
 
     /* Get GDT pointer */
     sgdt(gdt_ptr);
@@ -105,4 +107,6 @@ static void tss_init(void)
     tss.esp0 = KERNEL_STACK_BASE;
     tss.ss0 = KERNEL_DS;
     ltr(KERNEL_TSS);
+
+    puts(" done.\n");
 }
