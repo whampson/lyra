@@ -19,8 +19,12 @@
 #include <kernel.h>
 #include <desc.h>
 #include <intr.h>
+#include <except.h>
 #include <memory.h>
 #include <types.h>
+
+#define PRIVL_KERNEL 0
+#define PRIVL_USER   3
 
 __attribute__((fastcall))
 extern void except_de(void);
@@ -43,19 +47,20 @@ void kernel_init(void)
     tss_init();
     idt_init();
 
-    // volatile int a = 1;
-    // volatile int b = 0;
-    // volatile int c = a / b;
-
     __asm__ volatile ("int $0x80" : : : "memory");
+    puts("Recovered from system call!\n");
 
-    puts("Recovered from interrupt!\n");
+    volatile int a = 1;
+    volatile int b = 0;
+    volatile int c = a / b;
 
     /* TODO:
         init idt
         init paging
         create __simple__ terminal driver
     */
+
+   puts("Halting system...");
 }
 
 static void idt_init(void)
@@ -69,15 +74,28 @@ static void idt_init(void)
     idt_len = NUM_VEC * sizeof(idt_gate_t);
 
     for (i = 0; i < NUM_VEC; i++) {
-        idt[i].value = 0;
-        if (i == 0x80) {
-            idt[i].fields.dpl = 0;
-            idt[i].fields.present = 1;
-            idt[i].fields.reserved = 0;
-            idt[i].fields.seg_selector = KERNEL_CS;
-            idt[i].fields.type = GATE_TRAP32;
-            idt[i].fields.offset_lo = ((uint32_t) system_call) & 0x0000FFFF;
-            idt[i].fields.offset_hi = ((uint32_t) system_call) >> 16;
+        switch (i) {
+            case EXCEPT_DE:
+                idt[i].fields.dpl = PRIVL_KERNEL;
+                idt[i].fields.present = 1;
+                idt[i].fields.reserved = 0;
+                idt[i].fields.seg_selector = KERNEL_CS;
+                idt[i].fields.type = GATE_TRAP32;
+                idt[i].fields.offset_lo = ((uint32_t) except_de) & 0x0000FFFF;
+                idt[i].fields.offset_hi = ((uint32_t) except_de) >> 16;
+                break;
+            case 0x80:
+                idt[i].fields.dpl = 3;
+                idt[i].fields.present = 1;
+                idt[i].fields.reserved = PRIVL_USER;
+                idt[i].fields.seg_selector = KERNEL_CS;
+                idt[i].fields.type = GATE_TRAP32;
+                idt[i].fields.offset_lo = ((uint32_t) system_call) & 0x0000FFFF;
+                idt[i].fields.offset_hi = ((uint32_t) system_call) >> 16;
+                break;
+            default:
+                idt[i].value = 0;
+                break;
         }
     }
 
