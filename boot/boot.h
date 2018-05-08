@@ -25,7 +25,7 @@
 
 /* Starting addresses of code. */
 #define STAGE1_START            0x7C00
-#define STAGE2_START            0x0600
+#define STAGE2_START            0x1000
 #define KERNEL_START_EARLY      0x7E00
 
 /* Segment selectors for protected mode. */
