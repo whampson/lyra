@@ -167,7 +167,7 @@ seg_desc_t ldt[2];
 /**
  * Load the Global Descriptor Table Register.
  *
- * @param desc - a pointer to a desc_reg_t structure
+ * @param desc - a desc_reg_t structure
  */
 #define lgdt(desc)          \
 __asm__ volatile (          \
@@ -188,7 +188,7 @@ __asm__ volatile (          \
 /**
  * Load the Interrupt Descriptor Table Register.
  *
- * @param desc - a pointer to a desc_reg_t structure
+ * @param desc - a desc_reg_t structure
  */
 #define lidt(desc)          \
 __asm__ volatile (          \
