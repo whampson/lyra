@@ -54,6 +54,6 @@ rep movsb   (%esi), (%edi)
 invoke_kernel:
     call    *KERNEL_START
 
-idle:
+pm_halt:
     hlt
-    jmp     idle
+    jmp     pm_halt
