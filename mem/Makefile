@@ -33,9 +33,9 @@ dirs:
 	@mkdir -p $(OBJ)
 
 $(OBJ)/%_asm.o: %.S
-	@echo $(AS) $(ASFLAGS) $(CUR_DIR)/$<
+	@echo AS $(CUR_DIR)/$<
 	@$(AS) $(ASFLAGS) -I$(INCLUDE) -c -o $@ $<
 
 $(OBJ)/%.o: %.c
-	@echo $(CC) $(CCFLAGS) $(CUR_DIR)/$<
+	@echo CC $(CUR_DIR)/$<
 	@$(CC) $(CCFLAGS) -I$(INCLUDE) -c -o $@ $<

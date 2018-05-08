@@ -32,18 +32,19 @@ OBJECTS         := $(patsubst %.o, $(OBJ_BOOT)/%.o, $(OBJECTS))
 all: $(BIN)/boot.bin
 
 $(BIN)/boot.bin: $(BIN)/boot.elf
-	objcopy -O binary $< $@
+	@objcopy -O binary $< $@
 
 $(BIN)/boot.elf: $(OBJ_BOOT)/boot_asm.o $(OBJECTS) $(OBJ_BOOT)/$(LDSCRIPTS_GEN)
-	$(LD) $(LDFLAGS) -T $(OBJ_BOOT)/$(LDSCRIPTS_GEN) -o $@ $< $(OBJECTS)
+	@echo LD $(patsubst $(OBJ_BOOT)/%, $(CUR_DIR)/%, $< $(OBJECTS))
+	@$(LD) $(LDFLAGS) -T $(OBJ_BOOT)/$(LDSCRIPTS_GEN) -o $@ $< $(OBJECTS)
 
 $(OBJ_BOOT)/$(LDSCRIPTS_GEN): $(LDSCRIPTS)
-	$(SCRIPTS)/gen-lds.sh $^ $@ -I$(INCLUDE)
+	@$(SCRIPTS)/gen-lds.sh $^ $@ -I$(INCLUDE)
 
 $(OBJ_BOOT)/%_asm.o: %.S
-	@echo $(AS) $(ASFLAGS) $(CUR_DIR)/$<
+	@echo AS $(CUR_DIR)/$<
 	@$(AS) $(ASFLAGS) -I$(INCLUDE) -c -o $@ $<
 
 $(OBJ_BOOT)/%.o: %.c
-	@echo $(CC) $(CCFLAGS) $(CUR_DIR)/$<
+	@echo CC $(CUR_DIR)/$<
 	@$(CC) $(CCFLAGS) -I$(INCLUDE) -c -o $@ $<
