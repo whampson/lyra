@@ -24,20 +24,20 @@ export OBJ_BOOT := $(PWD)/obj_boot
 export INCLUDE  := $(PWD)/include
 export SCRIPTS  := $(PWD)/scripts
 
-WARN            := -Wall -Wextra -Wpedantic
+WARNFLAGS       := -Wall -Wextra -Wpedantic
 
 export AS       := gcc
-export ASFLAGS  := $(WARN) -D__ASM__ -m32
+export ASFLAGS  := $(WARNFLAGS) -D__ASM__ -m32
 export CC       := gcc
-export CCFLAGS  := $(WARN) -m32 -ffreestanding\
+export CCFLAGS  := $(WARNFLAGS) -m32 -ffreestanding -fomit-frame-pointer\
                    -fno-unwind-tables -fno-asynchronous-unwind-tables
 export LD       := ld
 export LDFLAGS  :=
+export MAKEFLAGS:= --no-print-directory
 
 BOOT            := boot
 KERNEL          := kernel
 MEM             := mem
-
 KERNEL_DIRS     := $(KERNEL) $(MEM)
 KERNEL_OBJS     := $(foreach dir, $(KERNEL_DIRS), \
                        $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(dir)/*.c)))\
@@ -51,35 +51,36 @@ OSIMG           := $(BIN)/lyra.img
 all: img
 
 img: boot kernel
-	$(SCRIPTS)/create-img.sh $(BOOTIMG) $(KERNELIMG) $(OSIMG)
+	@$(SCRIPTS)/create-img.sh $(BOOTIMG) $(KERNELIMG) $(OSIMG)
 
 dirs:
-	mkdir -p $(BIN)
-	mkdir -p $(OBJ)
-	mkdir -p $(OBJ_BOOT)
+	@mkdir -p $(BIN)
+	@mkdir -p $(OBJ)
+	@mkdir -p $(OBJ_BOOT)
 
 debug: ASFLAGS += -g
 debug: CCFLAGS += -g
 debug: img
 
 boot: dirs
-	@$(MAKE) -C $(BOOT)
+	@$(MAKE) $(MAKEFLAGS) -C $(BOOT)
 
 kernel: dirs
-	@$(MAKE) -C $(KERNEL)
-	@$(MAKE) -C $(MEM)
-	$(SCRIPTS)/gen-lds.sh kernel.ld kernel.ld.gen -I$(INCLUDE)
-	$(LD) $(LDFLAGS) -T kernel.ld.gen -o $(BIN)/kernel.elf $(KERNEL_OBJS)
-	objcopy -O binary $(BIN)/kernel.elf $(BIN)/kernel.bin
+	@$(MAKE) $(MAKEFLAGS) -C $(KERNEL)
+	@$(MAKE) $(MAKEFLAGS) -C $(MEM)
+	@$(SCRIPTS)/gen-lds.sh kernel.ld kernel.ld.gen -I$(INCLUDE)
+	@echo LD $(patsubst $(OBJ)/%, %, $(KERNEL_OBJS))
+	@$(LD) $(LDFLAGS) -T kernel.ld.gen -o $(BIN)/kernel.elf $(KERNEL_OBJS)
+	@objcopy -O binary $(BIN)/kernel.elf $(BIN)/kernel.bin
 
 clean:
-	rm -rf $(BIN)
-	rm -rf $(OBJ)
-	rm -rf $(OBJ_BOOT)
-	rm -f *.gen
+	@rm -rf $(BIN)
+	@rm -rf $(OBJ)
+	@rm -rf $(OBJ_BOOT)
+	@rm -f *.gen
 
 remake: clean all
 
 floppy: img
-	# WARNING: check yer floppies!
-	dd if=$(OSIMG) of=/dev/fd0 bs=512
+	@# WARNING: check yer floppies!
+	@sudo dd if=$(OSIMG) of=/dev/fd0 bs=512
