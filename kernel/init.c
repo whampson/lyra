@@ -21,8 +21,16 @@
 #include <memory.h>
 #include <types.h>
 
+__attribute__((fastcall))
+extern void except_de(void);
+__attribute__((fastcall))
+extern void except_db(void);
+__attribute__((fastcall))
+extern void system_call(void);
+
 static void ldt_init(void);
 static void tss_init(void);
+static void idt_init(void);
 
 /**
  * "Fire 'er up, man!"
@@ -32,12 +40,50 @@ void kernel_init(void)
     clear();
     ldt_init();
     tss_init();
+    idt_init();
+
+    // volatile int a = 1;
+    // volatile int b = 0;
+    // volatile int c = a / b;
+
+    __asm__ volatile ("int $0x80" : : : "memory");
+
+    puts("Recovered from interrupt!\n");
 
     /* TODO:
         init idt
         init paging
         create __simple__ terminal driver
     */
+}
+
+static void idt_init(void)
+{
+    size_t i;
+    idt_gate_t *idt;
+    size_t idt_len;
+    desc_reg_t idt_ptr;
+
+    idt = (idt_gate_t *) 0x500;
+    idt_len = NUM_VEC * sizeof(idt_gate_t);
+
+    for (i = 0; i < NUM_VEC; i++) {
+        idt[i].value = 0;
+        if (i == 0x80) {
+            idt[i].fields.dpl = 0;
+            idt[i].fields.present = 1;
+            idt[i].fields.reserved = 0;
+            idt[i].fields.seg_selector = KERNEL_CS;
+            idt[i].fields.type = GATE_TRAP32;
+            idt[i].fields.offset_lo = ((uint32_t) system_call) & 0x0000FFFF;
+            idt[i].fields.offset_hi = ((uint32_t) system_call) >> 16;
+        }
+    }
+
+    idt_ptr.fields.base = (uint32_t) idt;
+    idt_ptr.fields.limit = (uint16_t) idt_len;
+    idt_ptr.fields.padding = 0;
+    lidt(idt_ptr);
 }
 
 static void ldt_init(void)
@@ -59,7 +105,7 @@ static void ldt_init(void)
        We're not using LDTs on our system, but we need one
        to keep the CPU happy, so just zero it. */
     for (i = 0; i < ldt_size / sizeof(seg_desc_t); i++) {
-        ldt[i].value = 0;
+        ldt[i].value = 0L;
     }
 
     /* Get GDT pointer */
