@@ -1,5 +1,3 @@
-#include <kernel.h>
-
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
  * Copyright (C) 2018 Wes Hampson. All Rights Reserved.                       *
  *                                                                            *
@@ -17,6 +15,8 @@
  * File: print.c
  * Desc: Basic screen-printing routines.
  *----------------------------------------------------------------------------*/
+
+#include <lyra/kernel.h>
 
 /* VGA colors */
 #define BG_BLACK        0x00
