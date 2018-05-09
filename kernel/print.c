@@ -16,7 +16,7 @@
  * Desc: Basic screen-printing routines.
  *----------------------------------------------------------------------------*/
 
-#include <lyra/kernel.h>
+#include <stdio.h>
 
 /* VGA colors */
 #define BG_BLACK        0x00
@@ -37,19 +37,23 @@ struct coord2d {
 static char * const VIDMEM = (char *) 0xb8000;
 static struct coord2d cursor = { 0 };
 
-void putc(char c)
+int putchar(int c)
 {
     char do_newline = 0;
+    unsigned char printed;
 
     switch (c) {
         case '\n':
+            printed = '\n';
             do_newline = 1;
             break;
         case '\r':
+            printed = '\r';
             cursor.x = 0;
             break;
         default:
-            VIDMEM[XY2POS(cursor.x, cursor.y) * 2] = c;
+            printed = (unsigned char) c;
+            VIDMEM[XY2POS(cursor.x, cursor.y) * 2] = printed;
             cursor.x++;
             if (cursor.x >= SCREEN_WIDTH) {
                 do_newline = 1;
@@ -64,14 +68,22 @@ void putc(char c)
     if (cursor.y >= SCREEN_HEIGHT) {
         cursor.y = 0;
     }
+
+    return printed;
 }
 
-void puts(const char *s)
+int puts(const char *str)
 {
-    while (*s != '\0') {
-        putc(*s);
-        s++;
+    int i;
+    char c;
+
+    i = 0;
+    while ((c = str[i]) != '\0') {
+        putchar(c);
+        i++;
     }
+
+    return i;
 }
 
 void clear(void)
