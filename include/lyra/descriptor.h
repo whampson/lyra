@@ -14,7 +14,6 @@
 /*-----------------------------------------------------------------------------
  * File: descriptor.h
  * Desc: i386 descriptor structure definitions and macros.
- *       Also contains references to the TSS and LDT.
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_DESC_H__
@@ -156,14 +155,6 @@ struct tss_struct {
     uint16_t reserved11 : 15;
     uint16_t io_base_addr;
 };
-
-/* The TSS. */
-struct tss_struct tss = { 0 };
-
-/* The LDT.
-   We're not using LDTs on our system, but we need one
-   to keep the CPU happy. */
-seg_desc_t ldt[2];
 
 /**
  * Load the Global Descriptor Table Register.
