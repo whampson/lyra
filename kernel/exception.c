@@ -20,16 +20,45 @@
 #include <lyra/kernel.h>
 
 __attribute__((fastcall))
-void do_except(struct interrupt_frame *regs)
+static void handle_unknown_exception(void);
+
+__attribute__((fastcall))
+static void exception_halt(void);
+
+__attribute__((fastcall))
+void do_exception(struct interrupt_frame *regs)
 {
+    if (regs->vec_num >= NUM_EXCEPT) {
+        handle_unknown_exception();
+    }
+
+    // handler_stub_func stub;
+    // stub = exception_stubs[regs->vec_num];
+    // if (stub == NULL) {
+    //     handle_unknown_exception();
+    // }
+
     switch (regs->vec_num) {
         case EXCEPT_DE:
             puts("Divide error!\n");
-            __asm__ volatile ("except_halt: hlt; jmp except_halt" : : : "memory");
+            exception_halt();
             break;
-
         default:
-            puts("Unknown exception!\n");
+            handle_unknown_exception();
             break;
     }
+}
+
+__attribute__((fastcall))
+static void handle_unknown_exception(void)
+{
+    puts("Unknown exception!\n");
+    exception_halt();
+}
+
+__attribute__((fastcall))
+void exception_halt(void)
+{
+    /* Deathbed... */
+    __asm__ volatile ("rip: hlt; jmp rip" : : : "memory");
 }
