@@ -16,26 +16,21 @@
  * Desc: Kernel entry point and initialization.
  *----------------------------------------------------------------------------*/
 
-#include <kernel.h>
-#include <desc.h>
-#include <intr.h>
-#include <except.h>
-#include <memory.h>
 #include <types.h>
+#include <lyra/kernel.h>
+#include <lyra/descriptor.h>
+#include <lyra/interrupt.h>
+#include <lyra/memory.h>
 
-#define PRIVL_KERNEL 0
-#define PRIVL_USER   3
+/* The TSS. */
+static struct tss_struct tss = { 0 };
 
-__attribute__((fastcall))
-extern void except_de(void);
-__attribute__((fastcall))
-extern void except_db(void);
-__attribute__((fastcall))
-extern void system_call(void);
+/* The LDT.
+   We're not using LDTs on our system, but we need one to keep the CPU happy. */
+static seg_desc_t ldt[2];
 
 static void ldt_init(void);
 static void tss_init(void);
-static void idt_init(void);
 
 /**
  * "Fire 'er up, man!"
@@ -43,19 +38,12 @@ static void idt_init(void);
 void kernel_init(void)
 {
     clear();
+
     ldt_init();
     tss_init();
     idt_init();
 
-    __asm__ volatile ("int $0x80" : : : "memory");
-    puts("Recovered from system call!\n");
-
-    volatile int a = 1;
-    volatile int b = 0;
-    volatile int c = a / b;
-
     /* TODO:
-        init idt
         init paging
         create __simple__ terminal driver
     */
@@ -63,51 +51,8 @@ void kernel_init(void)
    puts("Halting system...");
 }
 
-static void idt_init(void)
-{
-    size_t i;
-    idt_gate_t *idt;
-    size_t idt_len;
-    desc_reg_t idt_ptr;
-
-    idt = (idt_gate_t *) 0x500;
-    idt_len = NUM_VEC * sizeof(idt_gate_t);
-
-    for (i = 0; i < NUM_VEC; i++) {
-        switch (i) {
-            case EXCEPT_DE:
-                idt[i].fields.dpl = PRIVL_KERNEL;
-                idt[i].fields.present = 1;
-                idt[i].fields.reserved = 0;
-                idt[i].fields.seg_selector = KERNEL_CS;
-                idt[i].fields.type = GATE_TRAP32;
-                idt[i].fields.offset_lo = ((uint32_t) except_de) & 0x0000FFFF;
-                idt[i].fields.offset_hi = ((uint32_t) except_de) >> 16;
-                break;
-            case 0x80:
-                idt[i].fields.dpl = 3;
-                idt[i].fields.present = 1;
-                idt[i].fields.reserved = PRIVL_USER;
-                idt[i].fields.seg_selector = KERNEL_CS;
-                idt[i].fields.type = GATE_TRAP32;
-                idt[i].fields.offset_lo = ((uint32_t) system_call) & 0x0000FFFF;
-                idt[i].fields.offset_hi = ((uint32_t) system_call) >> 16;
-                break;
-            default:
-                idt[i].value = 0;
-                break;
-        }
-    }
-
-    idt_ptr.fields.base = (uint32_t) idt;
-    idt_ptr.fields.limit = (uint16_t) idt_len;
-    idt_ptr.fields.padding = 0;
-    lidt(idt_ptr);
-}
-
 static void ldt_init(void)
 {
-    desc_reg_t gdt_ptr;
     seg_desc_t *gdt;
     seg_desc_t *ldt_desc;
     uint32_t ldt_base;
@@ -120,18 +65,13 @@ static void ldt_init(void)
     ldt_base = (uint32_t) ldt;
     ldt_size = sizeof(ldt);
 
-    /* Zero-out the LDT.
-       We're not using LDTs on our system, but we need one
-       to keep the CPU happy, so just zero it. */
+    /* Zero-out the LDT. */
     for (i = 0; i < ldt_size / sizeof(seg_desc_t); i++) {
         ldt[i].value = 0L;
     }
 
-    /* Get GDT pointer */
-    sgdt(gdt_ptr);
-    gdt = (seg_desc_t *) gdt_ptr.fields.base;
-
     /* Get LDT descriptor from GDT */
+    gdt = (seg_desc_t *) GDT_BASE;
     ldt_desc_idx = get_gdt_index(KERNEL_LDT);
     ldt_desc = &gdt[ldt_desc_idx];
 
@@ -144,7 +84,6 @@ static void ldt_init(void)
 
 static void tss_init(void)
 {
-    desc_reg_t gdt_ptr;
     seg_desc_t *gdt;
     seg_desc_t *tss_desc;
     uint32_t tss_base;
@@ -153,11 +92,8 @@ static void tss_init(void)
 
     puts("Initializing the TSS...");
 
-    /* Get GDT pointer */
-    sgdt(gdt_ptr);
-    gdt = (seg_desc_t *) gdt_ptr.fields.base;
-
     /* Get TSS descriptor from GDT */
+    gdt = (seg_desc_t *) GDT_BASE;
     tss_desc_idx = get_gdt_index(KERNEL_TSS);
     tss_desc = &gdt[tss_desc_idx];
 
