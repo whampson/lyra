@@ -62,6 +62,10 @@ common_interrupt_handler:
     # Get interrupt vector number
     movl    INTR_FRAME_VEC_NUM(%esp), %eax
 
+    # Pass interrupt frame pointer as first argument
+    # (ECX is the first parameter in 'fastcall' calling convention)
+    movl    %esp, %ecx
+
     # Call handler based on interrupt type
     cmpl    $NUM_EXCEPT, %eax
     jb      interrupt_exception
@@ -143,27 +147,27 @@ stub_name:                                                  \
     jmp     common_interrupt_handler
 
 /* Exception stubs */
-GEN_EXCEPT_STUB(except_de, EXCEPT_DE)
-GEN_EXCEPT_STUB(except_db, EXCEPT_DB)
-GEN_EXCEPT_STUB(except_nmi, EXCEPT_NMI)
-GEN_EXCEPT_STUB(except_bp, EXCEPT_BP)
-GEN_EXCEPT_STUB(except_of, EXCEPT_OF)
-GEN_EXCEPT_STUB(except_br, EXCEPT_BR)
-GEN_EXCEPT_STUB(except_ud, EXCEPT_UD)
-GEN_EXCEPT_STUB(except_nm, EXCEPT_NM)
-GEN_EXCEPT_STUB_WITH_ERRORCODE(except_df, EXCEPT_DF)
-GEN_EXCEPT_STUB_WITH_ERRORCODE(except_ts, EXCEPT_TS)
-GEN_EXCEPT_STUB_WITH_ERRORCODE(except_np, EXCEPT_NP)
-GEN_EXCEPT_STUB_WITH_ERRORCODE(except_ss, EXCEPT_SS)
-GEN_EXCEPT_STUB_WITH_ERRORCODE(except_gp, EXCEPT_GP)
-GEN_EXCEPT_STUB_WITH_ERRORCODE(except_pf, EXCEPT_PF)
-GEN_EXCEPT_STUB(except_mf, EXCEPT_MF)
-GEN_EXCEPT_STUB_WITH_ERRORCODE(except_ac, EXCEPT_AC)
-GEN_EXCEPT_STUB(except_mc, EXCEPT_MC)
-GEN_EXCEPT_STUB(except_xf, EXCEPT_XF)
+GEN_EXCEPT_STUB(stub_except_de, EXCEPT_DE)
+GEN_EXCEPT_STUB(stub_except_db, EXCEPT_DB)
+GEN_EXCEPT_STUB(stub_except_nmi, EXCEPT_NMI)
+GEN_EXCEPT_STUB(stub_except_bp, EXCEPT_BP)
+GEN_EXCEPT_STUB(stub_except_of, EXCEPT_OF)
+GEN_EXCEPT_STUB(stub_except_br, EXCEPT_BR)
+GEN_EXCEPT_STUB(stub_except_ud, EXCEPT_UD)
+GEN_EXCEPT_STUB(stub_except_nm, EXCEPT_NM)
+GEN_EXCEPT_STUB_WITH_ERRORCODE(stub_except_df, EXCEPT_DF)
+GEN_EXCEPT_STUB_WITH_ERRORCODE(stub_except_ts, EXCEPT_TS)
+GEN_EXCEPT_STUB_WITH_ERRORCODE(stub_except_np, EXCEPT_NP)
+GEN_EXCEPT_STUB_WITH_ERRORCODE(stub_except_ss, EXCEPT_SS)
+GEN_EXCEPT_STUB_WITH_ERRORCODE(stub_except_gp, EXCEPT_GP)
+GEN_EXCEPT_STUB_WITH_ERRORCODE(stub_except_pf, EXCEPT_PF)
+GEN_EXCEPT_STUB(stub_except_mf, EXCEPT_MF)
+GEN_EXCEPT_STUB_WITH_ERRORCODE(stub_except_ac, EXCEPT_AC)
+GEN_EXCEPT_STUB(stub_except_mc, EXCEPT_MC)
+GEN_EXCEPT_STUB(stub_except_xf, EXCEPT_XF)
 
 /* Device IRQ stubs */
-GEN_IRQ_STUB(irq_00, 0x00)
+GEN_IRQ_STUB(stub_irq_00, 0x00)
 
 /* System call stub */
-GEN_SYSCALL_STUB(system_call)
+GEN_SYSCALL_STUB(stub_syscall)
