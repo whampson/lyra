@@ -20,20 +20,22 @@
 #ifndef __BOOT_H__
 #define __BOOT_H__
 
+#include <lyra/init.h>
+
 /* Starting addresses of global data. */
-#define STACK_BASE              0x7C00  /* first item at 0x7BFE, grows to 0 */
+#define BOOT_STACK_BASE         0x7C00  /* first item at 0x7BFE, grows to 0 */
 
 /* Starting addresses of code. */
+#define BOOT_ENTRY              entry
 #define STAGE1_START            0x7C00
 #define STAGE2_START            0x1000
 #define KERNEL_START_EARLY      0x7E00
 
-/* Segment selectors for protected mode. */
-#define BOOT_CS                 0x10
-#define BOOT_DS                 0x18
-
 /* Boot sector signature for MBR. */
 #define BOOTSECT_MAGIC          0xAA55
+
+/* Protected Mode enable bit */
+#define PE_BIT                  0x01
 
 /* Disk layout information.
    The following symbols are defined during linking and are stored on-disk
