@@ -34,7 +34,7 @@ entry:
     xorw    %ax, %ax
     movw    %ax, %ds
     movw    %ax, %ss
-    movw    $STACK_BASE, %bp
+    movw    $BOOT_STACK_BASE, %bp
     movw    %bp, %sp
 
     leaw    s_hello, %bx
@@ -59,13 +59,13 @@ load_kernel_early:
 go_to_pm:
     call    kill_interrupts
     call    a20_enable
-    lgdt    gdt_ptr
+    call    setup_gdt
     jmp     pm_switch
 
 kill_interrupts:
     # Mask PIC interrupts
-    movb    $0xff, %al          # mask all IRQs
-    outb    %al, $0xa1          # send mask to slave PIC
+    movb    $0xFF, %al          # mask all IRQs
+    outb    %al, $0xA1          # send mask to slave PIC
     outb    %al, $0x21          # send mask to master PIC
 
     # Disable non-maskable interrupts
