@@ -20,8 +20,6 @@
 #ifndef __LYRA_DESC_H__
 #define __LYRA_DESC_H__
 
-#include <types.h>
-
 /* Segment selectors */
 #define KERNEL_CS   0x10
 #define KERNEL_DS   0x18
@@ -57,6 +55,9 @@
 #define DESC_LDT    0x02
 #define DESC_TSS16  0x01
 #define DESC_TSS32  0x09
+
+#ifndef __ASM__
+#include <types.h>
 
 /* Descriptor register structure (for GDTR and IDTR). */
 typedef union desc_reg {
@@ -261,5 +262,7 @@ static inline int get_gdt_index(int selector)
        a descriptor */
     return (selector & 0xF8) / sizeof(seg_desc_t);
 }
+
+#endif /* __ASM__ */
 
 #endif /* __LYRA_DESC_H__ */
