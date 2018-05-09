@@ -28,6 +28,34 @@
 #ifndef __ASM__
 #include <types.h>
 
+/* Interrupt handler stub function pointer. */
+typedef void (*intr_handler_stub)(void);
+
+/* Generates a function prototype for an interrupt handler stub. */
+#define GEN_STUB_PROTOTYPE(stub_name) \
+extern void stub_name(void);
+
+/* Prototypes for interrupt handler stubs. */
+GEN_STUB_PROTOTYPE(stub_except_de)
+GEN_STUB_PROTOTYPE(stub_except_db)
+GEN_STUB_PROTOTYPE(stub_except_nmi)
+GEN_STUB_PROTOTYPE(stub_except_bp)
+GEN_STUB_PROTOTYPE(stub_except_of)
+GEN_STUB_PROTOTYPE(stub_except_br)
+GEN_STUB_PROTOTYPE(stub_except_ud)
+GEN_STUB_PROTOTYPE(stub_except_nm)
+GEN_STUB_PROTOTYPE(stub_except_df)
+GEN_STUB_PROTOTYPE(stub_except_ts)
+GEN_STUB_PROTOTYPE(stub_except_np)
+GEN_STUB_PROTOTYPE(stub_except_ss)
+GEN_STUB_PROTOTYPE(stub_except_gp)
+GEN_STUB_PROTOTYPE(stub_except_pf)
+GEN_STUB_PROTOTYPE(stub_except_mf)
+GEN_STUB_PROTOTYPE(stub_except_ac)
+GEN_STUB_PROTOTYPE(stub_except_mc)
+GEN_STUB_PROTOTYPE(stub_except_xf)
+GEN_STUB_PROTOTYPE(stub_syscall)
+
 /* Structure for storing registers during an interrupt or system call. */
 struct interrupt_frame {
     /* Process context.

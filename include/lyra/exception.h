@@ -44,19 +44,9 @@
 
 #ifndef __ASM__
 
-// #define GEN_EXCEPT_STUB_DECL(stub_name) \
-// __attribute__((fastcall))               \
-// void stub_name(void)
-
-// GEN_EXCEPT_STUB_DECL(except_de)
-// GEN_EXCEPT_STUB_DECL(except_db)
-// GEN_EXCEPT_STUB_DECL(except_nmi)
-// GEN_EXCEPT_STUB_DECL(except_bp)
-// GEN_EXCEPT_STUB_DECL(except_of)
-// GEN_EXCEPT_STUB_DECL(except_br)
-
+/* Common exception handler. */
 __attribute__((fastcall))
-void do_except(struct interrupt_frame *regs);
+void do_exception(struct interrupt_frame *regs);
 
 #endif /* __ASM__ */
 
