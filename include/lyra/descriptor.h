@@ -12,13 +12,13 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: desc.h
+ * File: descriptor.h
  * Desc: i386 descriptor structure definitions and macros.
  *       Also contains references to the TSS and LDT.
  *----------------------------------------------------------------------------*/
 
-#ifndef __DESC_H__
-#define __DESC_H__
+#ifndef __LYRA_DESC_H__
+#define __LYRA_DESC_H__
 
 #include <types.h>
 
@@ -262,4 +262,4 @@ static inline int get_gdt_index(int selector)
     return (selector & 0xF8) / sizeof(seg_desc_t);
 }
 
-#endif /* __DESC_H__ */
+#endif /* __LYRA_DESC_H__ */

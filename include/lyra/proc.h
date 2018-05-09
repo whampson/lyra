@@ -12,35 +12,23 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: io.h
- * Desc: I/O macros.
+ * File: proc.h
+ * Desc: Process management macros and prototypes.
  *----------------------------------------------------------------------------*/
 
-#ifndef __IO_H__
-#define __IO_H__
+#ifndef __LYRA_PROC_H__
+#define __LYRA_PROC_H__
 
 #include <types.h>
 
-static inline uint8_t inb(uint16_t port)
-{
-    uint8_t data;
-    __asm__ volatile (
-        "inb    %w1, %b0"
-        : "=a"(data)
-        : "d"(port)
-        : "memory", "cc"
-    );
-    return data;
-}
+struct proc_ctx {
+    uint32_t edi;
+    uint32_t esi;
+    uint32_t ebp;
+    uint32_t ebx;
+    uint32_t edx;
+    uint32_t ecx;
+    uint32_t eax;
+};
 
-static inline void outb(uint8_t data, uint16_t port)
-{
-    __asm__ volatile (
-        "outb   %b0, %w1"
-        :
-        : "a"(data), "d"(port)
-        : "memory", "cc"
-    );
-}
-
-#endif /* __IO_H__ */
+#endif /* __LYRA_PROC_H__ */

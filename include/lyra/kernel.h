@@ -13,13 +13,13 @@
 
 /*-----------------------------------------------------------------------------
  * File: kernel.h
- * Desc: Common function prototyyes and macros.
+ * Desc: Commonly-used function prototypes and macros.
  *----------------------------------------------------------------------------*/
 
-#ifndef __KERNEL_H__
-#define __KERNEL_H__
+#ifndef __LYRA_KERNEL_H__
+#define __LYRA_KERNEL_H__
 
-#include <init.h>
+#include <lyra/init.h>
 
 /**
  * Clear interrupt flag.
@@ -70,4 +70,4 @@ void putc(char c);
 void puts(const char *s);
 void clear(void);
 
-#endif  /* __KERNEL_H__ */
+#endif  /* __LYRA_KERNEL_H__ */
