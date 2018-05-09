@@ -17,11 +17,11 @@
  *       kernel.
  *----------------------------------------------------------------------------*/
 
-#ifndef __INIT_H__
-#define __INIT_H__
+#ifndef __LYRA_INIT_H__
+#define __LYRA_INIT_H__
 
 #define KERNEL_START        0x400000    /* 4 MiB */
 #define KERNEL_STACK_BASE   0x800000    /* 8 MiB */
 #define ENTRY_POINT         kernel_init
 
-#endif /* __INIT_H__ */
+#endif /* __LYRA_INIT_H__ */

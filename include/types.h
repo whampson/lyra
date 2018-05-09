@@ -19,6 +19,8 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
+#define NULL 0
+
 /* i386 integer types */
 typedef char int8_t;
 typedef unsigned char uint8_t;

@@ -12,34 +12,35 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: except.h
- * Desc:
+ * File: io.h
+ * Desc: I/O macros.
  *----------------------------------------------------------------------------*/
 
-#ifndef __EXCEPT_H__
-#define __EXCEPT_H__
+#ifndef __LYRA_IO_H__
+#define __LYRA_IO_H__
 
-#define NUM_EXCEPT  32
+#include <types.h>
 
-#define EXCEPT_DE   0x00    /* Divide Error */
-#define EXCEPT_DB   0x01    /* Debug */
-#define EXCEPT_NMI  0x02    /* Non-Maskable Interrupt */
-#define EXCEPT_BP   0x03    /* Breakpoint */
-#define EXCEPT_OF   0x04    /* Overflow */
-#define EXCEPT_BR   0x05    /* Bound Range Exceeded */
-#define EXCEPT_UD   0x06    /* Invalid Opcode */
-#define EXCEPT_NM   0x07    /* No Math Coprocessor */
-#define EXCEPT_DF   0x08    /* Double Fault */
-#define EXCEPT_TS   0x0A    /* Invalid TSS */
-#define EXCEPT_NP   0x0B    /* Segment Not Present */
-#define EXCEPT_SS   0x0C    /* Stack-Segment Fault */
-#define EXCEPT_GP   0x0D    /* General Protection Fault */
-#define EXCEPT_PF   0x0E    /* Page Fault */
-#define EXCEPT_MF   0x10    /* Math Fault */
-#define EXCEPT_AC   0x11    /* Alignment Check */
-#define EXCEPT_MC   0x12    /* Machine Check */
-#define EXCEPT_XF   0x13    /* SIMD Floating-Point Exception */
+static inline uint8_t inb(uint16_t port)
+{
+    uint8_t data;
+    __asm__ volatile (
+        "inb    %w1, %b0"
+        : "=a"(data)
+        : "d"(port)
+        : "memory", "cc"
+    );
+    return data;
+}
 
+static inline void outb(uint8_t data, uint16_t port)
+{
+    __asm__ volatile (
+        "outb   %b0, %w1"
+        :
+        : "a"(data), "d"(port)
+        : "memory", "cc"
+    );
+}
 
-
-#endif /* __EXCEPT_H__ */
+#endif /* __LYRA_IO_H__ */

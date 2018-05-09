@@ -13,17 +13,13 @@
 
 /*-----------------------------------------------------------------------------
  * File: memory.h
- * Desc:
+ * Desc: Memory management macros and prototypes.
  *----------------------------------------------------------------------------*/
 
-#ifndef __MEMORY_H__
-#define __MEMORY_H__
-
-/* Segment selectors. */
-#define KERNEL_CS   0x10
-#define KERNEL_DS   0x18
+#ifndef __LYRA_MEMORY_H__
+#define __LYRA_MEMORY_H__
 
 void mem_init(void);
 void flush_tlb(void);
 
-#endif /* __MEMORY_H__ */
+#endif /* __LYRA_MEMORY_H__ */
