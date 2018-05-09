@@ -16,7 +16,7 @@
 # Desc: Lyra OS build script.
 #-------------------------------------------------------------------------------
 
-.PHONY: all img boot kernel debug clean remake floppy
+.PHONY: all img boot kernel debug debug_echo clean remake floppy
 
 export BIN      := $(PWD)/bin
 export OBJ      := $(PWD)/obj
@@ -60,7 +60,9 @@ dirs:
 
 debug: ASFLAGS += -g
 debug: CCFLAGS += -g
-debug: img
+debug: debug_echo
+debug_echo:
+	@echo [INFO] Compiling with debugging symbols.
 
 boot: dirs
 	@$(MAKE) $(MAKEFLAGS) -C $(BOOT)
