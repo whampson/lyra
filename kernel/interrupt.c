@@ -16,11 +16,10 @@
  * Desc: IDT initialization.
  *----------------------------------------------------------------------------*/
 
-#include <types.h>
+#include <lyra/kernel.h>
 #include <lyra/interrupt.h>
 #include <lyra/exception.h>
 #include <lyra/descriptor.h>
-#include <lyra/kernel.h>
 
 #define SET_IDT_ENTRY(desc, in_use, privilege, gate_type, func) \
 {                                                               \

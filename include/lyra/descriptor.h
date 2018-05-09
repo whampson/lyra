@@ -56,7 +56,7 @@
 #define DESC_TSS32  0x09
 
 #ifndef __ASM__
-#include <types.h>
+#include <stdint.h>
 
 /* Descriptor register structure (for GDTR and IDTR). */
 typedef union desc_reg {

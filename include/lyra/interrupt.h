@@ -26,7 +26,7 @@
 #define SYSCALL_VEC 0x80
 
 #ifndef __ASM__
-#include <types.h>
+#include <stdint.h>
 
 /* Interrupt handler stub function pointer. */
 typedef void (*intr_handler_stub)(void);
@@ -76,7 +76,7 @@ struct interrupt_frame {
 
     /* Error code when an exception raised.
        Should be set to -1 when error code does not apply. */
-    uint32_t err_code;
+    int32_t err_code;
 
     /* Hardware context.
        Pushed automatically by CPU when interrupt raised. */

@@ -19,7 +19,7 @@
 #ifndef __LYRA_PROC_H__
 #define __LYRA_PROC_H__
 
-#include <types.h>
+#include <stdint.h>
 
 struct proc_ctx {
     uint32_t edi;

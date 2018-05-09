@@ -16,7 +16,6 @@
  * Desc: Kernel entry point and initialization.
  *----------------------------------------------------------------------------*/
 
-#include <types.h>
 #include <lyra/kernel.h>
 #include <lyra/descriptor.h>
 #include <lyra/interrupt.h>

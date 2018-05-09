@@ -19,6 +19,9 @@
 #ifndef __LYRA_KERNEL_H__
 #define __LYRA_KERNEL_H__
 
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <lyra/init.h>
 
 #define PRIVL_KERNEL 0
@@ -69,8 +72,6 @@ __asm__ volatile (          \
     : "memory", "cc"        \
 );
 
-void putc(char c);
-void puts(const char *s);
 void clear(void);
 
 #endif  /* __LYRA_KERNEL_H__ */
