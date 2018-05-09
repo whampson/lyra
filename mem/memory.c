@@ -16,7 +16,6 @@
  * Desc: Memory initialization and memory structure definitions.
  *----------------------------------------------------------------------------*/
 
-#include <types.h>
 #include <lyra/kernel.h>
 #include <lyra/memory.h>
 

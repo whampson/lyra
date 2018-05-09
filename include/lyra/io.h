@@ -19,7 +19,7 @@
 #ifndef __LYRA_IO_H__
 #define __LYRA_IO_H__
 
-#include <types.h>
+#include <stdint.h>
 
 static inline uint8_t inb(uint16_t port)
 {

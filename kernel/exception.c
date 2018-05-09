@@ -16,8 +16,8 @@
  * Desc: Exception handling routines.
  *----------------------------------------------------------------------------*/
 
-#include <lyra/exception.h>
 #include <lyra/kernel.h>
+#include <lyra/exception.h>
 
 __attribute__((fastcall))
 static void handle_unknown_exception(void);
