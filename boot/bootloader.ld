@@ -22,7 +22,7 @@
 
 OUTPUT_FORMAT("elf32-i386")
 OUTPUT_ARCH(i386)
-ENTRY(entry)
+ENTRY(BOOT_ENTRY)
 
 SECTIONS
 {
@@ -44,7 +44,7 @@ SECTIONS
         KERNEL_SECTOR = .;
         SHORT(__KERNEL_SECTOR)
         KERNEL_NUM_SECTORS = .;
-        SHORT(0)    // Written during final creation of disk image.
+        SHORT(0)    /* Written during final creation of disk image. */
 
         FILL(0x5748)
 
