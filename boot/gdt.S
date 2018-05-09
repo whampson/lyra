@@ -16,23 +16,39 @@
 # Desc: Home of the Global Descriptor Table.
 #-------------------------------------------------------------------------------
 
+#include <lyra/init.h>
+
 .code16
 .section .stage2, "ax", @progbits
 
 .align 16
-gdt_start:
+temp_gdt_base:
     .quad   0x0000000000000000
     .quad   0x0000000000000000
-    .quad   0x00CF9A000000FFFF      # KERNEL_CS     - 0x10
-    .quad   0x00CF92000000FFFF      # KERNEL_DS     - 0x18
-    .quad   0x00CFFA000000FFFF      # USER_CS       - 0x23
-    .quad   0x00CFF2000000FFFF      # USER_DS       - 0x2B
-    .quad   0x0000000000000000      # KERNEL_TSS    - 0x30
-    .quad   0x0000000000000000      # KERNEL_LDT    - 0x38
-gdt_end:
+    .quad   0x00CF9A000000FFFF      # KERNEL_CS
+    .quad   0x00CF92000000FFFF      # KERNEL_DS
+    .quad   0x00CFFA000000FFFF      # USER_CS
+    .quad   0x00CFF2000000FFFF      # USER_DS
+    .quad   0x0000000000000000      # KERNEL_TSS
+    .quad   0x0000000000000000      # KERNEL_LDT
+temp_gdt_limit:
 
-.globl gdt_ptr
+##
+# 48-bit value for the GDTR describing the location and size of the GDT.
+##
+.align 4
 gdt_ptr:
-    .word   gdt_end - gdt_start - 1
-    .long   gdt_start
+    .word   temp_gdt_limit - temp_gdt_base - 1
+    .long   GDT_BASE
     .word   0
+
+.globl setup_gdt
+setup_gdt:
+move_gdt:
+    movl    $temp_gdt_base, %esi    # src
+    movl    $GDT_BASE, %edi         # dest
+    movzwl  gdt_ptr, %ecx           # count
+rep movsb   (%esi), (%edi)
+load_gdt:
+    lgdtl   gdt_ptr
+    ret
