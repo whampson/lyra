@@ -21,6 +21,9 @@
 
 #include <lyra/init.h>
 
+#define PRIVL_KERNEL 0
+#define PRIVL_USER   3
+
 /**
  * Clear interrupt flag.
  */
