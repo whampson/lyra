@@ -29,7 +29,7 @@ WARNFLAGS       := -Wall -Wextra -Wpedantic
 export AS       := gcc
 export ASFLAGS  := $(WARNFLAGS) -D__ASM__ -m32
 export CC       := gcc
-export CCFLAGS  := $(WARNFLAGS) -m32 -ffreestanding -fomit-frame-pointer\
+export CCFLAGS  := $(WARNFLAGS) -m32 -ffreestanding -fomit-frame-pointer \
                    -fno-unwind-tables -fno-asynchronous-unwind-tables
 export LD       := ld
 export LDFLAGS  :=
@@ -40,7 +40,7 @@ KERNEL          := kernel
 MEM             := mem
 KERNEL_DIRS     := $(KERNEL) $(MEM)
 KERNEL_OBJS     := $(foreach dir, $(KERNEL_DIRS), \
-                       $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(dir)/*.c)))\
+                       $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(dir)/*.c))) \
                    $(foreach dir, $(KERNEL_DIRS), \
                        $(patsubst %.S, $(OBJ)/%_asm.o, $(wildcard $(dir)/*.S)))
 
@@ -58,9 +58,9 @@ dirs:
 	@mkdir -p $(OBJ)
 	@mkdir -p $(OBJ_BOOT)
 
-debug: ASFLAGS += -g
-debug: CCFLAGS += -g
-debug: debug_echo
+debug: export ASFLAGS += -g
+debug: export CCFLAGS += -g
+debug: debug_echo $(filter-out debug, $(MAKECMDGOALS))
 debug_echo:
 	@echo [INFO] Compiling with debugging symbols.
 
