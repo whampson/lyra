@@ -18,23 +18,24 @@
 #-------------------------------------------------------------------------------
 
 #include "boot.h"
-#include <init.h>
+#include <lyra/descriptor.h>
 
 .code16
 .section .stage2, "ax", @progbits
 
 .globl pm_switch
 pm_switch:
+    # Enable Protected Mode
     movl    %cr0, %eax
-    orw     $0x01, %ax  # set "protected mode enable" bit
+    orw     $PE_BIT, %ax
     movl    %eax, %cr0
 
-    # Here we go...!
-    ljmpl   $BOOT_CS, $pm_entry
+    # Reload the CS register... hold on!
+    ljmpl   $KERNEL_CS, $pm_entry
 
 .code32
 pm_entry:
-    movw    $BOOT_DS, %ax
+    movw    $KERNEL_DS, %ax
     movw    %ax, %ds
     movw    %ax, %ss
     movw    %ax, %es
