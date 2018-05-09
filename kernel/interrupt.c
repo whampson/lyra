@@ -20,9 +20,30 @@
 #include <lyra/interrupt.h>
 #include <lyra/exception.h>
 #include <lyra/descriptor.h>
+#include <lyra/kernel.h>
 
-#define PRIVL_KERNEL 0
-#define PRIVL_USER   3
+#define SET_IDT_ENTRY(desc, in_use, privilege, gate_type, func) \
+{                                                               \
+    desc.fields.reserved = 0;                                   \
+    desc.fields.present = in_use;                               \
+    desc.fields.type = gate_type;                               \
+    desc.fields.seg_selector = KERNEL_CS;                       \
+    desc.fields.dpl = privilege;                                \
+    desc.fields.offset_lo = func & 0x0000FFFF;                  \
+    desc.fields.offset_hi = func >> 16;                         \
+}
+
+/* All exception handler stubs. */
+static const intr_handler_stub exception_stubs[NUM_EXCEPT] = {
+    stub_except_de, stub_except_db, stub_except_nmi, stub_except_bp,
+    stub_except_of, stub_except_br, stub_except_ud, stub_except_nm,
+    stub_except_df, NULL,           stub_except_ts, stub_except_np,
+    stub_except_ss, stub_except_gp, stub_except_pf, NULL,
+    stub_except_mf, stub_except_ac, stub_except_mc, stub_except_xf,
+    NULL,           NULL,           NULL,           NULL,
+    NULL,           NULL,           NULL,           NULL,
+    NULL,           NULL,           NULL,           NULL
+};
 
 void idt_init(void)
 {
@@ -31,35 +52,38 @@ void idt_init(void)
     size_t idt_len;
     desc_reg_t idt_ptr;
 
-    idt = (idt_gate_t *) 0x500;
+    int in_use;
+    int privl;
+    int type;
+    intr_handler_stub stub;
+
+    idt = (idt_gate_t *) IDT_BASE;
     idt_len = NUM_VEC * sizeof(idt_gate_t);
 
+    /* Populate IDT entries */
     for (i = 0; i < NUM_VEC; i++) {
-        switch (i) {
-            case EXCEPT_DE:
-                idt[i].fields.dpl = PRIVL_KERNEL;
-                idt[i].fields.present = 1;
-                idt[i].fields.reserved = 0;
-                idt[i].fields.seg_selector = KERNEL_CS;
-                idt[i].fields.type = GATE_TRAP32;
-                // idt[i].fields.offset_lo = ((uint32_t) except_de) & 0x0000FFFF;
-                // idt[i].fields.offset_hi = ((uint32_t) except_de) >> 16;
-                break;
-            case 0x80:
-                idt[i].fields.dpl = 3;
-                idt[i].fields.present = 1;
-                idt[i].fields.reserved = PRIVL_USER;
-                idt[i].fields.seg_selector = KERNEL_CS;
-                idt[i].fields.type = GATE_TRAP32;
-                // idt[i].fields.offset_lo = ((uint32_t) system_call) & 0x0000FFFF;
-                // idt[i].fields.offset_hi = ((uint32_t) system_call) >> 16;
-                break;
-            default:
-                idt[i].value = 0;
-                break;
+        in_use = 0;
+        privl = PRIVL_KERNEL;
+        type = GATE_INTR32;
+        stub = NULL;
+
+        if (i < NUM_EXCEPT) {
+            in_use = 1;
+            privl = PRIVL_KERNEL;
+            type = GATE_TRAP32;
+            stub = exception_stubs[i];
         }
+        else if (i == SYSCALL_VEC) {
+            in_use = 1;
+            privl = PRIVL_USER;
+            type = GATE_TRAP32;
+            stub = stub_syscall;
+        }
+
+        SET_IDT_ENTRY(idt[i], in_use, privl, type, (uint32_t) stub)
     }
 
+    /* Load IDTR */
     idt_ptr.fields.base = (uint32_t) idt;
     idt_ptr.fields.limit = (uint16_t) idt_len;
     idt_ptr.fields.padding = 0;
