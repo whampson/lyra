@@ -20,8 +20,10 @@
 #ifndef __LYRA_INIT_H__
 #define __LYRA_INIT_H__
 
-#define KERNEL_START        0x400000    /* 4 MiB */
+#define KERNEL_ENTRY        kernel_init
+#define KERNEL_START        0x100000    /* 1 MiB */
 #define KERNEL_STACK_BASE   0x800000    /* 8 MiB */
-#define ENTRY_POINT         kernel_init
+#define GDT_BASE            0x0500
+#define IDT_BASE            0x0600
 
 #endif /* __LYRA_INIT_H__ */
