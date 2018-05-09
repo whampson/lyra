@@ -16,9 +16,9 @@
  * Desc: Memory initialization and memory structure definitions.
  *----------------------------------------------------------------------------*/
 
-#include <kernel.h>
-#include <memory.h>
 #include <types.h>
+#include <lyra/kernel.h>
+#include <lyra/memory.h>
 
 /* Page directory base address */
 #define PD_BASE     0x100000    /* 1 MiB */
