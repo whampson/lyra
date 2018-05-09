@@ -17,7 +17,7 @@
  *       Run through scripts/gen-lds.sh to resolve preprocessor directives.
  *----------------------------------------------------------------------------*/
 
-#include <init.h>
+#include <lyra/init.h>
 
 OUTPUT_FORMAT("elf32-i386")
 OUTPUT_ARCH(i386)
@@ -27,7 +27,7 @@ SECTIONS
 {
     .text KERNEL_START :
     {
-        LONG(ENTRY_POINT);
+        LONG(KERNEL_ENTRY);
         __TEXT_START = .;
         *(.text)
         __TEXT_END = .;
