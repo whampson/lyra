@@ -13,13 +13,17 @@
 
 /*-----------------------------------------------------------------------------
  * File: interrupt.c
- * Desc: IDT initialization.
+ * Desc: IDT initialization and general interrupt-related functions.
  *----------------------------------------------------------------------------*/
 
 #include <lyra/kernel.h>
 #include <lyra/interrupt.h>
 #include <lyra/exception.h>
 #include <lyra/descriptor.h>
+#include <lyra/io.h>
+
+#define PORT_CMOS       0x70
+#define NMI_DISABLE_BIT 0x80
 
 #define SET_IDT_ENTRY(desc, in_use, privilege, gate_type, func) \
 {                                                               \
@@ -56,6 +60,8 @@ void idt_init(void)
     int type;
     intr_handler_stub stub;
 
+    puts("Initializing IDT...");
+
     idt = (idt_gate_t *) IDT_BASE;
     idt_len = NUM_VEC * sizeof(idt_gate_t);
 
@@ -87,4 +93,31 @@ void idt_init(void)
     idt_ptr.fields.limit = (uint16_t) idt_len;
     idt_ptr.fields.padding = 0;
     lidt(idt_ptr);
+
+    puts(" done.\n");
+}
+
+void nmi_enable(void)
+{
+    uint8_t data;
+
+    data = inb(PORT_CMOS);
+    data &= ~NMI_DISABLE_BIT;
+    outb(data, PORT_CMOS);
+}
+
+void nmi_disable(void)
+{
+    uint8_t data;
+
+    data = inb(PORT_CMOS);
+    data |= NMI_DISABLE_BIT;
+    outb(data, PORT_CMOS);
+}
+
+int get_nmi_status(void)
+{
+    uint8_t data;
+    data = inb(PORT_CMOS);
+    return (~data >> 7) & 0x01;
 }
