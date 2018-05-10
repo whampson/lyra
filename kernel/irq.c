@@ -17,6 +17,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <stdint.h>
+#include <stdio.h>
+#include <lyra/interrupt.h>
 #include <lyra/irq.h>
 #include <lyra/io.h>
 
@@ -24,6 +26,46 @@
 #define PIC0_DATA   0x21
 #define PIC1_CMD    0xA0
 #define PIC1_DATA   0xA1
+
+static void handle_keyboard(void);
+static void eoi(int irq_num);
+
+__attribute__((fastcall))
+void do_irq(struct interrupt_frame *regs)
+{
+    int irq_num = ~(regs->vec_num);
+
+    switch (irq_num) {
+        case IRQ_KEYBOARD:
+            handle_keyboard();
+            eoi(irq_num);
+            break;
+        default:
+            puts("Unknown IRQ!\n");
+            break;
+    }
+}
+
+static void handle_keyboard(void)
+{
+    puts("Key pressed!\n");
+}
+
+#define EOI 0x60
+
+static void eoi(int irq_num)
+{
+    uint16_t port;
+    uint8_t data;
+
+    if (irq_num < 8) {
+        outb(EOI | irq_num, PIC0_CMD);
+    }
+    else {
+        outb(EOI | (irq_num & 0x07), PIC1_CMD);
+        outb(EOI | 0x02, PIC0_CMD);
+    }
+}
 
 void irq_enable(int irq_num)
 {
