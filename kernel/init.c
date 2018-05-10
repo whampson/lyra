@@ -19,6 +19,8 @@
 #include <lyra/kernel.h>
 #include <lyra/descriptor.h>
 #include <lyra/interrupt.h>
+#include <lyra/irq.h>
+#include <lyra/io.h>
 #include <lyra/memory.h>
 
 /* The TSS. */
@@ -30,6 +32,7 @@ static seg_desc_t ldt[2];
 
 static void ldt_init(void);
 static void tss_init(void);
+static void i8259_init(void);
 
 /**
  * "Fire 'er up, man!"
@@ -42,21 +45,14 @@ void kernel_init(void)
     tss_init();
     idt_init();
 
-    int status;
-    status = get_nmi_status();
-    if (status) {
-        puts("NMIs already enabled!\n");
-    }
-    else {
-        nmi_enable();
-        status = get_nmi_status();
-        if (!status) {
-            puts("Could not enable NMIs! :(\n");
-        }
-        else {
-            puts("NMIs successfully enabled!\n");
-        }
-    }
+    puts("Initializing PIC...\n");
+    i8259_init();
+    irq_enable(IRQ_KEYBOARD);
+
+    puts("Enabling interrupts...\n");
+    sti();
+
+    //__asm__ volatile ("int $0x21" : : : "memory");
 
     /* TODO:
         init paging
@@ -64,6 +60,57 @@ void kernel_init(void)
     */
 
    puts("Halting system...");
+}
+
+#define ICW1        0x11
+#define ICW2_MASTER 0x20
+#define ICW2_SLAVE  0x28
+#define ICW3_MASTER 0x04
+#define ICW3_SLAVE  0x02
+#define ICW4        0x01
+
+#define PIC0_CMD    0x20
+#define PIC0_DATA   0x21
+#define PIC1_CMD    0xA0
+#define PIC1_DATA   0xA1
+
+static void io_delay(void)
+{
+    volatile short i;
+
+    i = 0x0FFF;
+    while (--i > 0);
+}
+
+static void i8259_init(void)
+{
+    uint8_t mask0, mask1;
+
+    mask0 = inb(PIC0_DATA);
+    mask1 = inb(PIC1_DATA);
+
+    outb(PIC0_CMD, ICW1);
+    io_delay();
+    outb(PIC0_DATA, ICW2_MASTER);
+    io_delay();
+    outb(PIC0_DATA, ICW3_MASTER);
+    io_delay();
+    outb(PIC0_DATA, ICW4);
+    io_delay();
+
+    outb(PIC1_CMD, ICW1);
+    io_delay();
+    outb(PIC1_DATA, ICW2_SLAVE);
+    io_delay();
+    outb(PIC1_DATA, ICW3_SLAVE);
+    io_delay();
+    outb(PIC1_DATA, ICW4);
+    io_delay();
+
+    outb(PIC0_DATA, mask0);
+    outb(PIC1_DATA, mask1);
+
+    irq_enable(0x02);
 }
 
 static void ldt_init(void)
