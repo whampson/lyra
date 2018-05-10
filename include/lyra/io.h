@@ -19,8 +19,23 @@
 #ifndef __LYRA_IO_H__
 #define __LYRA_IO_H__
 
+/* BIOS POST code port.
+   Reading/writing to this port incurs about a 1us delay, according to various
+   sources I've found online.
+   We don't really care about BIOS POST codes, to writing to this port for the
+   purpose of adding a small delay should pose no harm.
+*/
+#define IO_DELAY_PORT   0x80
+
+#ifndef __ASM__
 #include <stdint.h>
 
+/**
+ * Read a byte from an I/O port.
+ *
+ * @param port - the port to read from
+ * @return the byte read
+ */
 static inline uint8_t inb(uint16_t port)
 {
     uint8_t data;
@@ -33,6 +48,35 @@ static inline uint8_t inb(uint16_t port)
     return data;
 }
 
+/**
+ * Read a byte from an I/O port, but pause for a short time before reading.
+ *
+ * @param port - the port to read from
+ * @return the byte read
+ */
+static inline uint8_t inb_p(uint16_t port)
+{
+    uint8_t data;
+    __asm__ volatile (
+        "                   \n\
+        xorb    %%al, %%al  \n\
+        outb    %%al, %w2   \n\
+        inb     %w1, %b0    \n\
+        "
+        : "=a"(data)
+        : "d"(port), "n"(IO_DELAY_PORT)
+        : "memory", "cc"
+    );
+    return data;
+}
+
+
+/**
+ * Write a byte to an I/O port.
+ *
+ * @param data - the byte to write
+ * @param port - the port to write to
+ */
 static inline void outb(uint8_t data, uint16_t port)
 {
     __asm__ volatile (
@@ -42,5 +86,27 @@ static inline void outb(uint8_t data, uint16_t port)
         : "memory", "cc"
     );
 }
+
+/**
+ * Write a byte to an I/O port, but pause for a short time after writing.
+ *
+ * @param data - the byte to write
+ * @param port - the port to write to
+ */
+static inline void outb_p(uint8_t data, uint16_t port)
+{
+    __asm__ volatile (
+        "                   \n\
+        outb    %b0, %w1    \n\
+        xorb    %%al, %%al  \n\
+        outb    %%al, %w2   \n\
+        "
+        :
+        : "a"(data), "d"(port), "n"(IO_DELAY_PORT)
+        : "memory", "cc"
+    );
+}
+
+#endif /* __ASM__ */
 
 #endif /* __LYRA_IO_H__ */
