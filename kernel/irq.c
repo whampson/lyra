@@ -28,12 +28,12 @@
 #define PIC1_DATA   0xA1
 
 static void handle_keyboard(void);
-static void eoi(int irq_num);
+static int eoi(unsigned int irq_num);
 
 __attribute__((fastcall))
 void do_irq(struct interrupt_frame *regs)
 {
-    int irq_num = ~(regs->vec_num);
+    unsigned int irq_num = ~(regs->vec_num);
 
     switch (irq_num) {
         case IRQ_KEYBOARD:
@@ -49,28 +49,38 @@ void do_irq(struct interrupt_frame *regs)
 static void handle_keyboard(void)
 {
     puts("Key pressed!\n");
+    (void)inb(0x60);
 }
 
 #define EOI 0x60
 
-static void eoi(int irq_num)
+static int eoi(unsigned int irq_num)
 {
-    uint16_t port;
-    uint8_t data;
+    if (irq_num >= NUM_IRQ) {
+        return -1;
+    }
 
     if (irq_num < 8) {
+        /* Send EOI to master only */
         outb(EOI | irq_num, PIC0_CMD);
     }
     else {
+        /* Send EOI to slave then master */
         outb(EOI | (irq_num & 0x07), PIC1_CMD);
         outb(EOI | 0x02, PIC0_CMD);
     }
+
+    return 0;
 }
 
-void irq_enable(int irq_num)
+int irq_enable(int irq_num)
 {
     uint16_t port;
     uint8_t data;
+
+    if (irq_num >= NUM_IRQ) {
+        return -1;
+    }
 
     if (irq_num < 8) {
         port = PIC0_DATA;
@@ -81,12 +91,18 @@ void irq_enable(int irq_num)
 
     data = inb(port) & ~(1 << (irq_num & 0x07));
     outb(data, port);
+
+    return 0;
 }
 
-void irq_disable(int irq_num)
+int irq_disable(int irq_num)
 {
     uint16_t port;
     uint8_t data;
+
+    if (irq_num >= NUM_IRQ) {
+        return -1;
+    }
 
     if (irq_num < 8) {
         port = PIC0_DATA;
@@ -97,4 +113,6 @@ void irq_disable(int irq_num)
 
     data = inb(port) | (1 << (irq_num & 0x07));
     outb(data, port);
+
+    return 0;
 }
