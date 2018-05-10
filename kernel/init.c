@@ -74,14 +74,6 @@ void kernel_init(void)
 #define PIC1_CMD    0xA0
 #define PIC1_DATA   0xA1
 
-static void io_delay(void)
-{
-    volatile short i;
-
-    i = 0x0FFF;
-    while (--i > 0);
-}
-
 static void i8259_init(void)
 {
     uint8_t mask0, mask1;
@@ -89,23 +81,15 @@ static void i8259_init(void)
     mask0 = inb(PIC0_DATA);
     mask1 = inb(PIC1_DATA);
 
-    outb(ICW1, PIC0_CMD);
-    io_delay();
-    outb(ICW2_MASTER, PIC0_DATA);
-    io_delay();
-    outb(ICW3_MASTER, PIC0_DATA);
-    io_delay();
-    outb(ICW4, PIC0_DATA);
-    io_delay();
+    outb_p(ICW1, PIC0_CMD);
+    outb_p(ICW2_MASTER, PIC0_DATA);
+    outb_p(ICW3_MASTER, PIC0_DATA);
+    outb_p(ICW4, PIC0_DATA);
 
-    outb(ICW1, PIC1_CMD);
-    io_delay();
-    outb(ICW2_SLAVE, PIC1_DATA);
-    io_delay();
-    outb(ICW3_SLAVE, PIC1_DATA);
-    io_delay();
-    outb(ICW4, PIC1_DATA);
-    io_delay();
+    outb_p(ICW1, PIC1_CMD);
+    outb_p(ICW2_SLAVE, PIC1_DATA);
+    outb_p(ICW3_SLAVE, PIC1_DATA);
+    outb_p(ICW4, PIC1_DATA);
 
     outb(mask0, PIC0_DATA);
     outb(mask1, PIC1_DATA);
