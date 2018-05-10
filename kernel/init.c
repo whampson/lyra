@@ -59,7 +59,7 @@ void kernel_init(void)
         create __simple__ terminal driver
     */
 
-   puts("Halting system...");
+   //puts("Halting system...");
 }
 
 #define ICW1        0x11
@@ -89,26 +89,26 @@ static void i8259_init(void)
     mask0 = inb(PIC0_DATA);
     mask1 = inb(PIC1_DATA);
 
-    outb(PIC0_CMD, ICW1);
+    outb(ICW1, PIC0_CMD);
     io_delay();
-    outb(PIC0_DATA, ICW2_MASTER);
+    outb(ICW2_MASTER, PIC0_DATA);
     io_delay();
-    outb(PIC0_DATA, ICW3_MASTER);
+    outb(ICW3_MASTER, PIC0_DATA);
     io_delay();
-    outb(PIC0_DATA, ICW4);
-    io_delay();
-
-    outb(PIC1_CMD, ICW1);
-    io_delay();
-    outb(PIC1_DATA, ICW2_SLAVE);
-    io_delay();
-    outb(PIC1_DATA, ICW3_SLAVE);
-    io_delay();
-    outb(PIC1_DATA, ICW4);
+    outb(ICW4, PIC0_DATA);
     io_delay();
 
-    outb(PIC0_DATA, mask0);
-    outb(PIC1_DATA, mask1);
+    outb(ICW1, PIC1_CMD);
+    io_delay();
+    outb(ICW2_SLAVE, PIC1_DATA);
+    io_delay();
+    outb(ICW3_SLAVE, PIC1_DATA);
+    io_delay();
+    outb(ICW4, PIC1_DATA);
+    io_delay();
+
+    outb(mask0, PIC0_DATA);
+    outb(mask1, PIC1_DATA);
 
     irq_enable(0x02);
 }
