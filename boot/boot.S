@@ -63,15 +63,9 @@ go_to_pm:
     jmp     pm_switch
 
 kill_interrupts:
-    # Mask PIC interrupts
     movb    $0xFF, %al          # mask all IRQs
     outb    %al, $0xA1          # send mask to slave PIC
     outb    %al, $0x21          # send mask to master PIC
-
-    # Disable non-maskable interrupts
-    inb     $0x70, %al          # read CMOS register
-    orb     $0x80, %al          # set NMI disable bit
-    outb    %al, $0x70          # write CMOS register
     ret
 
 boot_err:
