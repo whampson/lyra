@@ -79,11 +79,7 @@ interrupt_exception:
     jmp     interrupt_return
 
 interrupt_device_irq:
-    #call    do_irq
-    leal    s_irq, %ebx
-    pushl   %ebx
-    call    puts
-    addl    $4, %esp
+    call    do_irq
     jmp     interrupt_return
 
 interrupt_syscall:
