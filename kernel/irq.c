@@ -73,7 +73,7 @@ static int eoi(unsigned int irq_num)
     return 0;
 }
 
-int irq_enable(int irq_num)
+int irq_enable(unsigned int irq_num)
 {
     uint16_t port;
     uint8_t data;
@@ -95,7 +95,7 @@ int irq_enable(int irq_num)
     return 0;
 }
 
-int irq_disable(int irq_num)
+int irq_disable(unsigned int irq_num)
 {
     uint16_t port;
     uint8_t data;
