@@ -87,8 +87,28 @@ struct interrupt_frame {
     uint32_t ss;    /* ...interrupt causes privilege level change. */
 };
 
-/* Sets up and loads the IDT. */
+/***
+ * Sets up and loads the IDT.
+ */
 void idt_init(void);
+
+/**
+ * Enables non-maskable interrupts.
+ */
+void nmi_enable(void);
+
+/**
+ * Disables non-maskable interrupts.
+ */
+void nmi_disable(void);
+
+/**
+ * Gets a value indicating whether non-maskable interrupts are enabled.
+ *
+ * @return 1 if NMIs are enabled,
+ *         0 if NMIs are disabled
+ */
+int get_nmi_status(void);
 
 #endif /* __ASM __ */
 
