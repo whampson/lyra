@@ -33,6 +33,7 @@
 
 #include <lyra/interrupt.h>
 #include <lyra/exception.h>
+#include <lyra/irq.h>
 
 /* 'struct proc_ctx' field offsets and size. */
 #define PROC_CTX_EDI        0
@@ -167,7 +168,22 @@ GEN_EXCEPT_STUB(stub_except_mc, EXCEPT_MC)
 GEN_EXCEPT_STUB(stub_except_xf, EXCEPT_XF)
 
 /* Device IRQ stubs */
-GEN_IRQ_STUB(stub_irq_00, 0x00)
+GEN_IRQ_STUB(stub_irq_00, IRQ_TIMER)
+GEN_IRQ_STUB(stub_irq_01, IRQ_KEYBOARD)
+GEN_IRQ_STUB(stub_irq_02, 0x02)
+GEN_IRQ_STUB(stub_irq_03, 0x03)
+GEN_IRQ_STUB(stub_irq_04, 0x04)
+GEN_IRQ_STUB(stub_irq_05, 0x05)
+GEN_IRQ_STUB(stub_irq_06, 0x06)
+GEN_IRQ_STUB(stub_irq_07, 0x07)
+GEN_IRQ_STUB(stub_irq_08, IRQ_RTC)
+GEN_IRQ_STUB(stub_irq_09, 0x09)
+GEN_IRQ_STUB(stub_irq_10, 0x0A)
+GEN_IRQ_STUB(stub_irq_11, 0x0B)
+GEN_IRQ_STUB(stub_irq_12, 0x0C)
+GEN_IRQ_STUB(stub_irq_13, 0x0D)
+GEN_IRQ_STUB(stub_irq_14, 0x0E)
+GEN_IRQ_STUB(stub_irq_15, 0x0F)
 
 /* System call stub */
 GEN_SYSCALL_STUB(stub_syscall)
