@@ -42,6 +42,22 @@ void kernel_init(void)
     tss_init();
     idt_init();
 
+    int status;
+    status = get_nmi_status();
+    if (status) {
+        puts("NMIs already enabled!\n");
+    }
+    else {
+        nmi_enable();
+        status = get_nmi_status();
+        if (!status) {
+            puts("Could not enable NMIs! :(\n");
+        }
+        else {
+            puts("NMIs successfully enabled!\n");
+        }
+    }
+
     /* TODO:
         init paging
         create __simple__ terminal driver
@@ -59,7 +75,7 @@ static void ldt_init(void)
     int ldt_desc_idx;
     size_t i;
 
-    puts("Initializing the LDT...");
+    puts("Initializing LDT...");
 
     ldt_base = (uint32_t) ldt;
     ldt_size = sizeof(ldt);
@@ -89,7 +105,7 @@ static void tss_init(void)
     size_t tss_size;
     int tss_desc_idx;
 
-    puts("Initializing the TSS...");
+    puts("Initializing TSS...");
 
     /* Get TSS descriptor from GDT */
     gdt = (seg_desc_t *) GDT_BASE;
