@@ -30,6 +30,9 @@
 
 #ifndef __ASM__
 
+__attribute__((fastcall))
+void do_irq(struct interrupt_frame *regs);
+
 void irq_enable(int irq_num);
 void irq_disable(int irq_num);
 
