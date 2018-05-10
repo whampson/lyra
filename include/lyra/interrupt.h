@@ -54,6 +54,22 @@ GEN_STUB_PROTOTYPE(stub_except_mf)
 GEN_STUB_PROTOTYPE(stub_except_ac)
 GEN_STUB_PROTOTYPE(stub_except_mc)
 GEN_STUB_PROTOTYPE(stub_except_xf)
+GEN_STUB_PROTOTYPE(stub_irq_00)
+GEN_STUB_PROTOTYPE(stub_irq_01)
+GEN_STUB_PROTOTYPE(stub_irq_02)
+GEN_STUB_PROTOTYPE(stub_irq_03)
+GEN_STUB_PROTOTYPE(stub_irq_04)
+GEN_STUB_PROTOTYPE(stub_irq_05)
+GEN_STUB_PROTOTYPE(stub_irq_06)
+GEN_STUB_PROTOTYPE(stub_irq_07)
+GEN_STUB_PROTOTYPE(stub_irq_08)
+GEN_STUB_PROTOTYPE(stub_irq_09)
+GEN_STUB_PROTOTYPE(stub_irq_10)
+GEN_STUB_PROTOTYPE(stub_irq_11)
+GEN_STUB_PROTOTYPE(stub_irq_12)
+GEN_STUB_PROTOTYPE(stub_irq_13)
+GEN_STUB_PROTOTYPE(stub_irq_14)
+GEN_STUB_PROTOTYPE(stub_irq_15)
 GEN_STUB_PROTOTYPE(stub_syscall)
 
 /* Structure for storing registers during an interrupt or system call. */
@@ -91,24 +107,6 @@ struct interrupt_frame {
  * Sets up and loads the IDT.
  */
 void idt_init(void);
-
-/**
- * Enables non-maskable interrupts.
- */
-void nmi_enable(void);
-
-/**
- * Disables non-maskable interrupts.
- */
-void nmi_disable(void);
-
-/**
- * Gets a value indicating whether non-maskable interrupts are enabled.
- *
- * @return 1 if NMIs are enabled,
- *         0 if NMIs are disabled
- */
-int get_nmi_status(void);
 
 #endif /* __ASM __ */
 

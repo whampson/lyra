@@ -19,11 +19,9 @@
 #include <lyra/kernel.h>
 #include <lyra/interrupt.h>
 #include <lyra/exception.h>
+#include <lyra/irq.h>
 #include <lyra/descriptor.h>
 #include <lyra/io.h>
-
-#define PORT_CMOS       0x70
-#define NMI_DISABLE_BIT 0x80
 
 #define SET_IDT_ENTRY(desc, in_use, privilege, gate_type, func) \
 {                                                               \
@@ -46,6 +44,13 @@ static const intr_handler_stub exception_stubs[NUM_EXCEPT] = {
     NULL,           NULL,           NULL,           NULL,
     NULL,           NULL,           NULL,           NULL,
     NULL,           NULL,           NULL,           NULL
+};
+
+static const intr_handler_stub irq_stubs[NUM_IRQ] = {
+    stub_irq_00,    stub_irq_01,    stub_irq_02,    stub_irq_03,
+    stub_irq_04,    stub_irq_05,    stub_irq_06,    stub_irq_07,
+    stub_irq_08,    stub_irq_09,    stub_irq_10,    stub_irq_11,
+    stub_irq_12,    stub_irq_13,    stub_irq_14,    stub_irq_15
 };
 
 void idt_init(void)
@@ -73,16 +78,22 @@ void idt_init(void)
         stub = NULL;
 
         if (i < NUM_EXCEPT) {
-            in_use = 1;
             privl = PRIVL_KERNEL;
             type = GATE_TRAP32;
             stub = exception_stubs[i];
+            in_use = (stub != NULL);
+        }
+        else if (i >= IRQ_BASE_VEC && i < IRQ_BASE_VEC + NUM_IRQ) {
+            privl = PRIVL_KERNEL;
+            type = GATE_INTR32;
+            stub = irq_stubs[i - IRQ_BASE_VEC];
+            in_use = (stub != NULL);
         }
         else if (i == SYSCALL_VEC) {
-            in_use = 1;
             privl = PRIVL_USER;
             type = GATE_TRAP32;
             stub = stub_syscall;
+            in_use = 1;
         }
 
         SET_IDT_ENTRY(idt[i], in_use, privl, type, (uint32_t) stub)
@@ -95,29 +106,4 @@ void idt_init(void)
     lidt(idt_ptr);
 
     puts(" done.\n");
-}
-
-void nmi_enable(void)
-{
-    uint8_t data;
-
-    data = inb(PORT_CMOS);
-    data &= ~NMI_DISABLE_BIT;
-    outb(data, PORT_CMOS);
-}
-
-void nmi_disable(void)
-{
-    uint8_t data;
-
-    data = inb(PORT_CMOS);
-    data |= NMI_DISABLE_BIT;
-    outb(data, PORT_CMOS);
-}
-
-int get_nmi_status(void)
-{
-    uint8_t data;
-    data = inb(PORT_CMOS);
-    return (~data >> 7) & 0x01;
 }
