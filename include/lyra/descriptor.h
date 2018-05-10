@@ -157,27 +157,6 @@ struct tss_struct {
 };
 
 /**
- * Load the Global Descriptor Table Register.
- *
- * @param desc - a desc_reg_t structure
- */
-#define lgdt(desc)          \
-__asm__ volatile (          \
-    "lgdt %0"               \
-    :                       \
-    : "g"(desc)             \
-    : "memory", "cc"        \
-);
-
-#define sgdt(desc)          \
-__asm__ volatile (          \
-    "sgdt %0"               \
-    : "=g"(desc)            \
-    :                       \
-    : "memory", "cc"        \
-);
-
-/**
  * Load the Interrupt Descriptor Table Register.
  *
  * @param desc - a desc_reg_t structure
