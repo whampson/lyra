@@ -33,8 +33,8 @@
 __attribute__((fastcall))
 void do_irq(struct interrupt_frame *regs);
 
-void irq_enable(int irq_num);
-void irq_disable(int irq_num);
+int irq_enable(unsigned int irq_num);
+int irq_disable(unsigned int irq_num);
 
 #endif /* __ASM__ */
 
