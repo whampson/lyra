@@ -32,7 +32,6 @@ static seg_desc_t ldt[2];
 
 static void ldt_init(void);
 static void tss_init(void);
-static void i8259_init(void);
 
 /**
  * "Fire 'er up, man!"
@@ -45,14 +44,13 @@ void kernel_init(void)
     tss_init();
     idt_init();
 
-    puts("Initializing PIC...\n");
-    i8259_init();
+    puts("Initializing IRQs...\n");
+    irq_init();
     irq_enable(IRQ_KEYBOARD);
 
     puts("Enabling interrupts...\n");
     sti();
 
-    //__asm__ volatile ("int $0x21" : : : "memory");
 
     /* TODO:
         init paging
@@ -62,40 +60,7 @@ void kernel_init(void)
    //puts("Halting system...");
 }
 
-#define ICW1        0x11
-#define ICW2_MASTER 0x20
-#define ICW2_SLAVE  0x28
-#define ICW3_MASTER 0x04
-#define ICW3_SLAVE  0x02
-#define ICW4        0x01
 
-#define PIC0_CMD    0x20
-#define PIC0_DATA   0x21
-#define PIC1_CMD    0xA0
-#define PIC1_DATA   0xA1
-
-static void i8259_init(void)
-{
-    uint8_t mask0, mask1;
-
-    mask0 = inb(PIC0_DATA);
-    mask1 = inb(PIC1_DATA);
-
-    outb_p(ICW1, PIC0_CMD);
-    outb_p(ICW2_MASTER, PIC0_DATA);
-    outb_p(ICW3_MASTER, PIC0_DATA);
-    outb_p(ICW4, PIC0_DATA);
-
-    outb_p(ICW1, PIC1_CMD);
-    outb_p(ICW2_SLAVE, PIC1_DATA);
-    outb_p(ICW3_SLAVE, PIC1_DATA);
-    outb_p(ICW4, PIC1_DATA);
-
-    outb(mask0, PIC0_DATA);
-    outb(mask1, PIC1_DATA);
-
-    irq_enable(0x02);
-}
 
 static void ldt_init(void)
 {
