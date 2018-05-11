@@ -36,17 +36,26 @@ export LDFLAGS  :=
 export MAKEFLAGS:= --no-print-directory
 
 BOOT            := boot
+DRIVERS			:= drivers
 KERNEL          := kernel
 MEM             := mem
-KERNEL_DIRS     := $(KERNEL) $(MEM)
-KERNEL_OBJS     := $(foreach dir, $(KERNEL_DIRS), \
-                       $(patsubst %.c, $(OBJ)/%.o, $(wildcard $(dir)/*.c))) \
-                   $(foreach dir, $(KERNEL_DIRS), \
-                       $(patsubst %.S, $(OBJ)/%_asm.o, $(wildcard $(dir)/*.S)))
+KERNEL_DIRS     := $(DRIVERS) $(KERNEL) $(MEM)
+KERNEL_OBJS     := $(foreach dir, $(KERNEL_DIRS),                       \
+                       $(patsubst %.c, $(OBJ)/%.o,                      \
+                           $(shell find $(dir) -iname '*.c' -type f)))  \
+                    $(foreach dir, $(KERNEL_DIRS),                      \
+                       $(patsubst %.S, $(OBJ)/%_asm.o,                  \
+                           $(shell find $(dir) -iname '*.S' -type f)))
 
 BOOTIMG         := $(BIN)/boot.bin
 KERNELIMG       := $(BIN)/kernel.bin
 OSIMG           := $(BIN)/lyra.img
+
+# Call makefile form subdirectory
+define submake
+	@$(MAKE) $(MAKEFLAGS) -C $1
+
+endef
 
 all: img
 
@@ -65,11 +74,10 @@ debug_echo:
 	@echo [INFO] Compiling with debugging symbols.
 
 boot: dirs
-	@$(MAKE) $(MAKEFLAGS) -C $(BOOT)
+	$(call submake, $(BOOT))
 
 kernel: dirs
-	@$(MAKE) $(MAKEFLAGS) -C $(KERNEL)
-	@$(MAKE) $(MAKEFLAGS) -C $(MEM)
+	$(foreach dir, $(KERNEL_DIRS), $(call submake, $(dir)))
 	@$(SCRIPTS)/gen-lds.sh kernel.ld kernel.ld.gen -I$(INCLUDE)
 	@echo LD $(patsubst $(OBJ)/%, %, $(KERNEL_OBJS))
 	@$(LD) $(LDFLAGS) -T kernel.ld.gen -o $(BIN)/kernel.elf $(KERNEL_OBJS)
