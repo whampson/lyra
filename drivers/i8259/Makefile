@@ -38,4 +38,4 @@ $(OBJ)/%_asm.o: %.S
 
 $(OBJ)/%.o: %.c
 	@echo CC $(TREE)/$<
-	@$(CC) $(CCFLAGS) -I$(INCLUDE) -c -o $@ $<
+	@$(CC) $(CFLAGS) -I$(INCLUDE) -c -o $@ $<
