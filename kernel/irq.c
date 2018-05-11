@@ -18,17 +18,39 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <drivers/i8259.h>
 #include <lyra/interrupt.h>
 #include <lyra/irq.h>
 #include <lyra/io.h>
 
-#define PIC0_CMD    0x20
-#define PIC0_DATA   0x21
-#define PIC1_CMD    0xA0
-#define PIC1_DATA   0xA1
-
 static void handle_keyboard(void);
 static int eoi(unsigned int irq_num);
+
+void irq_init(void)
+{
+    i8259_init();
+    irq_enable(0x02);
+}
+
+int irq_enable(unsigned int irq_num)
+{
+    if (irq_num >= NUM_IRQ) {
+        return -1;
+    }
+
+    i8259_unmask(irq_num);
+    return 0;
+}
+
+int irq_disable(unsigned int irq_num)
+{
+    if (irq_num >= NUM_IRQ) {
+        return -1;
+    }
+
+    i8259_mask(irq_num);
+    return 0;
+}
 
 __attribute__((fastcall))
 void do_irq(struct interrupt_frame *regs)
@@ -46,73 +68,18 @@ void do_irq(struct interrupt_frame *regs)
     }
 }
 
-static void handle_keyboard(void)
-{
-    puts("Key pressed!\n");
-    (void)inb(0x60);
-}
-
-#define EOI 0x60
-
 static int eoi(unsigned int irq_num)
 {
     if (irq_num >= NUM_IRQ) {
         return -1;
     }
 
-    if (irq_num < 8) {
-        /* Send EOI to master only */
-        outb(EOI | irq_num, PIC0_CMD);
-    }
-    else {
-        /* Send EOI to slave then master */
-        outb(EOI | (irq_num & 0x07), PIC1_CMD);
-        outb(EOI | 0x02, PIC0_CMD);
-    }
-
+    i8259_eoi(irq_num);
     return 0;
 }
 
-int irq_enable(unsigned int irq_num)
+static void handle_keyboard(void)
 {
-    uint16_t port;
-    uint8_t data;
-
-    if (irq_num >= NUM_IRQ) {
-        return -1;
-    }
-
-    if (irq_num < 8) {
-        port = PIC0_DATA;
-    }
-    else {
-        port = PIC1_DATA;
-    }
-
-    data = inb(port) & ~(1 << (irq_num & 0x07));
-    outb(data, port);
-
-    return 0;
-}
-
-int irq_disable(unsigned int irq_num)
-{
-    uint16_t port;
-    uint8_t data;
-
-    if (irq_num >= NUM_IRQ) {
-        return -1;
-    }
-
-    if (irq_num < 8) {
-        port = PIC0_DATA;
-    }
-    else {
-        port = PIC1_DATA;
-    }
-
-    data = inb(port) | (1 << (irq_num & 0x07));
-    outb(data, port);
-
-    return 0;
+    puts("Key pressed!\n");
+    (void)inb(0x60);
 }
