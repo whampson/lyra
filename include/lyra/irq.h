@@ -13,15 +13,20 @@
 
 /*-----------------------------------------------------------------------------
  * File: irq.h
- * Desc:
+ * Desc: Macros and function prototyes for handling device interrupt requests.
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_IRQ_H__
 #define __LYRA_IRQ_H__
 
-#define NUM_IRQ         16
+#include <drivers/i8259.h>
 
+/* The IDT vector of IRQ0. */
 #define IRQ_BASE_VEC    0x20
+
+/* The total number of IRQs.
+   We have 2 PICs (master & slave). */
+#define NUM_IRQ         (PIC_NUM_IRQ * 2)
 
 /* IRQ numbers for devices connected to the Intel 8259 PICs. */
 #define IRQ_TIMER       0
@@ -30,11 +35,38 @@
 
 #ifndef __ASM__
 
+/**
+ * Initialize device interrupts.
+ */
+void irq_init(void);
+
+/**
+ * Enable (unmask) an IRQ line.
+ *
+ * @param irq_num - the IRQ line to enable
+ * @return  0 if the line was successfully enabled
+ *         -1 if the IRQ number is invalid
+ */
+int irq_enable(unsigned int irq_num);
+
+/**
+ * Disable (mask) an IRQ line.
+ *
+ * @param irq_num - the IRQ line to disable
+ * @return  0 if the line was successfully disabled
+ *         -1 if the IRQ number is invalid
+ */
+int irq_disable(unsigned int irq_num);
+
+/**
+ * Generic IRQ handler. All IRQs are routed through this handler before being
+ * dispatched to a device-specific handler.
+ *
+ * @param regs - the interrupt frame which contains the process and CPU context,
+ *               as well as the IRQ number
+ */
 __attribute__((fastcall))
 void do_irq(struct interrupt_frame *regs);
-
-int irq_enable(unsigned int irq_num);
-int irq_disable(unsigned int irq_num);
 
 #endif /* __ASM__ */
 
