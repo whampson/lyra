@@ -48,4 +48,4 @@ $(OBJ_BOOT)/%_asm.o: %.S
 
 $(OBJ_BOOT)/%.o: %.c
 	@echo CC $(TREE)/$<
-	@$(CC) $(CCFLAGS) -I$(INCLUDE) -c -o $@ $<
+	@$(CC) $(CFLAGS) -I$(INCLUDE) -c -o $@ $<

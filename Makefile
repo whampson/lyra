@@ -16,30 +16,47 @@
 # Desc: Lyra OS build script.
 #-------------------------------------------------------------------------------
 
-.PHONY: all img boot kernel debug debug_echo clean remake floppy
+.PHONY: all img boot kernel kernel_build debug debug_echo clean remake floppy
 
-export BIN      := $(PWD)/bin
-export OBJ      := $(PWD)/obj
-export OBJ_BOOT := $(PWD)/obj_boot
-export INCLUDE  := $(PWD)/include
-export SCRIPTS  := $(PWD)/scripts
+GCC_WARNINGS    := -Wall -Wextra -Wpedantic
 
-WARNFLAGS       := -Wall -Wextra -Wpedantic
-
+# Build tools and flags
 export AS       := gcc
-export ASFLAGS  := $(WARNFLAGS) -D__ASM__ -m32
+export ASFLAGS  := $(GCC_WARNINGS) -D__ASM__ -m32
 export CC       := gcc
-export CCFLAGS  := $(WARNFLAGS) -m32 -ffreestanding -fomit-frame-pointer \
+export CFLAGS   := $(GCC_WARNINGS) -m32 -ffreestanding -fomit-frame-pointer \
                    -fno-unwind-tables -fno-asynchronous-unwind-tables
 export LD       := ld
 export LDFLAGS  :=
 export MAKEFLAGS:= --no-print-directory
 
+# Build tools and header directories
+export INCLUDE  := $(PWD)/include
+export SCRIPTS  := $(PWD)/scripts
+
+# Build output directories
+export BIN      := $(PWD)/bin
+export OBJ      := $(PWD)/obj
+export OBJ_BOOT := $(PWD)/obj_boot
+
+# Linker script for kernel
+LDSCRIPT        := kernel.ld
+
+# Output binaries
+BOOTIMG         := $(BIN)/boot.bin
+BOOTELF         := $(BIN)/boot.elf
+KERNELIMG       := $(BIN)/kernel.bin
+KERNELELF       := $(BIN)/kernel.elf
+OSIMG           := $(BIN)/lyra.img
+
+# Code directories
 BOOT            := boot
 DRIVERS			:= drivers
 KERNEL          := kernel
 MEM             := mem
 KERNEL_DIRS     := $(DRIVERS) $(KERNEL) $(MEM)
+
+# Object files for the kernel
 KERNEL_OBJS     := $(foreach dir, $(KERNEL_DIRS),                       \
                        $(patsubst %.c, $(OBJ)/%.o,                      \
                            $(shell find $(dir) -iname '*.c' -type f)))  \
@@ -47,11 +64,7 @@ KERNEL_OBJS     := $(foreach dir, $(KERNEL_DIRS),                       \
                        $(patsubst %.S, $(OBJ)/%_asm.o,                  \
                            $(shell find $(dir) -iname '*.S' -type f)))
 
-BOOTIMG         := $(BIN)/boot.bin
-KERNELIMG       := $(BIN)/kernel.bin
-OSIMG           := $(BIN)/lyra.img
-
-# Call makefile form subdirectory
+# Call Makefile in subdirectory
 define submake
 	@$(MAKE) $(MAKEFLAGS) -C $1
 
@@ -76,12 +89,14 @@ debug_echo:
 boot: dirs
 	$(call submake, $(BOOT))
 
-kernel: dirs
-	$(foreach dir, $(KERNEL_DIRS), $(call submake, $(dir)))
-	@$(SCRIPTS)/gen-lds.sh kernel.ld kernel.ld.gen -I$(INCLUDE)
+kernel: kernel_build
+	@$(SCRIPTS)/gen-lds.sh $(LDSCRIPT) $(LDSCRIPT).gen -I$(INCLUDE)
 	@echo LD $(patsubst $(OBJ)/%, %, $(KERNEL_OBJS))
-	@$(LD) $(LDFLAGS) -T kernel.ld.gen -o $(BIN)/kernel.elf $(KERNEL_OBJS)
-	@objcopy -O binary $(BIN)/kernel.elf $(BIN)/kernel.bin
+	@$(LD) $(LDFLAGS) -T $(LDSCRIPT).gen -o $(KERNELELF) $(KERNEL_OBJS)
+	@objcopy -O binary $(KERNELELF) $(KERNELIMG)
+
+kernel_build: dirs
+	$(foreach dir, $(KERNEL_DIRS), $(call submake, $(dir)))
 
 clean:
 	@rm -rf $(BIN)
@@ -92,5 +107,5 @@ clean:
 remake: clean all
 
 floppy: img
-	@# WARNING: check yer floppies!
+	@echo [WARNING]: Overwriting floppy disk on /dev/fd0!
 	@sudo dd if=$(OSIMG) of=/dev/fd0 bs=512
