@@ -18,6 +18,7 @@
 
 CUR_DIR         := $(notdir $(shell pwd))
 OBJ             := $(OBJ)/$(CUR_DIR)
+TREE            := $(CUR_DIR)
 
 ASM_SOURCES     := $(wildcard *.S)
 C_SOURCES       := $(wildcard *.c)
@@ -42,9 +43,9 @@ $(OBJ_BOOT)/$(LDSCRIPTS_GEN): $(LDSCRIPTS)
 	@$(SCRIPTS)/gen-lds.sh $^ $@ -I$(INCLUDE)
 
 $(OBJ_BOOT)/%_asm.o: %.S
-	@echo AS $(CUR_DIR)/$<
+	@echo AS $(TREE)/$<
 	@$(AS) $(ASFLAGS) -I$(INCLUDE) -c -o $@ $<
 
 $(OBJ_BOOT)/%.o: %.c
-	@echo CC $(CUR_DIR)/$<
+	@echo CC $(TREE)/$<
 	@$(CC) $(CCFLAGS) -I$(INCLUDE) -c -o $@ $<

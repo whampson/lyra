@@ -16,9 +16,9 @@
 # Desc: Lyra kernel build script.
 #-------------------------------------------------------------------------------
 
-# Append current directory to objects dir to avoid naming conflicts
 CUR_DIR         := $(notdir $(shell pwd))
 OBJ             := $(OBJ)/$(CUR_DIR)
+TREE            := $(CUR_DIR)
 
 ASM_SOURCES     := $(wildcard *.S)
 C_SOURCES       := $(wildcard *.c)
@@ -33,9 +33,9 @@ dirs:
 	@mkdir -p $(OBJ)
 
 $(OBJ)/%_asm.o: %.S
-	@echo AS $(CUR_DIR)/$<
+	@echo AS $(TREE)/$<
 	@$(AS) $(ASFLAGS) -I$(INCLUDE) -c -o $@ $<
 
 $(OBJ)/%.o: %.c
-	@echo CC $(CUR_DIR)/$<
+	@echo CC $(TREE)/$<
 	@$(CC) $(CCFLAGS) -I$(INCLUDE) -c -o $@ $<
