@@ -21,6 +21,7 @@
 #include <lyra/interrupt.h>
 #include <lyra/irq.h>
 #include <lyra/io.h>
+#include <lyra/kbd.h>
 #include <lyra/memory.h>
 
 /* The TSS. */
@@ -47,10 +48,10 @@ void kernel_init(void)
     puts("Initializing IRQs...\n");
     irq_init();
     irq_enable(IRQ_KEYBOARD);
+    kbd_init();
 
     puts("Enabling interrupts...\n");
     sti();
-
 
     /* TODO:
         init paging
