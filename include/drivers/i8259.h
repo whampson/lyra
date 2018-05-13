@@ -32,7 +32,8 @@
 
 /**
  * Initialize the Intel 8259 PICs.
- * (TODO: what parameters are used for initialization?)
+ * Initialization parameters:
+ *   Cascade mode, edge-triggered, normal EOI, 8086 mode
  */
 void i8259_init(void);
 

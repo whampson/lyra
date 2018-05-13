@@ -19,6 +19,7 @@
 #ifndef __LYRA_IRQ_H__
 #define __LYRA_IRQ_H__
 
+#include <lyra/interrupt.h>
 #include <drivers/i8259.h>
 
 /* The IDT vector of IRQ0. */
@@ -31,6 +32,7 @@
 /* IRQ numbers for devices connected to the Intel 8259 PICs. */
 #define IRQ_TIMER       0
 #define IRQ_KEYBOARD    1
+#define IRQ_SLAVE_PIC   2
 #define IRQ_RTC         8
 
 #ifndef __ASM__
