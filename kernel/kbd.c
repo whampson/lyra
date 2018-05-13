@@ -46,27 +46,86 @@ void kbd_init(void)
     uint8_t data;
 
     kbd_disable();
-    kbd_set_scancode(1);
+    //kbd_set_scancode(1);
 
-    do {
-        outb_p(CMD_KBD_SC, PORT_KBD);
-    } while ((data = inb(PORT_KBD)) == KBD_RSND);
+    /* Clear translation bit */
+    while (inb(PORT_CTL) & 0x02);
+    outb(CMD_CTL_RDCFG, PORT_CTL); 
+    while (!(inb(PORT_CTL) & 0x01));
+    data = inb(PORT_KBD);
+    data &= ~0x40;
+    while (inb(PORT_CTL) & 0x02);
+    outb(CMD_CTL_WRCFG, PORT_CTL); 
+    while (inb(PORT_CTL) & 0x02);
+    outb(data, PORT_KBD);
 
-    do {
-        outb_p(0, PORT_KBD);
-    } while ((data = inb(PORT_KBD)) == KBD_RSND);
+    /* Read translation bit */
+    while (inb(PORT_CTL) & 0x02);
+    outb(CMD_CTL_RDCFG, PORT_CTL); 
+    while (!(inb(PORT_CTL) & 0x01));
+    data = inb(PORT_KBD);
+    if (data & 0x40) {
+        puts("Translation enabled!\n");
+    }
+    else {
+        puts("Translation disabled!\n");
+    }
 
-    /* Scancode set (hopefully) */
-    data = inb_p(PORT_KBD);
+    /* Set scancode 3 */
+    while (inb(PORT_CTL) & 0x02);
+    outb(CMD_KBD_SC, PORT_KBD);
+    while (!(inb(PORT_CTL) & 0x01));
+    data = inb(PORT_KBD);
+    if (data != KBD_ACK) {
+        puts("Error: ACK not received!\n");
+    }
+
+    while (inb(PORT_CTL) & 0x02);
+    outb(3, PORT_KBD);
+    while (!(inb(PORT_CTL) & 0x01));
+    data = inb(PORT_KBD);
+    if (data != KBD_ACK) {
+        puts("Error: ACK not received!\n");
+    }
+
+    /* Set all keys to make/break */
+    while (inb(PORT_CTL) & 0x02);
+    outb(0xFA, PORT_KBD);
+    while (!(inb(PORT_CTL) & 0x01));
+    data = inb(PORT_KBD);
+    if (data != KBD_ACK) {
+        puts("Error: ACK not received!\n");
+    }
+   
+   
+    /* Read scancode number */
+    while (inb(PORT_CTL) & 0x02);
+    outb(CMD_KBD_SC, PORT_KBD);
+    while (!(inb(PORT_CTL) & 0x01));
+    data = inb(PORT_KBD);
+    if (data != KBD_ACK) {
+        puts("Error: ACK not received!\n");
+    }
+
+    while (inb(PORT_CTL) & 0x02);
+    outb(0, PORT_KBD);
+    while (!(inb(PORT_CTL) & 0x01));
+    data = inb(PORT_KBD);
+    if (data != KBD_ACK) {
+        puts("Error: ACK not received!\n");
+    }
+   
+    while (!(inb(PORT_CTL) & 0x01));
+    data = inb(PORT_KBD);
 
     switch (data) {
-        case 0x43:
+        case 0x01:
             puts("Scancode 1!\n");
             break;
-        case 0x41:
+        case 0x02:
             puts("Scancode 2!\n");
             break;
-        case 0x3f:
+        case 0x03:
             puts("Scancode 3!\n");
             break;
         default:
