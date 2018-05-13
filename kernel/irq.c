@@ -18,8 +18,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <drivers/i8259.h>
-#include <lyra/interrupt.h>
 #include <lyra/irq.h>
 #include <lyra/io.h>
 
@@ -29,7 +27,7 @@ static int eoi(unsigned int irq_num);
 void irq_init(void)
 {
     i8259_init();
-    irq_enable(0x02);
+    irq_enable(IRQ_SLAVE_PIC);
 }
 
 int irq_enable(unsigned int irq_num)

@@ -18,19 +18,43 @@
 
 #include <stdint.h>
 #include <lyra/io.h>
+#include <lyra/irq.h>
 #include <drivers/i8259.h>
 
-/* Initialization Command Words for the master and slave PICs. */
-/* TODO: break these down or build dynamically using parameters. */
-#define ICW1        0x11
-#define ICW2_MASTER 0x20
-#define ICW2_SLAVE  0x28
-#define ICW3_MASTER 0x04
-#define ICW3_SLAVE  0x02
-#define ICW4        0x01
+/* ICW1 bit fields.
+   Parentheses indicate the mode used when the bit is zero. */
+#define ICW1_INIT   0x10    /* always needed */
+#define ICW1_LTIM   0x08    /* level-triggered mode (edge-triggered mode) */
+#define ICW1_ADI4   0x04    /* call address interval 4 (8) */
+#define ICW1_SNGL   0x02    /* single (cascade) mode */
+#define ICW1_ICW4   0x01    /* ICW4 (not) present */
+
+/* ICW4 bit fields.
+   Parentheses indicate the mode used when the bit is zero. */
+#define ICW4_SNFM   0x10    /* (not) special fully nested mode */
+#define ICW4_BUF    0x08    /* (not) buffered mode */
+#define ICW4_MS     0x04    /* buffered mode master (slave) */
+#define ICW4_AEOI   0X02    /* auto (normal) EOI */
+#define ICW4_8086   0x01    /* 8086 (MCS-80/85) mode */
+
+/* PIC configuration.
+   Initialization Command Words for the master and slave PICs. ICW1 and ICW4
+   specify operating modes for the PIC. ICW2 specifies the IDT base vector for
+   each IRQ line (must be a multiple of 8). ICW3 specifies which IRQ line the
+   slave PIC is connected to on the master PIC (only needed when operating in
+   cascade mode). For the master PIC, this is value uses a one-hot encoding
+   (bit0=IRQ0..bit7=IRQ7); for the slave PIC, the value uses the standard binary
+   encoding.
+   */
+#define ICW1    (ICW1_INIT | ICW1_ICW4)
+#define ICW2_M  (IRQ_BASE_VEC)
+#define ICW2_S  (IRQ_BASE_VEC + 8)
+#define ICW3_M  0x04    /* IRQ 2 (one-hot, 0000 0100 = 0x04) */
+#define ICW3_S  (IRQ_SLAVE_PIC)
+#define ICW4    (ICW4_8086)
 
 /* End-Of-Interrupt command word. */
-#define OCW_EOI     0x60
+#define OCW_EOI 0x60
 
 void i8259_init(void)
 {
@@ -42,14 +66,14 @@ void i8259_init(void)
 
     /* Configure master PIC */
     outb_p(ICW1, PORT_PIC0_CMD);
-    outb_p(ICW2_MASTER, PORT_PIC0_DATA);
-    outb_p(ICW3_MASTER, PORT_PIC0_DATA);
+    outb_p(ICW2_M, PORT_PIC0_DATA);
+    outb_p(ICW3_M, PORT_PIC0_DATA);
     outb_p(ICW4, PORT_PIC0_DATA);
 
     /* Configure slave PIC */
     outb_p(ICW1, PORT_PIC1_CMD);
-    outb_p(ICW2_SLAVE, PORT_PIC1_DATA);
-    outb_p(ICW3_SLAVE, PORT_PIC1_DATA);
+    outb_p(ICW2_S, PORT_PIC1_DATA);
+    outb_p(ICW3_S, PORT_PIC1_DATA);
     outb_p(ICW4, PORT_PIC1_DATA);
 
     /* Restore masks */
@@ -98,6 +122,6 @@ void i8259_eoi(int irq_num)
     else {
         /* Send EOI to slave then master */
         outb(OCW_EOI | (irq_num & 0x07), PORT_PIC1_CMD);
-        outb(OCW_EOI | 0x02, PORT_PIC0_CMD);
+        outb(OCW_EOI | IRQ_SLAVE_PIC, PORT_PIC0_CMD);
     }
 }
