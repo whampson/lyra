@@ -81,7 +81,7 @@ dirs:
 	@mkdir -p $(OBJ_BOOT)
 
 debug: export ASFLAGS += -g
-debug: export CCFLAGS += -g
+debug: export CFLAGS += -g
 debug: debug_echo $(filter-out debug, $(MAKECMDGOALS))
 debug_echo:
 	@echo [INFO] Compiling with debugging symbols.
