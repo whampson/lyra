@@ -20,8 +20,8 @@
 #include <stdio.h>
 #include <lyra/irq.h>
 #include <lyra/io.h>
+#include <lyra/kbd.h>
 
-static void handle_keyboard(void);
 static int eoi(unsigned int irq_num);
 
 void irq_init(void)
@@ -57,7 +57,7 @@ void do_irq(struct interrupt_frame *regs)
 
     switch (irq_num) {
         case IRQ_KEYBOARD:
-            handle_keyboard();
+            kbd_handle_interrupt();
             eoi(irq_num);
             break;
         default:
@@ -74,10 +74,4 @@ static int eoi(unsigned int irq_num)
 
     i8259_eoi(irq_num);
     return 0;
-}
-
-static void handle_keyboard(void)
-{
-    puts("Key pressed!\n");
-    (void)inb(0x60);
 }
