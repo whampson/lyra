@@ -35,7 +35,7 @@
 }
 
 /* All exception handler stubs. */
-static const intr_handler_stub exception_stubs[NUM_EXCEPT] = {
+static const intr_handler_stub EXCEPTION_STUBS[NUM_EXCEPT] = {
     stub_except_de, stub_except_db, stub_except_nmi, stub_except_bp,
     stub_except_of, stub_except_br, stub_except_ud, stub_except_nm,
     stub_except_df, NULL,           stub_except_ts, stub_except_np,
@@ -46,7 +46,7 @@ static const intr_handler_stub exception_stubs[NUM_EXCEPT] = {
     NULL,           NULL,           NULL,           NULL
 };
 
-static const intr_handler_stub irq_stubs[NUM_IRQ] = {
+static const intr_handler_stub IRQ_STUBS[NUM_IRQ] = {
     stub_irq_00,    stub_irq_01,    stub_irq_02,    stub_irq_03,
     stub_irq_04,    stub_irq_05,    stub_irq_06,    stub_irq_07,
     stub_irq_08,    stub_irq_09,    stub_irq_10,    stub_irq_11,
@@ -80,13 +80,13 @@ void idt_init(void)
         if (i < NUM_EXCEPT) {
             privl = PRIVL_KERNEL;
             type = GATE_TRAP32;
-            stub = exception_stubs[i];
+            stub = EXCEPTION_STUBS[i];
             in_use = (stub != NULL);
         }
         else if (i >= IRQ_BASE_VEC && i < IRQ_BASE_VEC + NUM_IRQ) {
             privl = PRIVL_KERNEL;
             type = GATE_INTR32;
-            stub = irq_stubs[i - IRQ_BASE_VEC];
+            stub = IRQ_STUBS[i - IRQ_BASE_VEC];
             in_use = (stub != NULL);
         }
         else if (i == SYSCALL_VEC) {
