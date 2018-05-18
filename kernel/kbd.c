@@ -77,12 +77,75 @@ static uint8_t kbd_inb(void);
 void kbd_init(void)
 {
     uint8_t data;
+    volatile int i;
 
+    puts("Disable PS/2 ports...\n");
     kbd_disable();
-    // ctl_selftest();
-    // kbd_flush();
-    // disable_translation();
-    kbd_selftest();
+    ctl_outb(0xA7);     // disable second PS/2 port
+
+    puts("Flushing PS/2 output buffer...\n");
+    kbd_flush();
+
+    puts("Keyboard self-test...");
+    kbd_outb(0xFF);
+    i = 0xFFFF;
+    while (--i > 0);
+    data = kbd_inb();
+    if (data == 0xAA) {
+        puts(" passed!\n");
+    }
+    else if (data == 0xFC || data == 0xFD) {
+        puts(" failed!\n");
+    }
+    else if (data == 0xFE) {
+        puts(" resend.\n");
+    }
+    else {
+        puts(" inconclusive!\n");
+    }
+
+    puts("Disabling PS/2 IRQs & translation...\n");
+    ctl_outb(0x20);
+    puts("    RDCFG command sent\n");
+    data = kbd_inb();
+    puts("    got response!\n");
+    data &= 0x9C;       // 10011100
+    ctl_outb(0x60);
+    puts("    WRCFG command sent\n");
+    kbd_outb(data);
+    puts("    config word sent\n");
+
+    /*puts("PS/2 controller self-test...");
+    ctl_outb(0xAA);
+    data = kbd_inb();
+    switch (data) {
+        case 0x55:
+            puts(" passed!\n");
+            break;
+        case 0xFC:
+            puts(" failed!\n");
+            break;
+        default:
+            puts(" inconclusive!\n");
+            break;
+    }*/
+ 
+    /*puts("Enabling scanning... ");
+    kbd_outb(0xF4);
+    data = kbd_inb();
+    if (data != KBD_RES_ACK) {
+        puts(" failed!\n");
+    }
+    else {
+        puts(" done!\n");
+    }*/
+    
+    //puts("Testing PS/2 controller...\n");
+    //ctl_selftest();
+    //puts("Disabling scancode translation...\n");
+    //disable_translation();
+    //puts("Testing PS/2 keyboard...\n");
+    //kbd_selftest();
 
 
     // /* Set scancode 3 */
@@ -112,40 +175,53 @@ void kbd_init(void)
     // }
 
 
-    // /* Read scancode number */
-    // while (inb(PORT_CTL) & 0x02);
-    // outb(CMD_KBD_SC, PORT_KBD);
-    // while (!(inb(PORT_CTL) & 0x01));
-    // data = inb(PORT_KBD);
-    // if (data != KBD_ACK) {
-    //     puts("Error: ACK not received!\n");
-    // }
+    /* Read scancode number */
+    puts("Setting scancode 2...\n");
+    kbd_outb(KBD_CMD_SCANCODE);
+    puts("    sent command\n");
+    data = kbd_inb();
+    puts("    got response!\n");
+    if (data != KBD_RES_ACK) {
+        puts("Error: ACK not received!\n");
+    }
 
-    // while (inb(PORT_CTL) & 0x02);
-    // outb(0, PORT_KBD);
-    // while (!(inb(PORT_CTL) & 0x01));
-    // data = inb(PORT_KBD);
-    // if (data != KBD_ACK) {
-    //     puts("Error: ACK not received!\n");
-    // }
+    kbd_outb(2);
+    puts("    sent sub-command\n");
+    data = kbd_inb();
+    puts("    got response!\n");
+    if (data != KBD_RES_ACK) {
+        puts("Error: ACK not received!\n");
+    }
 
-    // while (!(inb(PORT_CTL) & 0x01));
-    // data = inb(PORT_KBD);
+    /*data = kbd_inb();
+    puts("    got scancode number!\n");
 
-    // switch (data) {
-    //     case 0x01:
-    //         puts("Scancode 1!\n");
-    //         break;
-    //     case 0x02:
-    //         puts("Scancode 2!\n");
-    //         break;
-    //     case 0x03:
-    //         puts("Scancode 3!\n");
-    //         break;
-    //     default:
-    //         puts("Unknown scancode?\n");
-    //         break;
-    // }
+    switch (data) {
+        case 0x43:
+        case 0x01:
+            puts("Scancode 1!\n");
+            break;
+        case 0x41:
+        case 0x02:
+            puts("Scancode 2!\n");
+            break;
+        case 0x3F:
+        case 0x03:
+            puts("Scancode 3!\n");
+            break;
+        default:
+            puts("Unknown scancode?\n");
+            break;
+    }*/
+
+    puts("Enabling PS/2 port 1 IRQ...\n");
+    ctl_outb(0x20);
+    data = kbd_inb();
+    data &= 0x9F;
+    data |= 0x01;
+    ctl_outb(0x60);
+    kbd_outb(data);
+
 
     kbd_enable();
 }
@@ -166,11 +242,11 @@ static int ctl_selftest(void)
         return 1;
     }
 
-    // ctl_outb(CTL_CMD_TESTPORT1);
-    // if (kbd_inb() != 0x00) {
-    //     puts("i8042: port 1 failure!\n");
-    //     return 1;
-    // }
+    ctl_outb(CTL_CMD_TESTPORT1);
+    if (kbd_inb() != 0x00) {
+        puts("i8042: port 1 failure!\n");
+        return 1;
+    }
 
     return 0;
 }
@@ -190,11 +266,18 @@ static int disable_translation(void)
 
 static int kbd_selftest(void)
 {
-    kbd_outb(KBD_CMD_SELFTEST);
+    /*kbd_outb(KBD_CMD_SELFTEST);
     if (kbd_inb() != 0xAA) {
         puts("Keyboard self-test failed!\n");
         return 1;
+    }*/
+
+    kbd_outb(KBD_CMD_ECHO);
+    if (kbd_inb() != KBD_RES_ECHO) {
+        puts("Keyboard self-test failed!\n");
+        return 1;
     }
+
 
     return 0;
 }
