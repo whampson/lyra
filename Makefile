@@ -18,7 +18,7 @@
 
 .PHONY: all img boot kernel kernel_build debug debug_echo clean remake floppy
 
-GCC_WARNINGS    := -Wall -Wextra -Wpedantic
+GCC_WARNINGS    := -Wall -Wextra -Wpedantic -Wno-unused-function
 
 # Build tools and flags
 export AS       := gcc
