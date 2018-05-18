@@ -47,10 +47,10 @@ void kernel_init(void)
 
     puts("Initializing IRQs...\n");
     irq_init();
-    irq_enable(IRQ_KEYBOARD);
     kbd_init();
 
     puts("Enabling interrupts...\n");
+    irq_enable(IRQ_KEYBOARD);
     sti();
 
     /* TODO:
