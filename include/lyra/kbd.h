@@ -86,8 +86,6 @@ typedef struct keycode {
 } keycode_t;
 
 void kbd_init(void);
-void kbd_enable(void);
-void kbd_disable(void);
 void kbd_set_scancode(int sc);
 void kbd_handle_interrupt(void);
 
