@@ -88,6 +88,10 @@ void kbd_init(void)
 
     puts("Keyboard self-test...");
     kbd_outb(0xFF);
+    data = kbd_inb();
+    if (data == KBD_RES_ACK) {
+        puts(" got ack!");
+    }
     i = 0xFFFF;
     while (--i > 0);
     data = kbd_inb();
@@ -115,82 +119,31 @@ void kbd_init(void)
     kbd_outb(data);
     puts("    config word sent\n");
 
-    /*puts("PS/2 controller self-test...");
-    ctl_outb(0xAA);
-    data = kbd_inb();
-    switch (data) {
-        case 0x55:
-            puts(" passed!\n");
-            break;
-        case 0xFC:
-            puts(" failed!\n");
-            break;
-        default:
-            puts(" inconclusive!\n");
-            break;
-    }*/
- 
-    /*puts("Enabling scanning... ");
-    kbd_outb(0xF4);
-    data = kbd_inb();
-    if (data != KBD_RES_ACK) {
-        puts(" failed!\n");
-    }
-    else {
-        puts(" done!\n");
-    }*/
-    
-    //puts("Testing PS/2 controller...\n");
-    //ctl_selftest();
-    //puts("Disabling scancode translation...\n");
-    //disable_translation();
-    //puts("Testing PS/2 keyboard...\n");
-    //kbd_selftest();
-
-
-    // /* Set scancode 3 */
-    // while (inb(PORT_CTL) & 0x02);
-    // outb(CMD_KBD_SC, PORT_KBD);
-    // while (!(inb(PORT_CTL) & 0x01));
-    // data = inb(PORT_KBD);
-    // if (data != KBD_ACK) {
-    //     puts("Error: ACK not received!\n");
-    // }
-
-    // while (inb(PORT_CTL) & 0x02);
-    // outb(3, PORT_KBD);
-    // while (!(inb(PORT_CTL) & 0x01));
-    // data = inb(PORT_KBD);
-    // if (data != KBD_ACK) {
-    //     puts("Error: ACK not received!\n");
-    // }
-
-    // /* Set all keys to make/break */
-    // while (inb(PORT_CTL) & 0x02);
-    // outb(0xFA, PORT_KBD);
-    // while (!(inb(PORT_CTL) & 0x01));
-    // data = inb(PORT_KBD);
-    // if (data != KBD_ACK) {
-    //     puts("Error: ACK not received!\n");
-    // }
-
-
-    /* Read scancode number */
     puts("Setting scancode 2...\n");
     kbd_outb(KBD_CMD_SCANCODE);
     puts("    sent command\n");
     data = kbd_inb();
-    puts("    got response!\n");
-    if (data != KBD_RES_ACK) {
-        puts("Error: ACK not received!\n");
+    if (data == KBD_RES_ACK) {
+        puts("    got ack!\n");
+    }
+    else if (data == KBD_RES_RSND) {
+        puts("    got resend!\n");
+    }
+    else {
+        puts("    got unknown response!");
     }
 
     kbd_outb(2);
     puts("    sent sub-command\n");
     data = kbd_inb();
-    puts("    got response!\n");
-    if (data != KBD_RES_ACK) {
-        puts("Error: ACK not received!\n");
+    if (data == KBD_RES_ACK) {
+        puts("    got ack!\n");
+    }
+    else if (data == KBD_RES_RSND) {
+        puts("    got resend!\n");
+    }
+    else {
+        puts("    got unknown response!");
     }
 
     /*data = kbd_inb();
