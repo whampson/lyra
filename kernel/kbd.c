@@ -17,6 +17,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
+#include <lyra/kernel.h>
 #include <lyra/kbd.h>
 #include <lyra/io.h>
 
@@ -78,6 +79,7 @@ void kbd_init(void)
 {
     uint8_t data;
     volatile int i;
+    char numbuf[32];
 
     puts("Disable PS/2 ports...\n");
     kbd_disable();
@@ -105,7 +107,10 @@ void kbd_init(void)
         puts(" resend.\n");
     }
     else {
-        puts(" inconclusive!\n");
+        puts(" inconclusive: ");
+        puts("0x");
+        itoa(data, numbuf, 16);
+        puts("\n");
     }
 
     puts("Disabling PS/2 IRQs & translation...\n");
@@ -130,7 +135,10 @@ void kbd_init(void)
         puts("    got resend!\n");
     }
     else {
-        puts("    got unknown response!");
+        puts("    got unknown response: ");
+        puts("0x");
+        itoa(data, numbuf, 16);
+        puts("\n");
     }
 
     kbd_outb(2);
@@ -143,7 +151,10 @@ void kbd_init(void)
         puts("    got resend!\n");
     }
     else {
-        puts("    got unknown response!");
+        puts("    got unknown response: ");
+        puts("0x");
+        itoa(data, numbuf, 16);
+        puts("\n");
     }
 
     /*data = kbd_inb();
