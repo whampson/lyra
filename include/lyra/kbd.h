@@ -34,6 +34,7 @@
 #define KB_SCROLL   0x88
 #define KB_PAUSE    0x89
 #define KB_PRNTSC   0x8A
+#define KB_ESC      0x8B
 #define KB_F1       0x91
 #define KB_F2       0x92
 #define KB_F3       0x93
