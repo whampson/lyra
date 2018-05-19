@@ -116,6 +116,21 @@ size_t strlen(const char *s) {
     return len;
 }
 
+void puti(uint32_t i)
+{
+    char buf[12];
+    itoa(i, buf, 10);
+    puts(buf);
+}
+
+void putix(uint32_t i)
+{
+    char buf[12];
+    itoa(i, buf, 16);
+    puts("0x");
+    puts(buf);
+}
+
 
 static void ldt_init(void)
 {
