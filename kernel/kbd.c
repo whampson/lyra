@@ -88,11 +88,13 @@ void kbd_init(void)
     puts("Flushing PS/2 output buffer...\n");
     kbd_flush();
 
+kbd_test:
     puts("Keyboard self-test...");
     kbd_outb(0xFF);
     data = kbd_inb();
-    if (data == KBD_RES_ACK) {
-        puts(" got ack!");
+    if (data == 0xFE) {
+        puts(" resend.\n");
+        goto kbd_test;
     }
     i = 0xFFFF;
     while (--i > 0);
@@ -105,11 +107,13 @@ void kbd_init(void)
     }
     else if (data == 0xFE) {
         puts(" resend.\n");
+        goto kbd_test;
     }
     else {
         puts(" inconclusive: ");
         puts("0x");
         itoa(data, numbuf, 16);
+        puts(numbuf);
         puts("\n");
     }
 
@@ -124,6 +128,7 @@ void kbd_init(void)
     kbd_outb(data);
     puts("    config word sent\n");
 
+set_sc_init:
     puts("Setting scancode 2...\n");
     kbd_outb(KBD_CMD_SCANCODE);
     puts("    sent command\n");
@@ -133,14 +138,17 @@ void kbd_init(void)
     }
     else if (data == KBD_RES_RSND) {
         puts("    got resend!\n");
+        goto set_sc_init;
     }
     else {
         puts("    got unknown response: ");
         puts("0x");
         itoa(data, numbuf, 16);
+        puts(numbuf);
         puts("\n");
     }
 
+set_sc_2:
     kbd_outb(2);
     puts("    sent sub-command\n");
     data = kbd_inb();
@@ -149,11 +157,13 @@ void kbd_init(void)
     }
     else if (data == KBD_RES_RSND) {
         puts("    got resend!\n");
+        goto set_sc_2;
     }
     else {
         puts("    got unknown response: ");
         puts("0x");
         itoa(data, numbuf, 16);
+        puts(numbuf);
         puts("\n");
     }
 
