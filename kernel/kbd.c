@@ -118,7 +118,7 @@ static const uint8_t SCANCODE3[256] =
 {
 /*00-07*/  0,0,0,0,0,0,0,KB_F1,
 /*08-0F*/  KB_ESC,0,0,0,0,'\t','`',KB_F2,
-/*10-17*/  0,KB_LCTRL,KB_LSHIFT,0,0,'q','1',KB_F3,
+/*10-17*/  0,KB_LCTRL,KB_LSHIFT,0,KB_CAPS,'q','1',KB_F3,
 /*18-1F*/  0,KB_LALT,'z','s','a','w','2',KB_F4,
 /*20-27*/  0,'c','x','d','e','4','3',KB_F5,
 /*28-2F*/  0,' ','v','f','t','r','5',KB_F6,
@@ -147,12 +147,12 @@ static const uint8_t SHIFT_MAP[256] =
 {
 /*00-0F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 /*10-1F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*20-2F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*30-3F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*20-2F*/  0,0,0,0,0,0,0,'"',0,0,0,0,'<','_','>','?',
+/*30-3F*/  ')','!','@','#','$','%','^','&','*','(',0,':',0,'+',0,0,
 /*40-4F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*50-5F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*60-6F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*70-7F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*50-5F*/  0,0,0,0,0,0,0,0,0,0,0,'{','|','}',0,0,
+/*60-6F*/  '~','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O',
+/*70-7F*/  'P','Q','R','S','T','U','V','W','X','Y','Z',0,0,0,0,0,
 /*80-8F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 /*90-9F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 /*A0-AF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -171,6 +171,7 @@ static void kbd_flush(void);
 static void ctl_test(void);
 static void kbd_test(void);
 static void kbd_sc3init(void);
+static void kbd_setled(int num, int caps, int scrl);
 
 void kbd_init(void)
 {
@@ -221,6 +222,7 @@ void kbd_handle_interrupt(void)
 
     uint8_t data;
     uint8_t key;
+    uint8_t tmp;
     int modifier_key;
 
     data = inb(PORT_KBD);
@@ -230,14 +232,56 @@ void kbd_handle_interrupt(void)
     }
 
     key = SCANCODE3[data];
-    // switch (key) {
-    //     case KB_LCTRL:
-    //     case KB_RCTRL:
-    //             flag_ctrl = (evt_release) ? 0 : 1;
-    //         break;
-    // }
-    if (!evt_release && key != 0) {
+    switch (key) {
+        case KB_LCTRL:
+        case KB_RCTRL:
+            modifier_key = 1;
+            flag_ctrl = (evt_release) ? 0 : 1;
+            break;
+        case KB_LSHIFT:
+        case KB_RSHIFT:
+            modifier_key = 1;
+            flag_shift = (evt_release) ? 0 : 1;
+            break;
+        case KB_LALT:
+        case KB_RALT:
+            modifier_key = 1;
+            flag_alt = (evt_release) ? 0 : 1;
+            break;
+        case KB_NUM:
+            if (!evt_release) {
+                flag_num ^= 1;
+                //kbd_setled(flag_num, flag_caps, flag_scroll);
+            }
+            break;
+        case KB_CAPS:
+            if (!evt_release) {
+                flag_caps ^= 1;
+                //kbd_setled(flag_num, flag_caps, flag_scroll);
+            }
+            break;
+        case KB_SCROLL:
+            if (!evt_release) {
+                flag_scroll ^= 1;
+                //kbd_setled(flag_num, flag_caps, flag_scroll);
+            }
+            break;
+        default:
+            modifier_key = 0;
+            break;
+    }
+
+    if (flag_shift) {
+        tmp = SHIFT_MAP[key];
+        if (tmp != 0) {
+            key = tmp;
+        }
+    }
+
+    if (!evt_release && !modifier_key && key != 0) {
         putchar((char) key);
+        // putix(key);
+        // puts("\n");
     }
     if (evt_release) {
         evt_release = 0;
@@ -403,4 +447,33 @@ static void kbd_sc3init(void)
 
 sc3_fail:
     puts("PS/2 keyboard: failed to switch to scancode 3!\n");
+}
+
+/**
+ * Set the states of the NUMLOCK, CAPSLOCK, and SCRLOCK lights.
+ * @param num  - numlock state
+ * @param caps - capslock state
+ * @param scrl - scrlock state
+ */
+static void kbd_setled(int num, int caps, int scrl)
+{
+    /* TODO: debug this, QEMU keyboard responds to SETLED with 0xF0 */
+
+    uint8_t data;
+
+    data = 0;
+    data |= (num)  ? KBD_CFG_LEDNUM  : 0;
+    data |= (caps) ? KBD_CFG_LEDCAPS : 0;
+    data |= (scrl) ? KBD_CFG_LEDSCRL : 0;
+
+    if (kbd_sendcmd(KBD_CMD_SETLED) != SENDCMD_SUCCESS) {
+        goto setled_fail;
+    }
+    if (kbd_sendcmd(data) != SENDCMD_SUCCESS) {
+        goto setled_fail;
+    }
+    return;
+
+setled_fail:
+    puts("Failed to set PS/2 keyboard LEDs!\n");
 }
