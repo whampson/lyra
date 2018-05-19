@@ -74,4 +74,8 @@ __asm__ volatile (          \
 
 void clear(void);
 
+char * itoa(unsigned int value, char *buf, int radix);
+char * strrev(char *s);
+size_t strlen(const char *s);
+
 #endif  /* __LYRA_KERNEL_H__ */
