@@ -104,8 +104,64 @@
 #define SENDCMD_ERROR       1
 #define SENDCMD_TIMEOUT     2
 
+#define SC3_BREAK           0xF0
+
 /* kbd_sendcmd() retry count before SENDCMD_TIMEOUT is returned. */
 #define NUM_RETRIES         3
+
+/* TODO:
+    check CAPS
+    check INSERT
+    check keypad
+*/
+static const uint8_t SCANCODE3[256] =
+{
+/*00-07*/  0,0,0,0,0,0,0,KB_F1,
+/*08-0F*/  KB_ESC,0,0,0,0,'\t','`',KB_F2,
+/*10-17*/  0,KB_LCTRL,KB_LSHIFT,0,0,'q','1',KB_F3,
+/*18-1F*/  0,KB_LALT,'z','s','a','w','2',KB_F4,
+/*20-27*/  0,'c','x','d','e','4','3',KB_F5,
+/*28-2F*/  0,' ','v','f','t','r','5',KB_F6,
+/*30-37*/  0,'n','b','h','g','y','6',KB_F7,
+/*38-3F*/  0,KB_RALT,'m','j','u','7','8',KB_F8,
+/*40-47*/  0,',','k','i','o','0','9',KB_F9,
+/*48-4F*/  0,'.','/','l',';','p','-',KB_F10,
+/*50-57*/  0,0,'\'','\\','[','=',KB_F11,KB_PRNTSC,
+/*58-5F*/  KB_RCTRL,KB_RSHIFT,'\n',']','\\',0,KB_F12,KB_SCROLL,
+/*60-67*/  KB_CUR_D,KB_CUR_L,KB_PAUSE,KB_CUR_U,KB_DELETE,KB_END,'\b',KB_INSERT,
+/*68-6F*/  0,KB_KP_1,KB_CUR_R,KB_KP_4,KB_KP_7,KB_PGDN,KB_HOME,KB_PGUP,
+/*70-77*/  KB_KP_0,KB_KP_DOT,KB_KP_2,KB_KP_5,KB_KP_6,KB_KP_8,KB_NUM,KB_KP_SLASH,
+/*78-7F*/  0,KB_KP_ENTER,KB_KP_3,0,KB_KP_PLUS,KB_KP_9,KB_KP_STAR,0,
+/*80-8F*/  0,0,0,0,KB_KP_MINUS,0,0,0,
+/*00-0F*/  0,0,0,0,0,0,0,0,
+/*90-9F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*A0-AF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*B0-BF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*C0-CF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*D0-DF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*E0-EF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*F0-FF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
+static const uint8_t SHIFT_MAP[256] =
+{
+/*00-0F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*10-1F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*20-2F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*30-3F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*40-4F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*50-5F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*60-6F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*70-7F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*80-8F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*90-9F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*A0-AF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*B0-BF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*C0-CF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*D0-DF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*E0-EF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*F0-FF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
 
 static void ctl_outb(uint8_t data);
 static void kbd_outb(uint8_t data);
@@ -155,10 +211,37 @@ void kbd_init(void)
 
 void kbd_handle_interrupt(void)
 {
-    uint8_t data;
-    data = inb(PORT_KBD);
+    static int evt_release = 0;
+    static int flag_ctrl = 0;
+    static int flag_shift = 0;
+    static int flag_alt = 0;
+    static int flag_num = 0;
+    static int flag_caps = 0;
+    static int flag_scroll = 0;
 
-    putchar((char) data);
+    uint8_t data;
+    uint8_t key;
+    int modifier_key;
+
+    data = inb(PORT_KBD);
+    if (data == SC3_BREAK) {
+        evt_release = 1;
+        return;
+    }
+
+    key = SCANCODE3[data];
+    // switch (key) {
+    //     case KB_LCTRL:
+    //     case KB_RCTRL:
+    //             flag_ctrl = (evt_release) ? 0 : 1;
+    //         break;
+    // }
+    if (!evt_release && key != 0) {
+        putchar((char) key);
+    }
+    if (evt_release) {
+        evt_release = 0;
+    }
 }
 
 /**
