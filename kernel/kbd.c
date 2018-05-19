@@ -25,179 +25,132 @@
 #define PORT_KBD            0x60    /* PS/2 keyboard I/O */
 #define PORT_CTL            0x64    /* PS/2 controller I/O */
 
-/* PS/2 controller status register bitfields.
-   The status register is accessed by reading from PORT_CTL. */
-#define CTL_STS_OUTFULL     0x01    /* keyboard output buffer full */
-#define CTL_STS_INFULL      0x02    /* keyboard input buffer full */
-#define CTL_STS_TIMEOUTERR  0x40    /* timeout error */
-#define CTL_STS_PARITYERR   0x80    /* parity error */
-
-#define CTL_CFG_INTR1       0x01
-#define CTL_CFG_INTR2       0x02
-#define CTL_CFG_SYS         0x04
-#define CTL_CFG_CLK         0x10
-#define CTL_CFG_XLATE1      0x40
-#define CTL_CFG_XLATE2      0x20
-
 /* Controller command words.
    The command register is accessed by writing to PORT_CTL. */
-#define CTL_CMD_RDCFG       0x20    /* read controller configuration port */
-#define CTL_CMD_WRCFG       0x60    /* write controller configuration port */
+#define CTL_CMD_RDCFG       0x20
+#define CTL_CMD_WRCFG       0x60
 #define CTL_CMD_SELFTEST    0xAA
-#define CTL_CMD_TESTPORT1   0xAB
-#define CTL_CMD_TESTPORT2   0xA9
-#define CTL_CMD_KBDOFF      0xAD    /* disable keyboard */
-#define CTL_CMD_KBDON       0xAE    /* enable keyboard */
+#define CTL_CMD_P1OFF       0xAD
+#define CTL_CMD_P1ON        0xAE
+#define CTL_CMD_P1TEST      0xAB
+#define CTL_CMD_P2OFF       0xA7
+#define CTL_CMD_P2ON        0xA8
+#define CTL_CMD_P2TEST      0xA9
 
-/* Keyboard command words. */
-#define KBD_CMD_SETLED      0xED    /* set LEDs */
-#define KBD_CMD_ECHO        0xEE    /* echo (sends same byte back on success) */
-#define KBD_CMD_SCANCODE    0xF0    /* get/set scancode set */
-#define KBD_CMD_TYPEMATIC   0xF3    /* set typematic rate and delay */
+/* PS/2 controller status register bitfields.
+   The status register is accessed by reading from PORT_CTL. */
+#define CTL_STS_OUTFULL     0x01    /* 0 = wait, 1 = ready for read */
+#define CTL_STS_INFULL      0x02    /* 0 = ready for write, 1 = wait */
+#define CTL_STS_TIMEOUTERR  0x40
+#define CTL_STS_PARITYERR   0x80
+
+/* Controller configuration bitfields.
+   Use the RDCFG and WRCFG commands to read/modify these fields. */
+#define CTL_CFG_P1INT       0x01    /* port 1 interrupts on */
+#define CTL_CFG_P1CLK       0x10    /* port 1 clock enabled */
+#define CTL_CFG_P1XLATE     0x40    /* port 1 translation enabled */
+#define CTL_CFG_P2INT       0x02    /* port 2 interrupts on */
+#define CTL_CFG_P2CLK       0x20    /* port 2 clock enabled */
+#define CTL_CFG_P2XLATE     0x20    /* port 2 translation enabled */
+#define CTL_CFG_POST        0x04    /* POST passed */
+
+/* Controller response bytes */
+#define CTL_RES_TESTPASS    0x55
+#define CTL_RES_TESTFAIL    0xFC
+
+/* Keyboard command words.
+   Commands are issued by writing to PORT_KBD. */
+#define KBD_CMD_SETLED      0xED
+#define KBD_CMD_ECHO        0xEE
+#define KBD_CMD_SCANCODE    0xF0
+#define KBD_CMD_IDENTIFY    0xF2
+#define KBD_CMD_TYPEMATIC   0xF3
+#define KBD_CMD_SCANON      0xF4
+#define KBD_CMD_SCANOFF     0xF5
+#define KBD_CMD_SETDEFAULTS 0xF6
+#define KBD_CMD_RESEND      0xFE
 #define KBD_CMD_SELFTEST    0xFF
 
-/* Keyboard response words. */
-#define KBD_RES_ECHO        0xEE    /* echo byte (see above) */
-#define KBD_RES_ACK         0xFA    /* command acknowledged */
-#define KBD_RES_RSND        0xFE    /* resend last command */
+/* The following commands are for scancode 3 only. */
+#define KBD_CMD_TYPMONLY    0xF7
+#define KBD_CMD_MKONLY      0xF9
+#define KBD_CMD_MKBRK       0xF8
+#define KBD_CMD_MKBRKTYPM   0xFA
 
-static void kbd_enable(void);
-static void kbd_disable(void);
-static void kbd_flush(void);
-static int ctl_selftest(void);
-static int kbd_selftest(void);
-static int disable_translation(void);
-static int kbd_reset(void);
-static int setup_sc3(void);
+/* Keyboard response words.
+   Responses are accessed by reading from PORT_KBD. */
+#define KBD_RES_ERROR1      0x00
+#define KBD_RES_ERROR2      0xFF
+#define KBD_RES_TESTPASS    0xAA
+#define KBD_RES_TESTFAIL1   0xFC
+#define KBD_RES_TESTFAIL2   0xFD
+#define KBD_RES_ECHO        0xEE
+#define KBD_RES_ACK         0xFA
+#define KBD_RES_RESEND      0xFE
+
+/* KBD_CMD_SCANCODE sub-commands */
+#define KBD_CFG_GETSC       0x00
+#define KBD_CFG_SC1         0x01
+#define KBD_CFG_SC2         0x02
+#define KBD_CFG_SC3         0x03
+
+/* KBD_CMD_SETLED bitmasks */
+#define KBD_CFG_LEDSCRL     0x01
+#define KBD_CFG_LEDNUM      0x02
+#define KBD_CFG_LEDCAPS     0x04
+
+/* Response codes for kbd_sendcmd() */
+#define SENDCMD_SUCCESS     0
+#define SENDCMD_ERROR       1
+#define SENDCMD_TIMEOUT     2
+
+/* kbd_sendcmd() retry count before SENDCMD_TIMEOUT is returned. */
+#define NUM_RETRIES         3
 
 static void ctl_outb(uint8_t data);
 static void kbd_outb(uint8_t data);
 static uint8_t kbd_inb(void);
-
+static int kbd_sendcmd(uint8_t cmd);
+static void kbd_flush(void);
+static void ctl_test(void);
+static void kbd_test(void);
+static void kbd_sc3init(void);
 
 void kbd_init(void)
 {
     uint8_t data;
-    volatile int i;
-    char numbuf[32];
 
-    puts("Disable PS/2 ports...\n");
-    kbd_disable();
-    ctl_outb(0xA7);     // disable second PS/2 port
+    puts("Initializing PS/2 devices...\n");
 
-    puts("Flushing PS/2 output buffer...\n");
+    /* disable ports */
+    ctl_outb(CTL_CMD_P1OFF);
+    ctl_outb(CTL_CMD_P2OFF);
     kbd_flush();
 
-kbd_test:
-    puts("Keyboard self-test...");
-    kbd_outb(0xFF);
+    /* disable interrupts and translation */
+    ctl_outb(CTL_CMD_RDCFG);
     data = kbd_inb();
-    if (data == 0xFE) {
-        puts(" resend.\n");
-        goto kbd_test;
-    }
-    i = 0xFFFF;
-    while (--i > 0);
-    data = kbd_inb();
-    if (data == 0xAA) {
-        puts(" passed!\n");
-    }
-    else if (data == 0xFC || data == 0xFD) {
-        puts(" failed!\n");
-    }
-    else if (data == 0xFE) {
-        puts(" resend.\n");
-        goto kbd_test;
-    }
-    else {
-        puts(" inconclusive: ");
-        puts("0x");
-        itoa(data, numbuf, 16);
-        puts(numbuf);
-        puts("\n");
-    }
-
-    puts("Disabling PS/2 IRQs & translation...\n");
-    ctl_outb(0x20);
-    puts("    RDCFG command sent\n");
-    data = kbd_inb();
-    puts("    got response!\n");
-    data &= 0x9C;       // 10011100
-    ctl_outb(0x60);
-    puts("    WRCFG command sent\n");
-    kbd_outb(data);
-    puts("    config word sent\n");
-
-set_sc_init:
-    puts("Setting scancode 2...\n");
-    kbd_outb(KBD_CMD_SCANCODE);
-    puts("    sent command\n");
-    data = kbd_inb();
-    if (data == KBD_RES_ACK) {
-        puts("    got ack!\n");
-    }
-    else if (data == KBD_RES_RSND) {
-        puts("    got resend!\n");
-        goto set_sc_init;
-    }
-    else {
-        puts("    got unknown response: ");
-        puts("0x");
-        itoa(data, numbuf, 16);
-        puts(numbuf);
-        puts("\n");
-    }
-
-set_sc_2:
-    kbd_outb(2);
-    puts("    sent sub-command\n");
-    data = kbd_inb();
-    if (data == KBD_RES_ACK) {
-        puts("    got ack!\n");
-    }
-    else if (data == KBD_RES_RSND) {
-        puts("    got resend!\n");
-        goto set_sc_2;
-    }
-    else {
-        puts("    got unknown response: ");
-        puts("0x");
-        itoa(data, numbuf, 16);
-        puts(numbuf);
-        puts("\n");
-    }
-
-    /*data = kbd_inb();
-    puts("    got scancode number!\n");
-
-    switch (data) {
-        case 0x43:
-        case 0x01:
-            puts("Scancode 1!\n");
-            break;
-        case 0x41:
-        case 0x02:
-            puts("Scancode 2!\n");
-            break;
-        case 0x3F:
-        case 0x03:
-            puts("Scancode 3!\n");
-            break;
-        default:
-            puts("Unknown scancode?\n");
-            break;
-    }*/
-
-    puts("Enabling PS/2 port 1 IRQ...\n");
-    ctl_outb(0x20);
-    data = kbd_inb();
-    data &= 0x9F;
-    data |= 0x01;
-    ctl_outb(0x60);
+    data &= ~CTL_CFG_P1INT;
+    data &= ~CTL_CFG_P2INT;
+    data &= ~CTL_CFG_P1XLATE;
+    data &= ~CTL_CFG_P2XLATE;
+    ctl_outb(CTL_CMD_WRCFG);
     kbd_outb(data);
 
+    /* perform controller tests */
+    ctl_test();
 
-    kbd_enable();
+    /* init keyboard */
+    ctl_outb(CTL_CMD_P1ON);
+    kbd_test();
+    kbd_sc3init();
+
+    /* enable interrupts */
+    ctl_outb(CTL_CMD_RDCFG);
+    data = kbd_inb();
+    data |= CTL_CFG_P1INT;
+    ctl_outb(CTL_CMD_WRCFG);
+    kbd_outb(data);
 }
 
 void kbd_handle_interrupt(void)
@@ -208,91 +161,163 @@ void kbd_handle_interrupt(void)
     putchar((char) data);
 }
 
-static int ctl_selftest(void)
+/**
+ * Output a byte to the PS/2 controller.
+ * @param data - the byte to output
+ */
+static void ctl_outb(uint8_t data)
 {
-    ctl_outb(CTL_CMD_SELFTEST);
-    if (kbd_inb() != 0x55) {
-        puts("i8042: self-test failed!\n");
-        return 1;
-    }
-
-    ctl_outb(CTL_CMD_TESTPORT1);
-    if (kbd_inb() != 0x00) {
-        puts("i8042: port 1 failure!\n");
-        return 1;
-    }
-
-    return 0;
+    /* Poll status register,
+       wait until input buffer is empty before writing */
+    while (inb(PORT_CTL) & CTL_STS_INFULL);
+    outb(data, PORT_CTL);
 }
 
-static int disable_translation(void)
+/**
+ * Output a byte to the PS/2 keyboard.
+ * @param data - the byte to output
+ */
+static void kbd_outb(uint8_t data)
 {
+    /* Poll status register,
+       wait until input buffer is empty before writing */
+    while (inb(PORT_CTL) & CTL_STS_INFULL);
+    outb(data, PORT_KBD);
+}
+
+/**
+ * Read a byte from the PS/2 keyboard.
+ * @return a byte from the keyboard
+ */
+static uint8_t kbd_inb(void)
+{
+    /* Poll status register,
+       wait until output buffer is full before reading */
+    while (!(inb(PORT_CTL) & CTL_STS_OUTFULL));
+    return inb(PORT_KBD);
+}
+
+/**
+ * Send a command to the PS/2 keyboard.
+ * @param cmd - the keyboard command word (one of KBD_CMD_*)
+ * @return SENDCMD_SUCCESS when a command is successfully issued
+ *         SENDCMD_ERROR   if the keyboard responds with an error
+ *         SENDCMD_TIMEOUT if the keyboard asks to reissue the command too many times
+ */
+static int kbd_sendcmd(uint8_t cmd)
+{
+    int i;
+    int retval;
     uint8_t data;
 
-    ctl_outb(CTL_CMD_RDCFG);
-    data = kbd_inb();
-    data &= ~0x40;
-    ctl_outb(CTL_CMD_WRCFG);
-    kbd_outb(data);
+    i = 0;
+    retval = 1;
+    do {
+        kbd_outb(cmd);
+        data = kbd_inb();
 
-    return 0;
-}
+        switch (data) {
+            case KBD_RES_ACK:
+                retval = SENDCMD_SUCCESS;
+                goto sendcmd_done;
+            case KBD_RES_RESEND:
+                break;
+            case KBD_RES_ERROR1:
+            case KBD_RES_ERROR2:
+                retval = SENDCMD_ERROR;
+                goto sendcmd_done;
+            default:
+                puts("Unrecognized response from PS/2 keyboard: ");
+                putix(data);
+                puts("\n");
+                retval = SENDCMD_ERROR;
+                goto sendcmd_done;
+        }
+        i++;
+    } while (i < NUM_RETRIES);
 
-static int kbd_selftest(void)
-{
-    /*kbd_outb(KBD_CMD_SELFTEST);
-    if (kbd_inb() != 0xAA) {
-        puts("Keyboard self-test failed!\n");
-        return 1;
-    }*/
-
-    kbd_outb(KBD_CMD_ECHO);
-    if (kbd_inb() != KBD_RES_ECHO) {
-        puts("Keyboard self-test failed!\n");
-        return 1;
+    if (i == NUM_RETRIES) {
+        retval = SENDCMD_TIMEOUT;
     }
 
-
-    return 0;
+sendcmd_done:
+    return retval;
 }
 
+/**
+ * Flush the keyboard output buffer.
+ */
 static void kbd_flush(void)
 {
+    /* TODO: timeout */
     while (inb(PORT_CTL) & CTL_STS_OUTFULL) {
         (void)kbd_inb();
     }
 }
 
-static void kbd_enable(void)
+static void ctl_test(void)
 {
-    ctl_outb(CTL_CMD_KBDON);
+    uint8_t data;
+
+    /* controller self-test */
+    ctl_outb(CTL_CMD_SELFTEST);
+    data = kbd_inb();
+    if (data != CTL_RES_TESTPASS) {
+        puts("PS/2 controller self-test failed!\n");
+    }
+
+    /* port tests */
+    ctl_outb(CTL_CMD_P1TEST);
+    data = kbd_inb();
+    if (data != 0x00) {
+        puts("PS/2 controller port 1 test failed!\n");
+    }
 }
 
-static void kbd_disable(void)
+static void kbd_test(void)
 {
-    ctl_outb(CTL_CMD_KBDOFF);
+    uint8_t data;
+
+    /* keyboard self-test */
+    if (kbd_sendcmd(KBD_CMD_SELFTEST) != SENDCMD_SUCCESS) {
+        puts("Failed to start PS/2 keyboard self-test!\n");
+    }
+
+    data = kbd_inb();
+    if (data != KBD_RES_TESTPASS) {
+        puts("PS/2 keyboard self-test failed! (");
+        putix(data);
+        puts(")\n");
+    }
 }
 
-/* Output a byte to the PS/2 controller. */
-static void ctl_outb(uint8_t data)
+static void kbd_sc3init(void)
 {
-    /* Poll status register, wait until input buffer is empty before writing */
-    while (inb(PORT_CTL) & CTL_STS_INFULL);
-    outb(data, PORT_CTL);
-}
+    /* set scancode */
+    if (kbd_sendcmd(KBD_CMD_SCANCODE) != SENDCMD_SUCCESS) {
+        goto sc3_fail;
+    }
+    if (kbd_sendcmd(KBD_CFG_SC3) != SENDCMD_SUCCESS) {
+        goto sc3_fail;
+    }
 
-/* Output a byte to the PS/2 keyboard. */
-static void kbd_outb(uint8_t data)
-{
-    /* Poll status register, wait until input buffer is empty before writing */
-    while (inb(PORT_CTL) & CTL_STS_INFULL);
-    outb(data, PORT_KBD);
-}
+    /* read back scancode for sanity */
+    if (kbd_sendcmd(KBD_CMD_SCANCODE) != SENDCMD_SUCCESS) {
+        goto sc3_fail;
+    }
+    if (kbd_sendcmd(KBD_CFG_GETSC) != SENDCMD_SUCCESS) {
+        goto sc3_fail;
+    }
+    if (kbd_inb() != KBD_CFG_SC3) {
+        goto sc3_fail;
+    }
 
-/* Read a byte from the PS/2 keyboard. */
-static uint8_t kbd_inb(void)
-{
-    /* Poll status register, wait until output buffer is full before reading */
-    while (!(inb(PORT_CTL) & CTL_STS_OUTFULL));
-    return inb(PORT_KBD);
+    /* set make/break/repeat and enable scanning
+       some keyboards (QEMU) don't support the make/break/repeat command... */
+    kbd_sendcmd(KBD_CMD_MKBRKTYPM);
+    kbd_sendcmd(KBD_CMD_SCANON);
+    return;
+
+sc3_fail:
+    puts("PS/2 keyboard: failed to switch to scancode 3!\n");
 }
