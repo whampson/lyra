@@ -25,7 +25,8 @@ export AS       := gcc
 export ASFLAGS  := $(GCC_WARNINGS) -D__ASM__ -m32
 export CC       := gcc
 export CFLAGS   := $(GCC_WARNINGS) -m32 -ffreestanding -fomit-frame-pointer \
-                   -fno-unwind-tables -fno-asynchronous-unwind-tables
+                   -fno-unwind-tables -fno-asynchronous-unwind-tables \
+				   -fno-stack-protector
 export LD       := ld
 export LDFLAGS  :=
 export MAKEFLAGS:= --no-print-directory
