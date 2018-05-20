@@ -73,7 +73,7 @@
 #define KB_CUR_U    0xB8
 #define KB_PGUP     0xB9
 
-typedef struct keycode {
+struct keycode {
     uint8_t key_id;
     struct keyflags {
         uint8_t pressed : 1;
@@ -84,10 +84,11 @@ typedef struct keycode {
         uint8_t caps    : 1;
         uint8_t scroll  : 1;
     } flags;
-} keycode_t;
+};
+
+typedef uint16_t keycode_t;
 
 void kbd_init(void);
-void kbd_set_scancode(int sc);
 void kbd_handle_interrupt(void);
 
 #endif /* __LYRA_KBD_H__ */

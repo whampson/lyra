@@ -221,8 +221,9 @@ void kbd_handle_interrupt(void)
     static int flag_scroll = 0;
 
     uint8_t data;
-    uint8_t key;
+    uint8_t key_id;
     uint8_t tmp;
+    struct keycode keycode;
     int modifier_key;
 
     data = inb(PORT_KBD);
@@ -231,8 +232,8 @@ void kbd_handle_interrupt(void)
         return;
     }
 
-    key = SCANCODE3[data];
-    switch (key) {
+    key_id = SCANCODE3[data];
+    switch (key_id) {
         case KB_LCTRL:
         case KB_RCTRL:
             modifier_key = 1;
@@ -251,19 +252,19 @@ void kbd_handle_interrupt(void)
         case KB_NUM:
             if (!evt_release) {
                 flag_num ^= 1;
-                //kbd_setled(flag_num, flag_caps, flag_scroll);
+                kbd_setled(flag_num, flag_caps, flag_scroll);
             }
             break;
         case KB_CAPS:
             if (!evt_release) {
                 flag_caps ^= 1;
-                //kbd_setled(flag_num, flag_caps, flag_scroll);
+                kbd_setled(flag_num, flag_caps, flag_scroll);
             }
             break;
         case KB_SCROLL:
             if (!evt_release) {
                 flag_scroll ^= 1;
-                //kbd_setled(flag_num, flag_caps, flag_scroll);
+                kbd_setled(flag_num, flag_caps, flag_scroll);
             }
             break;
         default:
@@ -272,16 +273,25 @@ void kbd_handle_interrupt(void)
     }
 
     if (flag_shift) {
-        tmp = SHIFT_MAP[key];
+        tmp = SHIFT_MAP[key_id];
         if (tmp != 0) {
-            key = tmp;
+            key_id = tmp;
         }
     }
 
-    if (!evt_release && !modifier_key && key != 0) {
-        putchar((char) key);
-        // putix(key);
-        // puts("\n");
+    keycode.key_id = key_id;
+    keycode.flags.pressed = !evt_release;
+    keycode.flags.ctrl = flag_ctrl;
+    keycode.flags.shift = flag_shift;
+    keycode.flags.alt = flag_alt;
+    keycode.flags.num = flag_num;
+    keycode.flags.caps = flag_caps;
+    keycode.flags.scroll = flag_scroll;
+
+    if (!evt_release && !modifier_key && key_id != 0) {
+        putchar((char) key_id);
+        //putix(*((keycode_t *) &keycode));
+        //puts("\n");
     }
     if (evt_release) {
         evt_release = 0;
