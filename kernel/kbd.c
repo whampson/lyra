@@ -201,6 +201,7 @@ void kbd_init(void)
     ctl_outb(CTL_CMD_P1ON);
     kbd_test();
     kbd_sc3init();
+    kbd_setled(0, 0, 0);
 
     /* enable interrupts */
     ctl_outb(CTL_CMD_RDCFG);
@@ -252,19 +253,19 @@ void kbd_handle_interrupt(void)
         case KB_NUM:
             if (!evt_release) {
                 flag_num ^= 1;
-                kbd_setled(flag_num, flag_caps, flag_scroll);
+                //kbd_setled(flag_num, flag_caps, flag_scroll);
             }
             break;
         case KB_CAPS:
             if (!evt_release) {
                 flag_caps ^= 1;
-                kbd_setled(flag_num, flag_caps, flag_scroll);
+                //kbd_setled(flag_num, flag_caps, flag_scroll);
             }
             break;
         case KB_SCROLL:
             if (!evt_release) {
                 flag_scroll ^= 1;
-                kbd_setled(flag_num, flag_caps, flag_scroll);
+                //kbd_setled(flag_num, flag_caps, flag_scroll);
             }
             break;
         default:
@@ -288,13 +289,17 @@ void kbd_handle_interrupt(void)
     keycode.flags.caps = flag_caps;
     keycode.flags.scroll = flag_scroll;
 
-    if (!evt_release && !modifier_key && key_id != 0) {
-        putchar((char) key_id);
-        //putix(*((keycode_t *) &keycode));
-        //puts("\n");
-    }
+    // if (!evt_release && !modifier_key && key_id != 0) {
+    //     putchar((char) key_id);
+    //     //putix(*((keycode_t *) &keycode));
+    //     //puts("\n");
+    // }
     if (evt_release) {
         evt_release = 0;
+    }
+    else {
+        putix(*((keycode_t *) &keycode));
+        puts(" ");
     }
 }
 
