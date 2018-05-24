@@ -19,8 +19,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <lyra/irq.h>
-#include <lyra/io.h>
-#include <lyra/kbd.h>
+#include <drivers/ps2kbd.h>
 
 static int eoi(unsigned int irq_num);
 
@@ -57,7 +56,7 @@ void do_irq(struct interrupt_frame *regs)
 
     switch (irq_num) {
         case IRQ_KEYBOARD:
-            kbd_handle_interrupt();
+            ps2kbd_do_irq();
             eoi(irq_num);
             break;
         default:
