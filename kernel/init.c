@@ -21,8 +21,8 @@
 #include <lyra/interrupt.h>
 #include <lyra/irq.h>
 #include <lyra/io.h>
-#include <lyra/kbd.h>
 #include <lyra/memory.h>
+#include <drivers/ps2kbd.h>
 
 /* The TSS. */
 static struct tss_struct tss = { 0 };
@@ -47,7 +47,7 @@ void kernel_init(void)
 
     puts("Initializing IRQs...\n");
     irq_init();
-    kbd_init();
+    ps2kbd_init();
 
     puts("Enabling interrupts...\n");
     irq_enable(IRQ_KEYBOARD);
