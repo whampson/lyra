@@ -13,24 +13,29 @@
 
 #-------------------------------------------------------------------------------
 # File: Makefile
-# Desc: Driver code build script.
+# Desc: Input driver build script.
 #-------------------------------------------------------------------------------
 
 CUR_DIR         := $(notdir $(shell pwd))
-export OBJ      := $(OBJ)/$(CUR_DIR)
-export TREE     := $(CUR_DIR)
+OBJ             := $(OBJ)/$(CUR_DIR)
+TREE            := $(TREE)/$(CUR_DIR)
 
-DRIVERS         := i8259 input
+ASM_SOURCES     := $(wildcard *.S)
+C_SOURCES       := $(wildcard *.c)
+OBJECTS         := $(ASM_SOURCES:.S=_asm.o) $(C_SOURCES:.c=.o)
+OBJECTS         := $(patsubst %.o, $(OBJ)/%.o, $(OBJECTS))
 
-.PHONY: all dirs $(DRIVERS)
+.PHONY: all dirs
 
-all: dirs $(DRIVERS)
+all: dirs $(OBJECTS)
 
 dirs:
 	@mkdir -p $(OBJ)
 
-i8259:
-	@$(MAKE) $(MAKEFLAGS) -C i8259
+$(OBJ)/%_asm.o: %.S
+	@echo AS $(TREE)/$<
+	@$(AS) $(ASFLAGS) -I$(INCLUDE) -c -o $@ $<
 
-input:
-	@$(MAKE) $(MAKEFLAGS) -C input
+$(OBJ)/%.o: %.c
+	@echo CC $(TREE)/$<
+	@$(CC) $(CFLAGS) -I$(INCLUDE) -c -o $@ $<
