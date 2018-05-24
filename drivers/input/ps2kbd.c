@@ -18,8 +18,9 @@
 
 #include <stdio.h>
 #include <lyra/kernel.h>
+#include <lyra/input.h>
 #include <lyra/io.h>
-#include <drivers/input/ps2kbd.h>
+#include <drivers/ps2kbd.h>
 
 /* PS/2 keyboard and controller I/O ports. */
 #define PORT_KBD            0x60    /* PS/2 keyboard I/O */
@@ -104,6 +105,7 @@
 #define SENDCMD_ERROR       1
 #define SENDCMD_TIMEOUT     2
 
+/* Data sent by keyboard when a key is released. */
 #define SC3_BREAK           0xF0
 
 /* kbd_sendcmd() retry count before SENDCMD_TIMEOUT is returned. */
@@ -114,11 +116,11 @@
     check INSERT
     check keypad
 */
-static const uint8_t SCANCODE3[256] =
+static const scancode_t SCANCODE3[256] =
 {
 /*00-07*/  0,0,0,0,0,0,0,KB_F1,
-/*08-0F*/  KB_ESC,0,0,0,0,'\t','`',KB_F2,
-/*10-17*/  0,KB_LCTRL,KB_LSHIFT,0,KB_CAPS,'q','1',KB_F3,
+/*08-0F*/  KB_ESCAPE,0,0,0,0,KB_TAB,'`',KB_F2,
+/*10-17*/  0,KB_LCTRL,KB_LSHIFT,0,KB_CAPLK,'q','1',KB_F3,
 /*18-1F*/  0,KB_LALT,'z','s','a','w','2',KB_F4,
 /*20-27*/  0,'c','x','d','e','4','3',KB_F5,
 /*28-2F*/  0,' ','v','f','t','r','5',KB_F6,
@@ -126,13 +128,13 @@ static const uint8_t SCANCODE3[256] =
 /*38-3F*/  0,KB_RALT,'m','j','u','7','8',KB_F8,
 /*40-47*/  0,',','k','i','o','0','9',KB_F9,
 /*48-4F*/  0,'.','/','l',';','p','-',KB_F10,
-/*50-57*/  0,0,'\'','\\','[','=',KB_F11,KB_PRNTSC,
-/*58-5F*/  KB_RCTRL,KB_RSHIFT,'\n',']','\\',0,KB_F12,KB_SCROLL,
-/*60-67*/  KB_CUR_D,KB_CUR_L,KB_PAUSE,KB_CUR_U,KB_DELETE,KB_END,'\b',KB_INSERT,
-/*68-6F*/  0,KB_KP_1,KB_CUR_R,KB_KP_4,KB_KP_7,KB_PGDN,KB_HOME,KB_PGUP,
-/*70-77*/  KB_KP_0,KB_KP_DOT,KB_KP_2,KB_KP_5,KB_KP_6,KB_KP_8,KB_NUM,KB_KP_SLASH,
-/*78-7F*/  0,KB_KP_ENTER,KB_KP_3,0,KB_KP_PLUS,KB_KP_9,KB_KP_STAR,0,
-/*80-8F*/  0,0,0,0,KB_KP_MINUS,0,0,0,
+/*50-57*/  0,0,'\'','\\','[','=',KB_F11,KB_PRTSC,
+/*58-5F*/  KB_RCTRL,KB_RSHIFT,'\n',']','\\',0,KB_F12,KB_SCRLK,
+/*60-67*/  KB_DOWN,KB_LEFT,KB_PAUSE,KB_UP,KB_DELETE,KB_END,KB_BACKSPACE,KB_INSERT,
+/*68-6F*/  0,KB_NUM1,KB_RIGHT,KB_NUM4,KB_NUM7,KB_PAGEDN,KB_HOME,KB_PAGEUP,
+/*70-77*/  KB_NUM0,KB_DECIMAL,KB_NUM2,KB_NUM5,KB_NUM6,KB_NUM8,KB_NUMLK,KB_DIVIDE,
+/*78-7F*/  0,KB_RENTER,KB_NUM3,0,KB_ADD,KB_NUM9,KB_MULTIPLY,0,
+/*80-8F*/  0,0,0,0,KB_SUBTRACT,0,0,0,
 /*00-0F*/  0,0,0,0,0,0,0,0,
 /*90-9F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 /*A0-AF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -143,7 +145,7 @@ static const uint8_t SCANCODE3[256] =
 /*F0-FF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static const uint8_t SHIFT_MAP[256] =
+static const char SHIFT_MAP[256] =
 {
 /*00-0F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 /*10-1F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -177,7 +179,7 @@ void ps2kbd_init(void)
 {
     uint8_t data;
 
-    puts("Initializing PS/2 devices...\n");
+    puts("Initializing PS/2 keyboard...\n");
 
     /* disable ports */
     ctl_outb(CTL_CMD_P1OFF);
@@ -221,20 +223,28 @@ void ps2kbd_do_irq(void)
     static int flag_caps = 0;
     static int flag_scroll = 0;
 
-    uint8_t data;
-    uint8_t key_id;
-    uint8_t tmp;
-    struct keycode keycode;
+    uint8_t kb_data;
+    scancode_t sc;
+    char ch;
+    char tmp;
     int modifier_key;
 
-    data = inb(PORT_KBD);
-    if (data == SC3_BREAK) {
+    /* Read raw scancode from keyboard */
+    kb_data = inb(PORT_KBD);
+    if (kb_data == SC3_BREAK) {
         evt_release = 1;
         return;
     }
 
-    key_id = SCANCODE3[data];
-    switch (key_id) {
+    /* Convert to virtual scancode */
+    sc = SCANCODE3[kb_data];
+    modifier_key = 0;
+
+    /* TODO: put sc into some sort of keypress buffer so user can get
+       raw keypresses if need be */
+
+    /* Handle modifier and toggle keys */
+    switch (sc) {
         case KB_LCTRL:
         case KB_RCTRL:
             modifier_key = 1;
@@ -250,56 +260,41 @@ void ps2kbd_do_irq(void)
             modifier_key = 1;
             flag_alt = (evt_release) ? 0 : 1;
             break;
-        case KB_NUM:
+        case KB_NUMLK:
             if (!evt_release) {
                 flag_num ^= 1;
-                //kbd_setled(flag_num, flag_caps, flag_scroll);
+                kbd_setled(flag_num, flag_caps, flag_scroll);
             }
             break;
-        case KB_CAPS:
+        case KB_CAPLK:
             if (!evt_release) {
                 flag_caps ^= 1;
-                //kbd_setled(flag_num, flag_caps, flag_scroll);
+                kbd_setled(flag_num, flag_caps, flag_scroll);
             }
             break;
-        case KB_SCROLL:
+        case KB_SCRLK:
             if (!evt_release) {
                 flag_scroll ^= 1;
-                //kbd_setled(flag_num, flag_caps, flag_scroll);
+                kbd_setled(flag_num, flag_caps, flag_scroll);
             }
-            break;
-        default:
-            modifier_key = 0;
             break;
     }
 
+    ch = (char) sc;
+
+    /* Handle shift */
     if (flag_shift) {
-        tmp = SHIFT_MAP[key_id];
+        tmp = SHIFT_MAP[sc];
         if (tmp != 0) {
-            key_id = tmp;
+            ch = tmp;
         }
     }
 
-    keycode.key_id = key_id;
-    keycode.flags.pressed = !evt_release;
-    keycode.flags.ctrl = flag_ctrl;
-    keycode.flags.shift = flag_shift;
-    keycode.flags.alt = flag_alt;
-    keycode.flags.num = flag_num;
-    keycode.flags.caps = flag_caps;
-    keycode.flags.scroll = flag_scroll;
-
-    // if (!evt_release && !modifier_key && key_id != 0) {
-    //     putchar((char) key_id);
-    //     //putix(*((keycode_t *) &keycode));
-    //     //puts("\n");
-    // }
+    if (!evt_release && !modifier_key && sc != 0) {
+        putchar(ch);
+    }
     if (evt_release) {
         evt_release = 0;
-    }
-    else {
-        putix(*((keycode_t *) &keycode));
-        puts(" ");
     }
 }
 
