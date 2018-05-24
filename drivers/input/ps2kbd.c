@@ -12,14 +12,14 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: kbd.c
+ * File: ps2kbd.c
  * Desc: PS/2 keyboard driver.
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
 #include <lyra/kernel.h>
-#include <lyra/kbd.h>
 #include <lyra/io.h>
+#include <drivers/input/ps2kbd.h>
 
 /* PS/2 keyboard and controller I/O ports. */
 #define PORT_KBD            0x60    /* PS/2 keyboard I/O */
@@ -173,7 +173,7 @@ static void kbd_test(void);
 static void kbd_sc3init(void);
 static void kbd_setled(int num, int caps, int scrl);
 
-void kbd_init(void)
+void ps2kbd_init(void)
 {
     uint8_t data;
 
@@ -211,7 +211,7 @@ void kbd_init(void)
     kbd_outb(data);
 }
 
-void kbd_handle_interrupt(void)
+void ps2kbd_do_irq(void)
 {
     static int evt_release = 0;
     static int flag_ctrl = 0;
