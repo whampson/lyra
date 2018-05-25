@@ -35,10 +35,10 @@
  * https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
  */
 enum kb_keys {
-    KB_BACKSPACE    = 0x08,
-    KB_TAB          = 0x09,
-    KB_ENTER        = 0x0D,
-    KB_ESCAPE       = 0x1B,
+    KB_BACKSPACE    = 0x08,     /* '\b' */
+    KB_TAB          = 0x09,     /* '\t' */
+    KB_ENTER        = 0x0D,     /* '\n' */
+    KB_ESCAPE       = 0x1B,     /* '\e' */
     KB_SPACE        = 0x20,
     KB_DELETE       = 0x7F,
     KB_NUM0         = 0x80,
@@ -90,6 +90,8 @@ enum kb_keys {
     KB_LEFT         = 0xAE,
     KB_RIGHT        = 0xAF
 };
+
+#define NUMPAD_OFFSET   0x50
 
 /**
  * Represents a keyboard virtual scancode.
