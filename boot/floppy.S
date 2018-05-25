@@ -27,32 +27,29 @@
 # Each sector is 512 bytes.
 #
 # LIMITATIONS:
-#   As of now, this routine only loads sectors from the first track of the
-#   first head of the floppy. Therefore, a maximum of 18 sectors can be loaded.
+#   As of now, this routine can only load a range of sectors starting from the
+#   first track of the first head of the floppy.
 #
 #   Inputs: bx - destination address
 #           cl - starting sector
 #           ch - number of sectors to read
-#           al - starting cylinder
 #  Outputs: ax - 0 for success, -1 if an error occurred
 # Clobbers: ax, ch, dx, es, si
 ##
 .globl read_sectors
 read_sectors:
-    pushw   %ax
     xorw    %ax, %ax
     movw    %ax, %es
+    movb    %ch, %al
     movw    $RETRY_COUNT, %si
 
-_bounds_check:
-    movb    %cl, %al
-    addb    %ch, %al        # TODO: test overflow
-    subw    $1, %ax
-    cmpw    $SECTOR_COUNT, %ax
-    ja      _support_err
-    popw    %ax             # TEMP FIX: allow reading from more than just cyl 0
-    xchgb   %ch, %al        # TODO: rewrite this routine to allow read of
-    #movb    %ch, %al       # arbitrary length from arbitrary position
+#_bounds_check:
+#    movb    %cl, %al
+#    addb    %ch, %al        # TODO: test overflow
+#    subw    $1, %ax
+#    cmpw    $SECTOR_COUNT, %ax
+#    ja      _support_err
+#    movb    %ch, %al
 
 _read_loop:
     decw    %si
@@ -81,16 +78,16 @@ _read_error:
     movw    $-1, %ax
     ret
 
-_support_err:
-    leaw    s_cyl_support, %bx
-    call    print
-    movw    $-1, %ax
-    ret
+#_support_err:
+#    leaw    s_cyl_support, %bx
+#    call    print
+#    movw    $-1, %ax
+#    ret
 
 s_disk_err:
     .ascii  "Disk read error!"
     .byte   10, 13, 0
 
-s_cyl_support:
-    .ascii "Reading more than one cylinder is not supported yet!"
-    .byte   10, 13, 0
+#s_cyl_support:
+#    .ascii "Reading more than one cylinder is not supported yet!"
+#    .byte   10, 13, 0
