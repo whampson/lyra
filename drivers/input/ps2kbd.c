@@ -235,13 +235,17 @@ void ps2kbd_do_irq(void)
         evt_release = 1;
         return;
     }
+    else if (kb_data == 0x00) {
+        /* TODO: check error? */
+        return;
+    }
 
     /* Convert to virtual scancode */
     sc = SCANCODE3[kb_data];
     modifier_key = 0;
 
     /* TODO: put sc into some sort of keypress buffer so user can get
-       raw keypresses if need be */
+       raw keypresses if need be, also add key release events */
 
     /* Handle modifier and toggle keys */
     switch (sc) {
@@ -249,38 +253,125 @@ void ps2kbd_do_irq(void)
         case KB_RCTRL:
             modifier_key = 1;
             flag_ctrl = (evt_release) ? 0 : 1;
-            break;
+            goto irq_done;
         case KB_LSHIFT:
         case KB_RSHIFT:
             modifier_key = 1;
             flag_shift = (evt_release) ? 0 : 1;
-            break;
+            goto irq_done;
         case KB_LALT:
         case KB_RALT:
             modifier_key = 1;
             flag_alt = (evt_release) ? 0 : 1;
-            break;
+            goto irq_done;
         case KB_NUMLK:
             if (!evt_release) {
                 flag_num ^= 1;
                 kbd_setled(flag_num, flag_caps, flag_scroll);
             }
-            break;
+            goto irq_done;
         case KB_CAPLK:
             if (!evt_release) {
                 flag_caps ^= 1;
                 kbd_setled(flag_num, flag_caps, flag_scroll);
             }
-            break;
+            goto irq_done;
         case KB_SCRLK:
             if (!evt_release) {
                 flag_scroll ^= 1;
                 kbd_setled(flag_num, flag_caps, flag_scroll);
             }
+            goto irq_done;
+    }
+
+    if (evt_release) {
+        goto irq_done;
+    }
+
+    /* ansi sequences */
+    switch (sc) {
+        case KB_UP:
+            putchar(KB_ESCAPE);
+            putchar('[');
+            putchar('A');
+            goto irq_done;
+        case KB_DOWN:
+            putchar(KB_ESCAPE);
+            putchar('[');
+            putchar('B');
+            goto irq_done;
+        case KB_LEFT:
+            putchar(KB_ESCAPE);
+            putchar('[');
+            putchar('C');
+            goto irq_done;
+        case KB_RIGHT:
+            putchar(KB_ESCAPE);
+            putchar('[');
+            putchar('D');
+            goto irq_done;
+        /* TODO: the rest */
+    }
+
+    /* Handle ctrl */
+    if (flag_ctrl) {
+        switch (sc) {
+            case '2':   /* ^@ */
+                putchar('\0');
+                goto irq_done;
+            case 'g':
+                putchar('\a');
+                goto irq_done;
+            case 'h':
+                putchar('\b');
+                goto irq_done;
+            case 'i':
+                putchar('\t');
+                goto irq_done;
+            case 'j':
+                putchar('\n');
+                goto irq_done;
+            case 'k':
+                putchar('\v');
+                goto irq_done;
+            case 'l':
+                putchar('\f');
+                goto irq_done;
+            case 'm':
+                putchar('\r');
+                goto irq_done;
+            case '[':
+                putchar('\e');
+                goto irq_done;
+        }
+    }
+
+    switch (sc) {
+        case KB_ADD:
+            ch = '+';
+            break;
+        case KB_SUBTRACT:
+            ch = '-';
+            break;
+        case KB_MULTIPLY:
+            ch = '*';
+            break;
+        case KB_DIVIDE:
+            ch = '/';
+            break;
+        case KB_DECIMAL:
+            ch = '.';
+            break;
+        default:
+            ch = (char) sc;
             break;
     }
 
-    ch = (char) sc;
+    /* Handle numpad */
+    /* TODO: check/handle numlock */
+    if (sc >= KB_NUM0 && sc <= KB_NUM9) {
+        ch -= NUMPAD_OFFSET;
+    }
 
     /* Handle shift */
     if (flag_shift) {
@@ -290,9 +381,15 @@ void ps2kbd_do_irq(void)
         }
     }
 
-    if (!evt_release && !modifier_key && sc != 0) {
-        putchar(ch);
+    /* Handle caps lock */
+    if (flag_caps && sc >= 'a' && sc <= 'z') {
+        ch += (flag_shift) ? 0x20 : -0x20;
     }
+
+    putchar(ch);
+
+/* TODO: rename */
+irq_done:
     if (evt_release) {
         evt_release = 0;
     }
