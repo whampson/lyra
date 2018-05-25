@@ -53,4 +53,9 @@ SECTIONS
         *(.rodata)
         __RODATA_END = .;
     }
+    __KERNEL_END = .;
+
+    __KERNEL_NUM_SECTORS = (__KERNEL_END - KERNEL_START) / 512;
+    ASSERT(__KERNEL_NUM_SECTORS < 256,
+        "Error: Kernel is too large for current floppy disk driver!")
 }
