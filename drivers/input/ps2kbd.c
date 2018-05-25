@@ -165,6 +165,9 @@ static const char SHIFT_MAP[256] =
 /*F0-FF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
+static int handle_numpad(scancode_t sc);
+static int handle_special(scancode_t sc);
+
 static void ctl_outb(uint8_t data);
 static void kbd_outb(uint8_t data);
 static uint8_t kbd_inb(void);
@@ -176,6 +179,8 @@ static void kbd_cli(void);
 static void kbd_sti(void);
 static void kbd_sc3init(void);
 static void kbd_setled(int num, int caps, int scrl);
+
+static void putcsi(const char *seq);
 
 void ps2kbd_init(void)
 {
@@ -205,14 +210,7 @@ void ps2kbd_init(void)
     ctl_outb(CTL_CMD_P1ON);
     kbd_test();
     kbd_sc3init();
-    kbd_setled(0, 0, 0);
-
-    // /* enable interrupts */
-    // ctl_outb(CTL_CMD_RDCFG);
-    // data = kbd_inb();
-    // data |= CTL_CFG_P1INT;
-    // ctl_outb(CTL_CMD_WRCFG);
-    // kbd_outb(data);
+    kbd_setled(0, 0, 0);        /* enables keyboard interrupts */
 }
 
 void ps2kbd_do_irq(void)
@@ -299,104 +297,45 @@ void ps2kbd_do_irq(void)
         goto irq_done;
     }
 
-    // /* ansi sequences */
-    // switch (sc) {
-    //     case KB_UP:
-    //         putchar(KB_ESCAPE);
-    //         putchar('[');
-    //         putchar('A');
-    //         goto irq_done;
-    //     case KB_DOWN:
-    //         putchar(KB_ESCAPE);
-    //         putchar('[');
-    //         putchar('B');
-    //         goto irq_done;
-    //     case KB_LEFT:
-    //         putchar(KB_ESCAPE);
-    //         putchar('[');
-    //         putchar('C');
-    //         goto irq_done;
-    //     case KB_RIGHT:
-    //         putchar(KB_ESCAPE);
-    //         putchar('[');
-    //         putchar('D');
-    //         goto irq_done;
-    //     /* TODO: the rest */
-    // }
-
-    // /* Handle ctrl */
-    // if (flag_ctrl) {
-    //     switch (sc) {
-    //         case '2':   /* ^@ */
-    //             putchar('\0');
-    //             goto irq_done;
-    //         case 'g':
-    //             putchar('\a');
-    //             goto irq_done;
-    //         case 'h':
-    //             putchar('\b');
-    //             goto irq_done;
-    //         case 'i':
-    //             putchar('\t');
-    //             goto irq_done;
-    //         case 'j':
-    //             putchar('\n');
-    //             goto irq_done;
-    //         case 'k':
-    //             putchar('\v');
-    //             goto irq_done;
-    //         case 'l':
-    //             putchar('\f');
-    //             goto irq_done;
-    //         case 'm':
-    //             putchar('\r');
-    //             goto irq_done;
-    //         case '[':
-    //             putchar('\e');
-    //             goto irq_done;
-    //     }
-    // }
-
-    switch (sc) {
-        case KB_ADD:
-            ch = '+';
-            break;
-        case KB_SUBTRACT:
-            ch = '-';
-            break;
-        case KB_MULTIPLY:
-            ch = '*';
-            break;
-        case KB_DIVIDE:
-            ch = '/';
-            break;
-        case KB_DECIMAL:
-            ch = '.';
-            break;
-        default:
-            ch = (char) sc;
-            break;
-    }
+    ch = (char) sc;
 
     /* Handle numpad */
     /* TODO: check/handle numlock */
-    if (sc >= KB_NUM0 && sc <= KB_NUM9) {
-        ch -= NUMPAD_OFFSET;
+    if (handle_numpad(sc)) {
+        goto irq_done;
+    }
+
+    /* Handle special keys */
+    if (handle_special(sc)) {
+        goto irq_done;
     }
 
     /* Handle shift */
     if (flag_shift) {
-        tmp = SHIFT_MAP[sc];
+        tmp = SHIFT_MAP[(int) ch];
         if (tmp != 0) {
             ch = tmp;
         }
     }
 
+    /* Handle ctrl chars (C0) */
+    if (flag_ctrl) {
+        if (ch >= 'a' && ch <= 'z') {
+            ch -= CAPS_OFFSET;
+        }
+        if (ch >= '@' && ch <= '_') {   /* superset of the above */
+            ch -= C0CHAR_OFFSET;
+            goto sendchar;
+        }
+        goto irq_done;
+    }
+
     /* Handle caps lock */
-    if (flag_caps && sc >= 'a' && sc <= 'z') {
+    if (flag_caps && ch >= 'a' && ch <= 'z') {
         ch += (flag_shift) ? 0x20 : -0x20;
     }
 
+sendchar:
     putchar(ch);
 
 /* TODO: rename */
@@ -404,6 +343,64 @@ irq_done:
     if (evt_release) {
         evt_release = 0;
     }
+}
+
+static int handle_special(scancode_t sc)
+{
+    if (sc < KB_DELETE || sc > KB_RIGHT) {
+        return 0;
+    }
+
+    /* ansi sequences */
+    switch (sc) {
+        case KB_UP:
+            putcsi("A");
+            break;
+        case KB_DOWN:
+            putcsi("B");
+            break;
+        case KB_LEFT:
+            putcsi("C");
+            break;
+        case KB_RIGHT:
+            putcsi("D");
+            break;
+        /* TODO: the rest */
+    }
+    return 1;
+}
+
+static int handle_numpad(scancode_t sc)
+{
+    if (sc >= KB_NUM0 && sc <= KB_NUM9) {
+        sc -= NUMPAD_OFFSET;
+        goto sendchar;
+    }
+
+    /* TODO: find a better way to do this... */
+    switch (sc) {
+        case KB_ADD:
+            sc = '+';
+            goto sendchar;
+        case KB_SUBTRACT:
+            sc = '-';
+            goto sendchar;
+        case KB_MULTIPLY:
+            sc = '*';
+            goto sendchar;
+        case KB_DIVIDE:
+            sc = '/';
+            goto sendchar;
+        case KB_DECIMAL:
+            sc = '.';
+            goto sendchar;
+        default:
+            return 0;
+    }
+
+sendchar:
+    putchar((char) sc);
+    return 1;
 }
 
 /**
@@ -620,4 +617,11 @@ setled_fail:
     puts("Failed to set PS/2 keyboard LEDs!\n");
 setled_done:
     kbd_sti();
+}
+
+static void putcsi(const char *seq)
+{
+    putchar(KB_ESCAPE);
+    putchar('[');
+    puts(seq);
 }
