@@ -172,6 +172,8 @@ static int kbd_sendcmd(uint8_t cmd);
 static void kbd_flush(void);
 static void ctl_test(void);
 static void kbd_test(void);
+static void kbd_cli(void);
+static void kbd_sti(void);
 static void kbd_sc3init(void);
 static void kbd_setled(int num, int caps, int scrl);
 
@@ -205,12 +207,12 @@ void ps2kbd_init(void)
     kbd_sc3init();
     kbd_setled(0, 0, 0);
 
-    /* enable interrupts */
-    ctl_outb(CTL_CMD_RDCFG);
-    data = kbd_inb();
-    data |= CTL_CFG_P1INT;
-    ctl_outb(CTL_CMD_WRCFG);
-    kbd_outb(data);
+    // /* enable interrupts */
+    // ctl_outb(CTL_CMD_RDCFG);
+    // data = kbd_inb();
+    // data |= CTL_CFG_P1INT;
+    // ctl_outb(CTL_CMD_WRCFG);
+    // kbd_outb(data);
 }
 
 void ps2kbd_do_irq(void)
@@ -231,18 +233,27 @@ void ps2kbd_do_irq(void)
 
     /* Read raw scancode from keyboard */
     kb_data = inb(PORT_KBD);
-    if (kb_data == SC3_BREAK) {
+    if (kb_data == KBD_RES_ERROR1 || kb_data == KBD_RES_ERROR2) {
+        /* TODO: handle */
+        /* QEMU likes to send these for the toggle keys... */
+        return;
+    }
+    else if (kb_data == SC3_BREAK) {
         evt_release = 1;
         return;
     }
-    else if (kb_data == 0x00) {
-        /* TODO: check error? */
-        return;
-    }
+
+    /*** use 'goto irq1_done' from now on to ensure the release event is ***
+     *** cleared.                                                        ***/
 
     /* Convert to virtual scancode */
     sc = SCANCODE3[kb_data];
     modifier_key = 0;
+
+    if (sc == 0) {
+        /* puts("Got null scancode!\n"); */
+        goto irq_done;
+    }
 
     /* TODO: put sc into some sort of keypress buffer so user can get
        raw keypresses if need be, also add key release events */
@@ -288,63 +299,63 @@ void ps2kbd_do_irq(void)
         goto irq_done;
     }
 
-    /* ansi sequences */
-    switch (sc) {
-        case KB_UP:
-            putchar(KB_ESCAPE);
-            putchar('[');
-            putchar('A');
-            goto irq_done;
-        case KB_DOWN:
-            putchar(KB_ESCAPE);
-            putchar('[');
-            putchar('B');
-            goto irq_done;
-        case KB_LEFT:
-            putchar(KB_ESCAPE);
-            putchar('[');
-            putchar('C');
-            goto irq_done;
-        case KB_RIGHT:
-            putchar(KB_ESCAPE);
-            putchar('[');
-            putchar('D');
-            goto irq_done;
-        /* TODO: the rest */
-    }
+    // /* ansi sequences */
+    // switch (sc) {
+    //     case KB_UP:
+    //         putchar(KB_ESCAPE);
+    //         putchar('[');
+    //         putchar('A');
+    //         goto irq_done;
+    //     case KB_DOWN:
+    //         putchar(KB_ESCAPE);
+    //         putchar('[');
+    //         putchar('B');
+    //         goto irq_done;
+    //     case KB_LEFT:
+    //         putchar(KB_ESCAPE);
+    //         putchar('[');
+    //         putchar('C');
+    //         goto irq_done;
+    //     case KB_RIGHT:
+    //         putchar(KB_ESCAPE);
+    //         putchar('[');
+    //         putchar('D');
+    //         goto irq_done;
+    //     /* TODO: the rest */
+    // }
 
-    /* Handle ctrl */
-    if (flag_ctrl) {
-        switch (sc) {
-            case '2':   /* ^@ */
-                putchar('\0');
-                goto irq_done;
-            case 'g':
-                putchar('\a');
-                goto irq_done;
-            case 'h':
-                putchar('\b');
-                goto irq_done;
-            case 'i':
-                putchar('\t');
-                goto irq_done;
-            case 'j':
-                putchar('\n');
-                goto irq_done;
-            case 'k':
-                putchar('\v');
-                goto irq_done;
-            case 'l':
-                putchar('\f');
-                goto irq_done;
-            case 'm':
-                putchar('\r');
-                goto irq_done;
-            case '[':
-                putchar('\e');
-                goto irq_done;
-        }
-    }
+    // /* Handle ctrl */
+    // if (flag_ctrl) {
+    //     switch (sc) {
+    //         case '2':   /* ^@ */
+    //             putchar('\0');
+    //             goto irq_done;
+    //         case 'g':
+    //             putchar('\a');
+    //             goto irq_done;
+    //         case 'h':
+    //             putchar('\b');
+    //             goto irq_done;
+    //         case 'i':
+    //             putchar('\t');
+    //             goto irq_done;
+    //         case 'j':
+    //             putchar('\n');
+    //             goto irq_done;
+    //         case 'k':
+    //             putchar('\v');
+    //             goto irq_done;
+    //         case 'l':
+    //             putchar('\f');
+    //             goto irq_done;
+    //         case 'm':
+    //             putchar('\r');
+    //             goto irq_done;
+    //         case '[':
+    //             putchar('\e');
+    //             goto irq_done;
+    //     }
+    // }
 
     switch (sc) {
         case KB_ADD:
@@ -445,7 +456,7 @@ static int kbd_sendcmd(uint8_t cmd)
     uint8_t data;
 
     i = 0;
-    retval = 1;
+    retval = SENDCMD_ERROR;
     do {
         kbd_outb(cmd);
         data = kbd_inb();
@@ -525,6 +536,28 @@ static void kbd_test(void)
     }
 }
 
+static void kbd_cli(void)
+{
+    uint8_t data;
+
+    ctl_outb(CTL_CMD_RDCFG);
+    data = kbd_inb();
+    data &= ~CTL_CFG_P1INT;
+    ctl_outb(CTL_CMD_WRCFG);
+    kbd_outb(data);
+}
+
+static void kbd_sti(void)
+{
+    uint8_t data;
+
+    ctl_outb(CTL_CMD_RDCFG);
+    data = kbd_inb();
+    data |= CTL_CFG_P1INT;
+    ctl_outb(CTL_CMD_WRCFG);
+    kbd_outb(data);
+}
+
 static void kbd_sc3init(void)
 {
     /* set scancode */
@@ -564,10 +597,12 @@ sc3_fail:
  */
 static void kbd_setled(int num, int caps, int scrl)
 {
-    /* TODO: debug this, QEMU keyboard responds to SETLED with 0xF0 */
+    /* TODO: debug this, QEMU keyboard responds to SETLED with 0xF0
+       (Mac only) */
 
     uint8_t data;
 
+    kbd_cli();
     data = 0;
     data |= (num)  ? KBD_CFG_LEDNUM  : 0;
     data |= (caps) ? KBD_CFG_LEDCAPS : 0;
@@ -579,8 +614,10 @@ static void kbd_setled(int num, int caps, int scrl)
     if (kbd_sendcmd(data) != SENDCMD_SUCCESS) {
         goto setled_fail;
     }
-    return;
+    goto setled_done;
 
 setled_fail:
     puts("Failed to set PS/2 keyboard LEDs!\n");
+setled_done:
+    kbd_sti();
 }
