@@ -33,11 +33,13 @@
 #   Inputs: bx - destination address
 #           cl - starting sector
 #           ch - number of sectors to read
+#           al - starting cylinder
 #  Outputs: ax - 0 for success, -1 if an error occurred
 # Clobbers: ax, ch, dx, es, si
 ##
 .globl read_sectors
 read_sectors:
+    pushw   %ax
     xorw    %ax, %ax
     movw    %ax, %es
     movw    $RETRY_COUNT, %si
@@ -48,7 +50,9 @@ _bounds_check:
     subw    $1, %ax
     cmpw    $SECTOR_COUNT, %ax
     ja      _support_err
-    movb    %ch, %al
+    popw    %ax             # TEMP FIX: allow reading from more than just cyl 0
+    xchgb   %ch, %al        # TODO: rewrite this routine to allow read of
+    #movb    %ch, %al       # arbitrary length from arbitrary position
 
 _read_loop:
     decw    %si
