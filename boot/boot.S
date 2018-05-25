@@ -51,7 +51,15 @@ load_stage2:
 load_kernel_early:
     movw    $KERNEL_START_EARLY, %bx
     movb    KERNEL_SECTOR, %cl
-    movb    KERNEL_NUM_SECTORS, %ch
+    #movb    KERNEL_NUM_SECTORS, %ch
+    movb    $16, %ch                # stage1(1) + stage2(1) + kernel(16) = 18
+    call    read_sectors
+    cmpw    $0, %ax
+    jnz     boot_err
+    # TEMP FIX: load rest of kernel from cyl 1
+    movw    $KERNEL_START_EARLY + 0x2200, %bx
+    movb    $0, %cl
+    movb    $3, %ch
     call    read_sectors
     cmpw    $0, %ax
     jnz     boot_err
