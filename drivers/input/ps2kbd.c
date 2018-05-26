@@ -111,6 +111,10 @@
 /* kbd_sendcmd() retry count before SENDCMD_TIMEOUT is returned. */
 #define NUM_RETRIES         3
 
+/**
+ * Mapping of physical scancodes to virtual scancodes for "scancode set 3", as
+ * it's known.
+ */
 static const scancode_t SCANCODE3[256] =
 {
 /*00-07*/  0,0,0,0,0,0,0,KB_F1,
@@ -140,29 +144,6 @@ static const scancode_t SCANCODE3[256] =
 /*F0-FF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-static const char SHIFT_MAP[256] =
-{
-/*00-0F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*10-1F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*20-2F*/  0,0,0,0,0,0,0,'"',0,0,0,0,'<','_','>','?',
-/*30-3F*/  ')','!','@','#','$','%','^','&','*','(',0,':',0,'+',0,0,
-/*40-4F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*50-5F*/  0,0,0,0,0,0,0,0,0,0,0,'{','|','}',0,0,
-/*60-6F*/  '~','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O',
-/*70-7F*/  'P','Q','R','S','T','U','V','W','X','Y','Z',0,0,0,0,0,
-/*80-8F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*90-9F*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*A0-AF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*B0-BF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*C0-CF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*D0-DF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*E0-EF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*F0-FF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-};
-
-static int handle_numpad(scancode_t sc);
-static int handle_special(scancode_t sc);
-
 static void ctl_outb(uint8_t data);
 static void kbd_outb(uint8_t data);
 static uint8_t kbd_inb(void);
@@ -174,8 +155,6 @@ static void kbd_cli(void);
 static void kbd_sti(void);
 static void kbd_sc3init(void);
 static void kbd_setled(int num, int caps, int scrl);
-
-static void putcsi(const char *seq);
 
 void ps2kbd_init(void)
 {
@@ -210,7 +189,8 @@ void ps2kbd_init(void)
 
 void ps2kbd_do_irq(void)
 {
-    static int evt_release = 0;
+    /* Keyboard state flags */
+    static int evt_keyrelease = 0;
     static int flag_ctrl = 0;
     static int flag_shift = 0;
     static int flag_alt = 0;
@@ -220,181 +200,82 @@ void ps2kbd_do_irq(void)
 
     uint8_t kb_data;
     scancode_t sc;
-    char ch;
-    char tmp;
-    int modifier_key;
+    struct keystroke k = { 0 };
+
+    /* Disable keyboard */
+    ctl_outb(CTL_CMD_P1OFF);
 
     /* Read raw scancode from keyboard */
     kb_data = inb(PORT_KBD);
     if (kb_data == KBD_RES_ERROR1 || kb_data == KBD_RES_ERROR2) {
-        /* TODO: handle */
-        return;
+        /* TODO: handle error */
+        puts("Keyboard error!\n");
+        goto irq_cleanup;
     }
     else if (kb_data == SC3_BREAK) {
-        evt_release = 1;
-        return;
+        /* Key was released.
+           Next interrupt will have scancode of released key. */
+        evt_keyrelease = 1;
+        goto irq_cleanup;
     }
-
-    /*** use 'goto irq1_done' from now on to ensure the release event is ***
-     *** cleared.                                                        ***/
 
     /* Convert to virtual scancode */
     sc = SCANCODE3[kb_data];
-    modifier_key = 0;
-
     if (sc == 0) {
-        /* TODO: log? */
-        goto irq_done;
+        /* TODO: not mapped. log? */
+        goto irq_cleanup;
     }
-
-    /* TODO: put sc into some sort of keypress buffer so user can get
-       raw keypresses if need be, also add key release events */
 
     /* Handle modifier and toggle keys */
     switch (sc) {
         case KB_LCTRL:
         case KB_RCTRL:
-            modifier_key = 1;
-            flag_ctrl = (evt_release) ? 0 : 1;
-            goto irq_done;
+            flag_ctrl = (!evt_keyrelease) ? 1 : 0;
+            break;
         case KB_LSHIFT:
         case KB_RSHIFT:
-            modifier_key = 1;
-            flag_shift = (evt_release) ? 0 : 1;
-            goto irq_done;
+            flag_shift = (!evt_keyrelease) ? 1 : 0;
+            break;
         case KB_LALT:
         case KB_RALT:
-            modifier_key = 1;
-            flag_alt = (evt_release) ? 0 : 1;
-            goto irq_done;
+            flag_alt = (!evt_keyrelease) ? 1 : 0;
+            break;
         case KB_NUMLK:
-            if (!evt_release) {
+            if (!evt_keyrelease) {
                 flag_num ^= 1;
                 kbd_setled(flag_num, flag_caps, flag_scroll);
             }
-            goto irq_done;
+            break;
         case KB_CAPLK:
-            if (!evt_release) {
+            if (!evt_keyrelease) {
                 flag_caps ^= 1;
                 kbd_setled(flag_num, flag_caps, flag_scroll);
             }
-            goto irq_done;
+            break;
         case KB_SCRLK:
-            if (!evt_release) {
+            if (!evt_keyrelease) {
                 flag_scroll ^= 1;
                 kbd_setled(flag_num, flag_caps, flag_scroll);
             }
-            goto irq_done;
-    }
-
-    if (evt_release) {
-        goto irq_done;
-    }
-
-    ch = (char) sc;
-
-    /* Handle numpad */
-    /* TODO: check/handle numlock */
-    if (handle_numpad(sc)) {
-        goto irq_done;
-    }
-
-    /* Handle special keys (home, end, insert, etc.) */
-    if (handle_special(sc)) {
-        goto irq_done;
-    }
-
-    /* Handle shift */
-    if (flag_shift) {
-        tmp = SHIFT_MAP[(int) ch];
-        if (tmp != 0) {
-            ch = tmp;
-        }
-    }
-
-    /* Handle ctrl chars (C0) */
-    if (flag_ctrl) {
-        if (ch >= 'a' && ch <= 'z') {
-            ch -= CAPS_OFFSET;
-        }
-        if (ch >= '@' && ch <= '_') {   /* superset of the above */
-            ch -= C0CHAR_OFFSET;
-            goto sendchar;
-        }
-        goto irq_done;
-    }
-
-    /* Handle caps lock */
-    if (flag_caps && ch >= 'a' && ch <= 'z') {
-        ch += (flag_shift) ? 0x20 : -0x20;
-    }
-
-sendchar:
-    putchar(ch);
-
-/* TODO: rename */
-irq_done:
-    if (evt_release) {
-        evt_release = 0;
-    }
-}
-
-static int handle_special(scancode_t sc)
-{
-    if (sc < KB_DELETE || sc > KB_RIGHT) {
-        return 0;
-    }
-
-    /* ansi sequences */
-    switch (sc) {
-        case KB_UP:
-            putcsi("A");
             break;
-        case KB_DOWN:
-            putcsi("B");
-            break;
-        case KB_LEFT:
-            putcsi("C");
-            break;
-        case KB_RIGHT:
-            putcsi("D");
-            break;
-        /* TODO: the rest */
-    }
-    return 1;
-}
-
-static int handle_numpad(scancode_t sc)
-{
-    if (sc >= KB_NUM0 && sc <= KB_NUM9) {
-        sc -= NUMPAD_OFFSET;
-        goto sendchar;
     }
 
-    /* TODO: find a better way to do this... */
-    switch (sc) {
-        case KB_ADD:
-            sc = '+';
-            goto sendchar;
-        case KB_SUBTRACT:
-            sc = '-';
-            goto sendchar;
-        case KB_MULTIPLY:
-            sc = '*';
-            goto sendchar;
-        case KB_DIVIDE:
-            sc = '/';
-            goto sendchar;
-        case KB_DECIMAL:
-            sc = '.';
-            goto sendchar;
-        default:
-            return 0;
-    }
+    /* Build and transmit keystroke */
+    k.key_id = sc;
+    k.flag_keypress = !evt_keyrelease;
+    k.flag_ctrl = flag_ctrl;
+    k.flag_shift = flag_shift;
+    k.flag_alt = flag_alt;
+    k.flag_numlk = flag_num;
+    k.flag_capslk = flag_caps;
+    k.flag_scrlk = flag_scroll;
+    sendkey(ENCODE_KEYSTROKE(k));
 
-sendchar:
-    putchar((char) sc);
-    return 1;
+    evt_keyrelease = 0;
+
+irq_cleanup:
+    /* Re-enable keyboard. */
+    ctl_outb(CTL_CMD_P1ON);
 }
 
 /**
@@ -491,6 +372,9 @@ static void kbd_flush(void)
     }
 }
 
+/**
+ * Perform PS/2 controller self-test and test keyboard port.
+ */
 static void ctl_test(void)
 {
     uint8_t data;
@@ -510,6 +394,9 @@ static void ctl_test(void)
     }
 }
 
+/**
+ * Perform keyboard self-test.
+ */
 static void kbd_test(void)
 {
     uint8_t data;
@@ -527,6 +414,9 @@ static void kbd_test(void)
     }
 }
 
+/**
+ * Disable keyboard interrupts.
+ */
 static void kbd_cli(void)
 {
     uint8_t data;
@@ -538,6 +428,9 @@ static void kbd_cli(void)
     kbd_outb(data);
 }
 
+/**
+ * Enable keyboard interrupts.
+ */
 static void kbd_sti(void)
 {
     uint8_t data;
@@ -549,6 +442,9 @@ static void kbd_sti(void)
     kbd_outb(data);
 }
 
+/**
+ * Tell keyboard to send scancodes using scancode set 3.
+ */
 static void kbd_sc3init(void)
 {
     /* set scancode */
@@ -611,11 +507,4 @@ setled_fail:
     puts("Failed to set PS/2 keyboard LEDs!\n");
 setled_done:
     kbd_sti();
-}
-
-static void putcsi(const char *seq)
-{
-    putchar(KB_ESCAPE);
-    putchar('[');
-    puts(seq);
 }
