@@ -12,8 +12,8 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: input.h
- * Desc: Keyboard virtual scancode definitons.
+ *   File: include/lyra/input.h
+ * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_INPUT_H__
@@ -30,28 +30,38 @@
  * codes for the symbol typed when shift is not pressed (e.g. the scancode for
  * the '/?' key is 0x2F, the ASCII code for the '/' character). All keys on the
  * numeric keypad have their own scancodes.
- *
- * Virtual key codes derived from the Windows Virtual-Key Codes found here:
- * https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
  */
 enum kb_keys {
-    KB_BACKSPACE    = 0x08,     /* '\b' */
-    KB_TAB          = 0x09,     /* '\t' */
-    KB_ENTER        = 0x0D,     /* '\n' */
-    KB_ESCAPE       = 0x1B,     /* '\e' */
-    KB_SPACE        = 0x20,
+    /* Control characters */
+    KB_BACKSPACE    = 0x08,
+    KB_TAB          = 0x09,
+    KB_ENTER        = 0x0D,
+    KB_ESCAPE       = 0x1B,
+
+    /* Alphabetic, numeric, and symbolic keys */
+    /* (matches ASCII values, see above) */
+    /* 0x20 - 0x7E */
+
+    /* "Special" keys */
     KB_DELETE       = 0x7F,
     KB_INSERT       = 0x80,
     KB_HOME         = 0x81,
     KB_END          = 0x82,
     KB_PAGEUP       = 0x83,
     KB_PAGEDN       = 0x84,
-    KB_PRTSC        = 0x85,
-    KB_PAUSE        = 0x86,
-    KB_UP           = 0x87,
-    KB_DOWN         = 0x88,
-    KB_LEFT         = 0x89,
-    KB_RIGHT        = 0x8A,
+    KB_UP           = 0x85,
+    KB_DOWN         = 0x86,
+    KB_LEFT         = 0x87,
+    KB_RIGHT        = 0x88,
+
+    /* Number pad */
+    /* Subtract NUMPAD_OFFSET to get ASCII values. */
+    KB_MULTIPLY     = 0x8A,
+    KB_ADD          = 0x8B,
+    KB_RENTER       = 0x8C,
+    KB_SUBTRACT     = 0x8D,
+    KB_DECIMAL      = 0x8E,
+    KB_DIVIDE       = 0x8F,
     KB_NUM0         = 0x90,
     KB_NUM1         = 0x91,
     KB_NUM2         = 0x92,
@@ -62,12 +72,8 @@ enum kb_keys {
     KB_NUM7         = 0x97,
     KB_NUM8         = 0x98,
     KB_NUM9         = 0x99,
-    KB_RENTER       = 0x9A,
-    KB_ADD          = 0x9B,
-    KB_SUBTRACT     = 0x9C,
-    KB_MULTIPLY     = 0x9D,
-    KB_DIVIDE       = 0x9E,
-    KB_DECIMAL      = 0x9F,
+
+    /* Toggle and modifier keys */
     KB_NUMLK        = 0xA0,
     KB_CAPLK        = 0xA1,
     KB_SCRLK        = 0xA2,
@@ -77,24 +83,30 @@ enum kb_keys {
     KB_RSHIFT       = 0xA6,
     KB_LALT         = 0xA7,
     KB_RALT         = 0xA8,
-    KB_F1           = 0xB0,
-    KB_F2           = 0xB1,
-    KB_F3           = 0xB2,
-    KB_F4           = 0xB3,
-    KB_F5           = 0xB4,
-    KB_F6           = 0xB5,
-    KB_F7           = 0xB6,
-    KB_F8           = 0xB7,
-    KB_F9           = 0xB8,
-    KB_F10          = 0xB9,
-    KB_F11          = 0xBA,
-    KB_F12          = 0xBB
+
+    /* Misc. keys */
+    KB_PRTSC        = 0xAA,
+    KB_PAUSE        = 0xAB,
+
+    /* Function keys */
+    KB_F1           = 0xB1,
+    KB_F2           = 0xB2,
+    KB_F3           = 0xB3,
+    KB_F4           = 0xB4,
+    KB_F5           = 0xB5,
+    KB_F6           = 0xB6,
+    KB_F7           = 0xB7,
+    KB_F8           = 0xB8,
+    KB_F9           = 0xB9,
+    KB_F10          = 0xBA,
+    KB_F11          = 0xBB,
+    KB_F12          = 0xBC
 };
 
-/* Useful offsets for converting scancodes to ASCII */
+/* Useful offsets for converting scancodes to ASCII. */
 #define NUMPAD_OFFSET   0x60
 #define C0CHAR_OFFSET   0x40
-#define CAPS_OFFSET     0x20
+#define CAPSLK_OFFSET   0x20
 
 /**
  * Represents a keyboard virtual scancode.
@@ -131,5 +143,25 @@ typedef uint32_t keystroke_t;
 #define FLAG_NUMLK      (1 << 20)
 #define FLAG_CAPSLK     (1 << 21)
 #define FLAG_SCRLK      (1 << 21)
+
+/**
+ * Convert 'struct keystroke' to 'keystroke_t'.
+ */
+#define ENCODE_KEYSTROKE(keystroke_struct)   \
+*((keystroke_t *) &keystroke_struct)
+
+/**
+ * Convert 'keystroke_t' to 'struct keystroke'.
+ */
+#define DECODE_KEYSTROKE(keystroke_val)     \
+*((struct keystroke *) &keystroke_val)
+
+/* defined in drivers/input/input.c */
+extern const char SHIFT_MAP[256];
+
+/**
+ * Send a keystroke to the terminal.
+ */
+void sendkey(keystroke_t k);
 
 #endif /* __LYRA_INPUT_H__ */
