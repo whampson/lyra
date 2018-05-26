@@ -12,14 +12,24 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: ps2kbd.h
- * Desc: PS/2 keyboard interface.
+ *   File: include/drivers/ps2kbd.h
+ * Author: Wes Hampson
+ *   Desc: PS/2 keyboard driver interface.
  *----------------------------------------------------------------------------*/
 
 #ifndef __DRIVERS_INPUT_PS2KBD_H__
 #define __DRIVERS_INPUT_PS2KBD_H__
 
+/**
+ * Test PS/2 controller and keyboard, then configure keyboard to transmit
+ * scancodes from scancode set 3.
+ */
 void ps2kbd_init(void);
+
+/**
+ * IRQ handler for keyboard interrupts.
+ * Sends virtual keystrokes to the terminal.
+ */
 void ps2kbd_do_irq(void);
 
 #endif /* __DRIVERS_INPUT_PS2KBD_H__ */
