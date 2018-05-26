@@ -111,11 +111,6 @@
 /* kbd_sendcmd() retry count before SENDCMD_TIMEOUT is returned. */
 #define NUM_RETRIES         3
 
-/* TODO:
-    check CAPS
-    check INSERT
-    check keypad
-*/
 static const scancode_t SCANCODE3[256] =
 {
 /*00-07*/  0,0,0,0,0,0,0,KB_F1,
@@ -233,7 +228,6 @@ void ps2kbd_do_irq(void)
     kb_data = inb(PORT_KBD);
     if (kb_data == KBD_RES_ERROR1 || kb_data == KBD_RES_ERROR2) {
         /* TODO: handle */
-        /* QEMU likes to send these for the toggle keys... */
         return;
     }
     else if (kb_data == SC3_BREAK) {
@@ -249,7 +243,7 @@ void ps2kbd_do_irq(void)
     modifier_key = 0;
 
     if (sc == 0) {
-        /* puts("Got null scancode!\n"); */
+        /* TODO: log? */
         goto irq_done;
     }
 
@@ -305,7 +299,7 @@ void ps2kbd_do_irq(void)
         goto irq_done;
     }
 
-    /* Handle special keys */
+    /* Handle special keys (home, end, insert, etc.) */
     if (handle_special(sc)) {
         goto irq_done;
     }
