@@ -91,6 +91,7 @@ enum kb_keys {
     KB_F12          = 0xBB
 };
 
+/* Useful offsets for converting scancodes to ASCII */
 #define NUMPAD_OFFSET   0x60
 #define C0CHAR_OFFSET   0x40
 #define CAPS_OFFSET     0x20
@@ -98,6 +99,37 @@ enum kb_keys {
 /**
  * Represents a keyboard virtual scancode.
  */
-typedef uint8_t scancode_t;
+typedef uint16_t scancode_t;
+
+/**
+ * Represents a keyboard event.
+ */
+struct keystroke {
+    scancode_t key_id;              /* virtual key id */
+    uint16_t flag_keypress  : 1;    /* key is pressed */
+    uint16_t flag_ctrl      : 1;    /* ctrl is pressed */
+    uint16_t flag_shift     : 1;    /* shift is pressed */
+    uint16_t flag_alt       : 1;    /* alt is pressed */
+    uint16_t flag_numlk     : 1;    /* num lock is on */
+    uint16_t flag_capslk    : 1;    /* caps lock is on */
+    uint16_t flag_scrlk     : 1;    /* scroll lock is on */
+};
+
+/**
+ * Represents a keyboard event.
+ * The same data is represented as in 'struct keypress', but encoded as an
+ * aggregate value.
+ */
+typedef uint32_t keystroke_t;
+
+/* Masks for accessing fields in 'keystroke_t' */
+#define KEY_ID          0xFFFF
+#define FLAG_KEYPRESS   (1 << 16)
+#define FLAG_CTRL       (1 << 17)
+#define FLAG_SHIFT      (1 << 18)
+#define FLAG_ALT        (1 << 19)
+#define FLAG_NUMLK      (1 << 20)
+#define FLAG_CAPSLK     (1 << 21)
+#define FLAG_SCRLK      (1 << 21)
 
 #endif /* __LYRA_INPUT_H__ */
