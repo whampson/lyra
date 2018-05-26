@@ -40,3 +40,52 @@ const char SHIFT_MAP[256] =
 /*E0-EF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 /*F0-FF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
+
+void sendkey(keystroke_t k)
+{
+    /* TODO:
+        - translate keystroke into character(s)
+            - the mapping of character(s) sent for keys pressed will happen here
+        - send characters to terminal input line
+            - tty line discipline will hold input buffer
+    */
+
+   /* Carried over from ps2kbd.c... */
+    // ch = (char) sc;
+
+    // /* Handle numpad */
+    // /* TODO: check/handle numlock */
+    // if (handle_numpad(sc)) {
+    //     goto irq_done;
+    // }
+
+    // /* Handle special keys (home, end, insert, etc.) */
+    // if (handle_special(sc)) {
+    //     goto irq_done;
+    // }
+
+    // /* Handle shift */
+    // if (flag_shift) {
+    //     tmp = SHIFT_MAP[(int) ch];
+    //     if (tmp != 0) {
+    //         ch = tmp;
+    //     }
+    // }
+
+    // /* Handle ctrl chars (C0) */
+    // if (flag_ctrl) {
+    //     if (ch >= 'a' && ch <= 'z') {
+    //         ch -= CAPS_OFFSET;
+    //     }
+    //     if (ch >= '@' && ch <= '_') {   /* superset of the above */
+    //         ch -= C0CHAR_OFFSET;
+    //         goto sendchar;
+    //     }
+    //     goto irq_done;
+    // }
+
+    // /* Handle caps lock */
+    // if (flag_caps && ch >= 'a' && ch <= 'z') {
+    //     ch += (flag_shift) ? CAPS_OFFSET : -CAPS_OFFSET;
+    // }
+}
