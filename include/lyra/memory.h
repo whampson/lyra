@@ -12,8 +12,9 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: memory.h
- * Desc: Memory management macros and prototypes.
+ *   File: include/lyra/memory.h
+ * Author: Wes Hampson
+ *   Desc: Memory management prototypes and macros.
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_MEMORY_H__

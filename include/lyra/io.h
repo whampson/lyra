@@ -12,8 +12,10 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: io.h
- * Desc: I/O macros.
+ *   File: include/lyra/io.h
+ * Author: Wes Hampson
+ *   Desc: Early kernel initialization macros; shared between bootloader and
+ *         kernel.
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_IO_H__

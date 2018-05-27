@@ -12,23 +12,25 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: interrupt.S
-# Desc: Assembly linkage for interrupt handling. All interrupts generated on the
-#       system are routed through the common interrupt handler defined here.
+#   File: kernel/interrupt.S
+# Author: Wes Hampson
+#   Desc: Assembly linkage for interrupt handling. All interrupts generated on
+#         the system are routed through the common interrupt handler defined
+#         here.
 #
 # Interrupt handling overview:
-#       Each time an interrupt is raised, the CPU will call the cooresponding
-#       stub function, which pushes the interrupt vector onto the stack and
-#       calls the common interrupt dispatcher. From there, the dispatcher will
-#       call the correct handler function based on whether the interrupt is an
-#       exception, device IRQ (rasied via the PIC), or system call.
-#       For exceptions, the exception number (IDT entry index) is pushed onto
-#       the stack. This is always a positive number. For device IRQs, the one's
-#       compliment of the IRQ number is pushed onto the stack. This is always a
-#       negative number, which allows the dispatcher to distinguish between
-#       exceptions and device IRQs. Exceptions are interrupts 0x00 - 0x1F,
-#       device IRQs are interrupts 0x20 - 0x2F, and system calls use interrupt
-#       0x80.
+#         Each time an interrupt is raised, the CPU will call the cooresponding
+#         stub function, which pushes the interrupt vector onto the stack and
+#         calls the common interrupt dispatcher. From there, the dispatcher will
+#         call the correct handler function based on whether the interrupt is an
+#         exception, device IRQ (rasied via the PIC), or system call.
+#         For exceptions, the exception number (IDT entry index) is pushed onto
+#         the stack. This is always a positive number. For device IRQs, the
+#         one's compliment of the IRQ number is pushed onto the stack. This is
+#         always a negative number, which allows the dispatcher to distinguish
+#         between exceptions and device IRQs. Exceptions are interrupts
+#         0x00 - 0x1F, device IRQs are interrupts 0x20 - 0x2F, and system calls
+#         use interrupt 0x80.
 #-------------------------------------------------------------------------------
 
 #include <lyra/interrupt.h>

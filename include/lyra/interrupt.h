@@ -12,8 +12,8 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: interrupt.h
- * Desc: Structures and prototypes for generic interrupt handling.
+ *   File: include/lyra/interrupt.h
+ * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_INTERRUPT_H__

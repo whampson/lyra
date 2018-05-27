@@ -12,8 +12,9 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: i8042.S
-# Desc: Misc. routines for communicating with the Intel 8042 PS/2 Controller.
+#   File: boot/i8042.S
+# Author: Wes Hampson
+#   Desc: Misc. routines for communicating with the Intel 8042 PS/2 Controller.
 #-------------------------------------------------------------------------------
 
 #include <lyra/io.h>
@@ -86,19 +87,3 @@ i8042_delay:
     xorb    %al, %al
     outb    %al, $IO_DELAY_PORT
     ret
-
-#    pushw   %bx
-#    pushw   %cx
-#    movw    $0x40, %bx
-#
-#_i8042_delay_loop_outer:
-#    movw    $0xFFFF, %cx
-#
-#_i8042_delay_loop:
-#    decw    %cx
-#    jnz     _i8042_delay_loop
-#    decw    %bx
-#    jnz     _i8042_delay_loop_outer
-#    popw    %cx
-#    popw    %bx
-#    ret

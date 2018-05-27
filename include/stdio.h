@@ -12,12 +12,16 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: stdio.h
- * Desc: Partial implementation of stdio.h from the C Standard Library.
+ *   File: include/stdint.h
+ * Author: Wes Hampson
+ *   Desc: Partial implementation of stdio.h from the C Standard Library.
+ *         Part of wklibc - Wes's Kernel C Standard Library.
  *----------------------------------------------------------------------------*/
 
 #ifndef __STDIO_H__
 #define __STDIO_H__
+
+#include <stdint.h>
 
 #ifndef __NULL_DEFINED__
 #define __NULL_DEFINED__

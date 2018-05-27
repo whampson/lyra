@@ -12,8 +12,9 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: floppy.S
-# Desc: Basic floppy disk driver.
+#   File: boot/floppy.S
+# Author: Wes Hampson
+#   Desc: Basic floppy disk driver.
 #-------------------------------------------------------------------------------
 
 #include "floppy.h"
@@ -43,14 +44,6 @@ read_sectors:
     movb    %ch, %al
     movw    $RETRY_COUNT, %si
 
-#_bounds_check:
-#    movb    %cl, %al
-#    addb    %ch, %al        # TODO: test overflow
-#    subw    $1, %ax
-#    cmpw    $SECTOR_COUNT, %ax
-#    ja      _support_err
-#    movb    %ch, %al
-
 _read_loop:
     decw    %si
     movb    $BIOS_READ_FLOPPY, %ah
@@ -78,16 +71,6 @@ _read_error:
     movw    $-1, %ax
     ret
 
-#_support_err:
-#    leaw    s_cyl_support, %bx
-#    call    print
-#    movw    $-1, %ax
-#    ret
-
 s_disk_err:
     .ascii  "Disk read error!"
     .byte   10, 13, 0
-
-#s_cyl_support:
-#    .ascii "Reading more than one cylinder is not supported yet!"
-#    .byte   10, 13, 0

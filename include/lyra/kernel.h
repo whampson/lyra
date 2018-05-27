@@ -12,8 +12,9 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: kernel.h
- * Desc: Commonly-used function prototypes and macros.
+ *   File: include/lyra/kernel.h
+ * Author: Wes Hampson
+ *   Desc: Commonly-used function prototypes and macros.
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_KERNEL_H__

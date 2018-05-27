@@ -12,8 +12,9 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: exception.h
- * Desc: Exception vector definitions and handler prototypes.
+ *   File: include/lyra/descriptor.h
+ * Author: Wes Hampson
+ *   Desc: Exception vector definitions and handler prototypes.
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_EXCEPTION_H__
@@ -44,7 +45,11 @@
 
 #ifndef __ASM__
 
-/* Common exception handler. */
+/**
+ * Common exception handler.
+ *
+ * @param regs - pointer to process state
+ */
 __attribute__((fastcall))
 void do_exception(struct interrupt_frame *regs);
 

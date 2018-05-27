@@ -12,9 +12,8 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: boot.h
- * Desc: Important memory addresses and other macros used during initial
- *       bootstrapping.
+ *   File: boot/boot.h
+ * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
 #ifndef __BOOT_H__

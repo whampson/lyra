@@ -12,9 +12,10 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: pm.S
-# Desc: Contains code for switching the CPU into protected mode and calling the
-#       kernel.
+#   File: boot/pm.S
+# Author: Wes Hampson
+#   Desc: Responsible for witching the CPU into protected mode and calling the
+#         kernel.
 #-------------------------------------------------------------------------------
 
 #include "boot.h"
@@ -30,11 +31,12 @@ pm_switch:
     orw     $PE_BIT, %ax
     movl    %eax, %cr0
 
-    # Reload the CS register... hold on!
+    # Reload the CS register... here we go!
     ljmpl   $KERNEL_CS, $pm_entry
 
 .code32
 pm_entry:
+    # We made it!
     movw    $KERNEL_DS, %ax
     movw    %ax, %ds
     movw    %ax, %ss

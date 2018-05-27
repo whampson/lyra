@@ -12,9 +12,11 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: init.c
- * Desc: Kernel entry point and initialization.
+ *   File: kernel/init.c
+ * Author: Wes Hampson
+ *   Desc: Kernel entry point and initialization.
  *----------------------------------------------------------------------------*/
+
 
 #include <lyra/kernel.h>
 #include <lyra/descriptor.h>
@@ -36,6 +38,7 @@ static void tss_init(void);
 
 /**
  * "Fire 'er up, man!"
+ *     -- Jerry, the racecar driver
  */
 void kernel_init(void)
 {
@@ -54,8 +57,9 @@ void kernel_init(void)
     sti();
 
     /* TODO:
-        init paging
-        create __simple__ terminal driver
+        terminal driver
+        finish exception handler (BSOD, reg dump, etc.)
+        setup paging
     */
 
    //puts("Halting system...");

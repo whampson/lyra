@@ -12,8 +12,8 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: irq.h
- * Desc: Macros and function prototyes for handling device interrupt requests.
+ *   File: include/lyra/irq.h
+ * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_IRQ_H__
