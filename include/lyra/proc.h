@@ -12,8 +12,9 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: proc.h
- * Desc: Process management macros and prototypes.
+ *   File: include/lyra/proc.h
+ * Author: Wes Hampson
+ *   Desc: Process management prototypes and macros.
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_PROC_H__

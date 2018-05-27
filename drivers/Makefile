@@ -12,14 +12,15 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: Makefile
-# Desc: Driver code build script.
+#   File: drivers/Makefile
+# Author: Wes Hampson
 #-------------------------------------------------------------------------------
 
 CUR_DIR         := $(notdir $(shell pwd))
 export OBJ      := $(OBJ)/$(CUR_DIR)
 export TREE     := $(CUR_DIR)
 
+# TODO: automate this somehow; generate list of directories
 DRIVERS         := i8259 input
 
 .PHONY: all dirs $(DRIVERS)

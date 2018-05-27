@@ -12,8 +12,9 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: descriptor.h
- * Desc: i386 descriptor structure definitions and macros.
+ *   File: include/lyra/descriptor.h
+ * Author: Wes Hampson
+ *   Desc: i386 descriptor structure definitions and macros.
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_DESC_H__

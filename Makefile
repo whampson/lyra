@@ -12,8 +12,8 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: Makefile
-# Desc: Lyra OS build script.
+#   File: Makefile
+# Author: Wes Hampson
 #-------------------------------------------------------------------------------
 
 .PHONY: all img boot kernel kernel_build debug debug_echo clean remake floppy

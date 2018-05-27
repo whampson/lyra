@@ -12,9 +12,10 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: bootloader.ld
- * Desc: Linker script for the boot code.
- *       Run through scripts/gen-lds.sh to resolve preprocessor directives.
+ *   File: boot/bootloader.ld
+ * Author: Wes Hampson
+ *   Desc: Linker script for the boot code.
+ *         Run through scripts/gen-lds.sh to resolve preprocessor directives.
  *----------------------------------------------------------------------------*/
 
 #include "boot.h"

@@ -14,12 +14,12 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: create-img.sh
-# Desc: Creates floppy disk image for Lyra.
+#   File: scripts/create-img.sh
+# Author: Wes Hampson
+#   Desc: Creates floppy disk image for Lyra.
 #-------------------------------------------------------------------------------
 
 SECTOR_SIZE=512
-MAX_SECTOR_COUNT=18
 KERNEL_NUM_SECTORS_ADDR=502
 
 if [ $# -lt 3 ]; then

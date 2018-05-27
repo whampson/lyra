@@ -14,8 +14,9 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: gen-lds.sh
-# Desc: "Preprocessor" for GNU linker scripts.
+#   File: scripts/gen-lds.sh
+# Author: Wes Hampson
+#   Desc: "Preprocessor" for GNU linker scripts.
 #-------------------------------------------------------------------------------
 
 if [ $# -lt 2 ]; then

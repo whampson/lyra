@@ -12,8 +12,9 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: interrupt.c
- * Desc: IDT initialization and general interrupt-related functions.
+ *   File: kernel/interrupt.c
+ * Author: Wes Hampson
+ *   Desc: IDT initialization anf general interrupt-handling.
  *----------------------------------------------------------------------------*/
 
 #include <lyra/kernel.h>

@@ -12,8 +12,10 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: stddef.h
- * Desc: Partial implementation of stddef.h from the C Standard Library.
+ *   File: include/stddef.h
+ * Author: Wes Hampson
+ *   Desc: Partial implementation of stddef.h from the C Standard Library.
+ *         Part of wklibc - Wes's Kernel C Standard Library.
  *----------------------------------------------------------------------------*/
 
 #ifndef __STDDEF_H__

@@ -12,8 +12,9 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: floppy.h
- * Desc: Floppy disk properties and driver behavior.
+ *   File: boot/floppy.h
+ * Author: Wes Hampson
+ *   Desc: Floppy disk properties and driver behavior.
  *----------------------------------------------------------------------------*/
 
 #ifndef __FLOPPY_H__

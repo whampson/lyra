@@ -12,8 +12,9 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: print.S
-# Desc: Basic print routine for 16-bit mode.
+#   File: boot/print.S
+# Author: Wes Hampson
+#   Desc: Basic print routine for 16-bit "real" mode.
 #-------------------------------------------------------------------------------
 
 .section .stage1, "ax", @progbits

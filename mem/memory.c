@@ -12,8 +12,8 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: memory.c
- * Desc: Memory initialization and memory structure definitions.
+ *   File: mem/memory.c
+ * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
 #include <lyra/kernel.h>
@@ -119,7 +119,6 @@ void flush_tlb(void)
         "
         : /* no outputs */
         : /* no inputs */
-        : "eax"
     );
 }
 
@@ -152,6 +151,5 @@ static void paging_enable(void)
         "
         : /* no outputs */
         : "r"(PAGING_ENABLE_BIT)
-        : "eax"
     );
 }

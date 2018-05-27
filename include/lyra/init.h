@@ -12,9 +12,10 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: init.h
- * Desc: Early kernel initialization macros; shared between bootloader and
- *       kernel.
+ *   File: include/lyra/init.h
+ * Author: Wes Hampson
+ *   Desc: Early kernel initialization macros; shared between bootloader and
+ *         kernel.
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_INIT_H__

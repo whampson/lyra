@@ -12,11 +12,10 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-# File: boot.S
-# Desc: Stage 1 boot code (a.k.a. the bootsector). The primary purpose of this
-#       code is to load the second stage and kernel code. This file also
-#       contains miscellaneous routines used throughout the stage 1 and stage 2
-#       boot phases.
+#   File: boot/boot.S
+# Author: Wes Hampson
+#   Desc: Stage 1 boot code (a.k.a. the bootsector). Responsible for loading the
+#         second stage bootloader and kernel code.
 #-------------------------------------------------------------------------------
 
 #include "boot.h"

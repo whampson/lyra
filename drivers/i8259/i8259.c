@@ -12,8 +12,9 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: i8269.c
- * Desc: Code for the Intel 8259 PIC driver.
+ *   File: drivers/i8259/i8259.c
+ * Author: Wes Hampson
+ *   Desc: Intel 8259 PIC driver.
  *----------------------------------------------------------------------------*/
 
 #include <stdint.h>
@@ -44,7 +45,7 @@
    slave PIC is connected to on the master PIC (only needed when operating in
    cascade mode). For the master PIC, this is value uses a one-hot encoding
    (bit0=IRQ0..bit7=IRQ7); for the slave PIC, the value uses the standard binary
-   encoding.
+   encoding (000=IRQ0..111=IRQ7)
    */
 #define ICW1    (ICW1_INIT | ICW1_ICW4)
 #define ICW2_M  (IRQ_BASE_VEC)

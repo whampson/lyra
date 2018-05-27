@@ -12,9 +12,10 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- * File: kernel.ld
- * Desc: Linker script for the kernel code.
- *       Run through scripts/gen-lds.sh to resolve preprocessor directives.
+ *   File: kernel.ld
+ * Author: Wes Hampson
+ *   Desc: Linker script for the Lyra kernel code.
+ *         Run through scripts/gen-lds.sh to resolve preprocessor directives.
  *----------------------------------------------------------------------------*/
 
 #include <lyra/init.h>
