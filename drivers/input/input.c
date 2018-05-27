@@ -16,6 +16,7 @@
  * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
+#include <stdio.h>
 #include <lyra/input.h>
 
 /**
@@ -41,6 +42,10 @@ const char SHIFT_MAP[256] =
 /*F0-FF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
+
+static int handle_numpad(scancode_t k);
+static int handle_special(scancode_t k);
+
 void sendkey(keystroke_t k)
 {
     /* TODO:
@@ -50,42 +55,97 @@ void sendkey(keystroke_t k)
             - tty line discipline will hold input buffer
     */
 
-   /* Carried over from ps2kbd.c... */
-    // ch = (char) sc;
+    struct keystroke keystroke;
+    char ch, tmp;
+    scancode_t sc;
 
-    // /* Handle numpad */
-    // /* TODO: check/handle numlock */
-    // if (handle_numpad(sc)) {
-    //     goto irq_done;
-    // }
+    keystroke = decode_keystroke(k);
+    sc = keystroke.key_id;
 
-    // /* Handle special keys (home, end, insert, etc.) */
-    // if (handle_special(sc)) {
-    //     goto irq_done;
-    // }
+    if (!keystroke.flag_keypress) {
+        /* Ignore key release events for now... */
+        return;
+    }
 
-    // /* Handle shift */
-    // if (flag_shift) {
-    //     tmp = SHIFT_MAP[(int) ch];
-    //     if (tmp != 0) {
-    //         ch = tmp;
-    //     }
-    // }
+    /* Ignore direct presses of ctrl, shift, alt, numlk, capslk, scrlk */
+    if (is_modifier_key(sc) || is_toggle_key(sc)) {
+        return;
+    }
 
-    // /* Handle ctrl chars (C0) */
-    // if (flag_ctrl) {
-    //     if (ch >= 'a' && ch <= 'z') {
-    //         ch -= CAPS_OFFSET;
-    //     }
-    //     if (ch >= '@' && ch <= '_') {   /* superset of the above */
-    //         ch -= C0CHAR_OFFSET;
-    //         goto sendchar;
-    //     }
-    //     goto irq_done;
-    // }
+    if (handle_numpad(sc) || handle_special(sc)) {
+        return;
+    }
 
-    // /* Handle caps lock */
-    // if (flag_caps && ch >= 'a' && ch <= 'z') {
-    //     ch += (flag_shift) ? CAPS_OFFSET : -CAPS_OFFSET;
-    // }
+    ch = (char) sc;
+
+    /* Handle shift */
+    if (is_shift_down(k)) {
+        tmp = SHIFT_MAP[sc];
+        if (tmp != 0) {
+            ch = tmp;
+        }
+    }
+
+    /* Handle ctrl chars (C0) */
+    if (is_ctrl_down(k)) {
+        /* See, the ASCII table was actually very well-crafted: all control
+           characters fall between 0x00 and 0x1F, and all "hat notation" control
+           characters (i.e. the keys you actually press to enter the control
+           character) fall between 0x40 and 0x5F. This means that you simply
+           have to subtract 0x40 from the typed character to get the actual
+           control character! For instance, ESC is typed as '^[', the '[' is
+           0x5B in ASCII. Subtract 0x40 from 0x5B and we get 0x1B, which is the
+           code for the ESC control charater! :) */
+
+        /* First though, we must convert all alphabetic characters to uppercase
+           since the virtual scancodes for alphabetic characters map to
+           lowercase letters. */
+        if (ch >= 'a' && ch <= 'z') {
+            ch -= CAPSLK_OFFSET;
+        }
+
+        /* Do nothing for non-control characters. */
+        if (ch < '@' || ch > '_') {
+            return;
+        }
+
+        /* Ok, now we can subtract the magic offset and transmit! */
+        ch -= C0CHAR_OFFSET;
+        goto sendchar;
+    }
+
+    /* Handle caps lock */
+    /* TODO: shift+caps not working properly */
+    if (is_capslk_on(k) && ch >= 'a' && ch <= 'z') {
+        ch += (is_shift_down(k)) ? CAPSLK_OFFSET : -CAPSLK_OFFSET;
+    }
+
+sendchar:
+    putchar(ch);
+}
+
+static int handle_numpad(scancode_t sc)
+{
+    if (!is_numpad_key(sc)) {
+        return 0;
+    }
+
+    if (sc == KB_RENTER) {
+        putchar('\n');
+    }
+    else {
+        putchar(sc - NUMPAD_OFFSET);
+    }
+
+    return 1;
+}
+
+static int handle_special(scancode_t sc)
+{
+    if (!is_special_key(sc)) {
+        return 0;
+    }
+
+    putchar((char) sc);
+    return 1;
 }
