@@ -21,8 +21,14 @@
 
 #include <stdint.h>
 
+#ifndef __NULL_DEFINED
+#define __NULL_DEFINED
 #define NULL    ((void *) 0)
+#endif
 
+#ifndef __SIZE_T_DEFINED
+#define __SIZE_T_DEFINED
 typedef uint32_t size_t;
+#endif
 
 #endif /* __STDDEF_H__ */

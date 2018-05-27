@@ -19,6 +19,16 @@
 #ifndef __STDIO_H__
 #define __STDIO_H__
 
+#ifndef __NULL_DEFINED__
+#define __NULL_DEFINED__
+#define NULL    ((void *) 0)
+#endif
+
+#ifndef __SIZE_T_DEFINED
+#define __SIZE_T_DEFINED
+typedef uint32_t size_t;
+#endif
+
 /* End-of-File indicator. */
 #define EOF     (-1)
 
