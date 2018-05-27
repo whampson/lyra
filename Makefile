@@ -41,7 +41,7 @@ export OBJ      := $(PWD)/obj
 export OBJ_BOOT := $(PWD)/obj_boot
 
 # Linker script for kernel
-LDSCRIPT        := kernel.ld
+LDSCRIPT        := lyra.ld
 
 # Output binaries
 BOOTIMG         := $(BIN)/boot.bin
