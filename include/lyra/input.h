@@ -22,6 +22,45 @@
 #include <stdint.h>
 
 /**
+ * ASCII control characters.
+ */
+enum ascii {
+    ASCII_NUL,  /* '\0' */
+    ASCII_SOH,
+    ASCII_STX,
+    ASCII_ETX,
+    ASCII_EOT,
+    ASCII_ENQ,
+    ASCII_ACK,
+    ASCII_BEL,  /* '\a' */
+    ASCII_BS,   /* '\b' */
+    ASCII_TAB,  /* '\t' */
+    ASCII_LF,   /* '\n' */
+    ASCII_VT,   /* '\v' */
+    ASCII_FF,   /* '\f' */
+    ASCII_CR,   /* '\r' */
+    ASCII_SO,
+    ASCII_SI,
+    ASCII_DLE,
+    ASCII_DC1,
+    ASCII_DC2,
+    ASCII_DC3,
+    ASCII_DC4,
+    ASCII_NAK,
+    ASCII_SYN,
+    ASCII_ETB,
+    ASCII_CAN,
+    ASCII_EM,
+    ASCII_SUB,
+    ASCII_ESC,  /* '\e' */
+    ASCII_FS,
+    ASCII_GS,
+    ASCII_RS,
+    ASCII_US,
+    ASCII_DEL = 0x7F
+};
+
+/**
  * Keyboard virtual scancodes. Each entry corresponds to a physical key on the
  * traditional 101-key US keyboard (IBM Model M).
  *
@@ -33,10 +72,10 @@
  */
 enum kb_keys {
     /* Control characters */
-    KB_BACKSPACE    = 0x08,
-    KB_TAB          = 0x09,
-    KB_ENTER        = 0x0D,
-    KB_ESCAPE       = 0x1B,
+    KB_BACKSPACE    = ASCII_BS,
+    KB_TAB          = ASCII_TAB,
+    KB_ENTER        = ASCII_LF,
+    KB_ESCAPE       = ASCII_ESC,
 
     /* Alphabetic, numeric, and symbolic keys */
     /* (matches ASCII values, see above) */
@@ -144,16 +183,56 @@ typedef uint32_t keystroke_t;
 #define FLAG_CAPSLK     (1 << 21)
 #define FLAG_SCRLK      (1 << 21)
 
+#define is_ctrl_down(keystroke)                                             \
+(keystroke & FLAG_CTRL)
+
+#define is_shift_down(keystroke)                                            \
+(keystroke & FLAG_SHIFT)
+
+#define is_alt_down(keystroke)                                              \
+(keystroke & FLAG_ALT)
+
+#define is_numlk_on(keystroke)                                              \
+(keystroke & FLAG_NUMLK)
+
+#define is_capslk_on(keystroke)                                             \
+(keystroke & FLAG_CAPSLK)
+
+#define is_scrlk_on(keystroke)                                              \
+(keystroke & FLAG_SCRLK)
+
+#define is_toggle_key(keystroke)                                            \
+((keystroke & KEY_ID) >= KB_NUMLK &&                                        \
+ (keystroke & KEY_ID) <= KB_SCRLK)
+
+#define is_modifier_key(keystroke)                                          \
+((keystroke & KEY_ID) >= KB_LCTRL &&                                        \
+ (keystroke & KEY_ID) <= KB_RALT)
+
+#define is_func_key(keystroke)                                              \
+((keystroke & KEY_ID) >= KB_F1 &&                                           \
+ (keystroke & KEY_ID) <= KB_F12)
+
+#define is_numpad_key(keystroke)                                            \
+((keystroke & KEY_ID) >= KB_MULTIPLY &&                                     \
+ (keystroke & KEY_ID) <= KB_NUM9)
+
+#define is_special_key(keystroke)                                           \
+(((keystroke & KEY_ID) >= KB_DELETE && (keystroke & KEY_ID) <= KB_RIGHT)    \
+    || (keystroke & KEY_ID) == KB_PRTSC                                     \
+    || (keystroke & KEY_ID) == KB_PAUSE)
+
+
 /**
  * Convert 'struct keystroke' to 'keystroke_t'.
  */
-#define ENCODE_KEYSTROKE(keystroke_struct)   \
+#define encode_keystroke(keystroke_struct)   \
 *((keystroke_t *) &keystroke_struct)
 
 /**
  * Convert 'keystroke_t' to 'struct keystroke'.
  */
-#define DECODE_KEYSTROKE(keystroke_val)     \
+#define decode_keystroke(keystroke_val)     \
 *((struct keystroke *) &keystroke_val)
 
 /* defined in drivers/input/input.c */
