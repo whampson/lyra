@@ -128,7 +128,7 @@ static const scancode_t SCANCODE3[256] =
 /*40-47*/  0,',','k','i','o','0','9',KB_F9,
 /*48-4F*/  0,'.','/','l',';','p','-',KB_F10,
 /*50-57*/  0,0,'\'','\\','[','=',KB_F11,KB_PRTSC,
-/*58-5F*/  KB_RCTRL,KB_RSHIFT,'\n',']','\\',0,KB_F12,KB_SCRLK,
+/*58-5F*/  KB_RCTRL,KB_RSHIFT,KB_ENTER,']','\\',0,KB_F12,KB_SCRLK,
 /*60-67*/  KB_DOWN,KB_LEFT,KB_PAUSE,KB_UP,KB_DELETE,KB_END,KB_BACKSPACE,KB_INSERT,
 /*68-6F*/  0,KB_NUM1,KB_RIGHT,KB_NUM4,KB_NUM7,KB_PAGEDN,KB_HOME,KB_PAGEUP,
 /*70-77*/  KB_NUM0,KB_DECIMAL,KB_NUM2,KB_NUM5,KB_NUM6,KB_NUM8,KB_NUMLK,KB_DIVIDE,
@@ -269,7 +269,7 @@ void ps2kbd_do_irq(void)
     k.flag_numlk = flag_num;
     k.flag_capslk = flag_caps;
     k.flag_scrlk = flag_scroll;
-    sendkey(ENCODE_KEYSTROKE(k));
+    sendkey(encode_keystroke(k));
 
     evt_keyrelease = 0;
 
