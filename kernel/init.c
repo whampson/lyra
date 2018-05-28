@@ -62,6 +62,10 @@ void kernel_init(void)
         setup paging
     */
 
+#ifdef __DEBUG
+    kprintf_test();
+#endif
+
    //puts("Halting system...");
 }
 
