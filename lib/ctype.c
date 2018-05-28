@@ -74,7 +74,7 @@ int islower(int ch)
 
 int isupper(int ch)
 {
-    return ch >= 'A' && ch <= 'A';
+    return ch >= 'A' && ch <= 'Z';
 }
 
 int isdigit(int ch)
