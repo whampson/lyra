@@ -79,7 +79,7 @@ dirs:
 	@mkdir -p $(OBJ_BOOT)
 
 debug: export ASFLAGS += -D__DEBUG -g
-debug: export CFLAGS += -d__DEBUG -g
+debug: export CFLAGS += -D__DEBUG -g
 debug: debug_echo $(filter-out debug, $(MAKECMDGOALS))
 debug_echo:
 	@echo [INFO] Compiling with debugging symbols.
