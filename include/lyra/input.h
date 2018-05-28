@@ -19,6 +19,7 @@
 #ifndef __LYRA_INPUT_H__
 #define __LYRA_INPUT_H__
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /**
@@ -81,7 +82,7 @@ enum kb_keys {
     /* (matches ASCII values, see above) */
     /* 0x20 - 0x7E */
 
-    /* "Special" keys */
+    /* "Special" keys (part 1) */
     KB_DELETE       = 0x7F,
     KB_INSERT       = 0x80,
     KB_HOME         = 0x81,
@@ -90,8 +91,8 @@ enum kb_keys {
     KB_PAGEDN       = 0x84,
     KB_UP           = 0x85,
     KB_DOWN         = 0x86,
-    KB_LEFT         = 0x87,
-    KB_RIGHT        = 0x88,
+    KB_RIGHT        = 0x87,
+    KB_LEFT         = 0x88,
 
     /* Number pad */
     /* Subtract NUMPAD_OFFSET to get ASCII values. */
@@ -123,7 +124,7 @@ enum kb_keys {
     KB_LALT         = 0xA7,
     KB_RALT         = 0xA8,
 
-    /* Misc. keys */
+    /* "Special" keys (part 2) */
     KB_PRTSC        = 0xAA,
     KB_PAUSE        = 0xAB,
 
@@ -144,8 +145,6 @@ enum kb_keys {
 
 /* Useful offsets for converting scancodes to ASCII. */
 #define NUMPAD_OFFSET   0x60
-#define C0CHAR_OFFSET   0x40
-#define CAPSLK_OFFSET   0x20
 
 /**
  * Represents a keyboard virtual scancode.
@@ -183,46 +182,6 @@ typedef uint32_t keystroke_t;
 #define FLAG_CAPSLK     (1 << 21)
 #define FLAG_SCRLK      (1 << 21)
 
-#define is_ctrl_down(keystroke)                                             \
-(keystroke & FLAG_CTRL)
-
-#define is_shift_down(keystroke)                                            \
-(keystroke & FLAG_SHIFT)
-
-#define is_alt_down(keystroke)                                              \
-(keystroke & FLAG_ALT)
-
-#define is_numlk_on(keystroke)                                              \
-(keystroke & FLAG_NUMLK)
-
-#define is_capslk_on(keystroke)                                             \
-(keystroke & FLAG_CAPSLK)
-
-#define is_scrlk_on(keystroke)                                              \
-(keystroke & FLAG_SCRLK)
-
-#define is_toggle_key(keystroke)                                            \
-((keystroke & KEY_ID) >= KB_NUMLK &&                                        \
- (keystroke & KEY_ID) <= KB_SCRLK)
-
-#define is_modifier_key(keystroke)                                          \
-((keystroke & KEY_ID) >= KB_LCTRL &&                                        \
- (keystroke & KEY_ID) <= KB_RALT)
-
-#define is_func_key(keystroke)                                              \
-((keystroke & KEY_ID) >= KB_F1 &&                                           \
- (keystroke & KEY_ID) <= KB_F12)
-
-#define is_numpad_key(keystroke)                                            \
-((keystroke & KEY_ID) >= KB_MULTIPLY &&                                     \
- (keystroke & KEY_ID) <= KB_NUM9)
-
-#define is_special_key(keystroke)                                           \
-(((keystroke & KEY_ID) >= KB_DELETE && (keystroke & KEY_ID) <= KB_RIGHT)    \
-    || (keystroke & KEY_ID) == KB_PRTSC                                     \
-    || (keystroke & KEY_ID) == KB_PAUSE)
-
-
 /**
  * Convert 'struct keystroke' to 'keystroke_t'.
  */
@@ -235,8 +194,66 @@ typedef uint32_t keystroke_t;
 #define decode_keystroke(keystroke_val)     \
 *((struct keystroke *) &keystroke_val)
 
-/* defined in drivers/input/input.c */
-extern const char SHIFT_MAP[256];
+static inline bool is_ctrl_down(keystroke_t k)
+{
+    return k & FLAG_CTRL;
+}
+
+static inline bool is_shift_down(keystroke_t k)
+{
+    return k & FLAG_SHIFT;
+}
+
+static inline bool is_alt_down(keystroke_t k)
+{
+    return k & FLAG_ALT;
+}
+
+static inline bool is_numlk_on(keystroke_t k)
+{
+    return k & FLAG_NUMLK;
+}
+
+static inline bool is_capslk_on(keystroke_t k)
+{
+    return k & FLAG_CAPSLK;
+}
+
+static inline bool is_scrlk_on(keystroke_t k)
+{
+    return k & FLAG_SCRLK;
+}
+
+static inline bool is_toggle_key(keystroke_t k)
+{
+    return (k & KEY_ID) >= KB_NUMLK &&
+           (k & KEY_ID) <= KB_SCRLK;
+}
+
+static inline bool is_modifier_key(keystroke_t k)
+{
+    return (k & KEY_ID) >= KB_LCTRL &&
+           (k & KEY_ID) <= KB_RALT;
+}
+
+static inline bool is_func_key(keystroke_t k)
+{
+    return (k & KEY_ID) >= KB_F1 &&
+           (k & KEY_ID) <= KB_F12;
+}
+
+static inline bool is_numpad_key(keystroke_t k)
+{
+    return (k & KEY_ID) >= KB_MULTIPLY &&
+           (k & KEY_ID) <= KB_NUM9;
+}
+
+static inline bool is_special_key(keystroke_t k)
+{
+    return ((k & KEY_ID) >= KB_DELETE && (k & KEY_ID) <= KB_LEFT)
+        || (k & KEY_ID) == KB_PRTSC
+        || (k & KEY_ID) == KB_PAUSE;
+}
 
 /**
  * Send a keystroke to the terminal.
