@@ -14,8 +14,7 @@
 /*-----------------------------------------------------------------------------
  *   File: include/stdint.h
  * Author: Wes Hampson
- *   Desc: Partial implementation of stdint.h from the C Standard Library.
- *         Part of wklibc - Wes's Kernel C Standard Library.
+ *   Desc: Part of wklibc - Wes's Kernel C Standard Library.
  *----------------------------------------------------------------------------*/
 
 #ifndef __STDINT_H__
