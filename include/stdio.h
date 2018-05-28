@@ -17,6 +17,10 @@
  *   Desc: Part of wklibc - Wes's Kernel C Standard Library.
  *----------------------------------------------------------------------------*/
 
+/******************************************************************************
+ * THIS FILE MAY BE REMOVED IN THE FUTURE. USE kprintf() FOR CONSOLE LOGGING. *
+ ******************************************************************************/
+
 #ifndef __STDIO_H__
 #define __STDIO_H__
 
