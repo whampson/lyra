@@ -17,8 +17,18 @@
  *----------------------------------------------------------------------------*/
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <lyra/input.h>
+
+/* Use this to convert control character "caret notation" to the actual
+   control character. */
+#define C0CHAR_OFFSET   0x40
+
+/* Use these to correctly index the 'ESC_SEQUENCES' array. */
+#define SPECIAL1_OFFSET 0x7F
+#define SPECIAL2_OFFSET 0xA0
+#define FUNC_OFFSET     0xA5
 
 /**
  * Mapping of "unshifted" ASCII characters to "shifted" ASCII characters.
@@ -43,9 +53,12 @@ const char SHIFT_MAP[256] =
 /*F0-FF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
+/**
+ * ANSI escape sequences for non-character keys.
+ */
 const char * const ESC_SEQUENCES[24] =
 {
-    /* "Special" keys */
+    /* "Special" keys (part 1) */
     "\x1B[3~",      /* Del */
     "\x1B[2~",      /* Ins */
     "\x1B[1~",      /* Home */
@@ -57,8 +70,8 @@ const char * const ESC_SEQUENCES[24] =
     "\x1B[C",       /* Right  */
     "\x1B[D",       /* Left */
 
-    /* Misc. keys */
-    NULL,           /* PrntSc? */
+    /* "Special" keys (part 2) */
+    NULL,           /* PrntSc (does this have an esc seq?) */
     "\x1B[P",       /* Pause */
 
     /* Function keys */
@@ -76,19 +89,11 @@ const char * const ESC_SEQUENCES[24] =
     "\x1B[[24~",    /* F12 */
 };
 
-
-static int handle_numpad(scancode_t k);
-static int handle_special(scancode_t k);
+static bool handle_numpad(scancode_t k);
+static bool handle_nonchar(scancode_t k);
 
 void sendkey(keystroke_t k)
 {
-    /* TODO:
-        - translate keystroke into character(s)
-            - the mapping of character(s) sent for keys pressed will happen here
-        - send characters to terminal input line
-            - tty line discipline will hold input buffer
-    */
-
     struct keystroke keystroke;
     char ch, tmp;
     scancode_t sc;
@@ -106,7 +111,13 @@ void sendkey(keystroke_t k)
         return;
     }
 
-    if (handle_numpad(sc) || handle_special(sc)) {
+    /* Send the correct ASCII value for the numpad keys. */
+    if (handle_numpad(sc)) {
+        return;
+    }
+
+    /* Handle keys that do not represent characters (ins., home, end, etc.) */
+    if (handle_nonchar(sc)) {
         return;
     }
 
@@ -120,16 +131,16 @@ void sendkey(keystroke_t k)
         }
     }
 
-    /* Handle ctrl chars (C0) */
+    /* Handle ctrl chars (C0 set) */
     if (is_ctrl_down(k)) {
         /* See, the ASCII table was actually very well-crafted: all control
-           characters fall between 0x00 and 0x1F, and all "hat notation" control
-           characters (i.e. the keys you actually press to enter the control
-           character) fall between 0x40 and 0x5F. This means that you simply
-           have to subtract 0x40 from the typed character to get the actual
-           control character! For instance, ESC is typed as '^[', the '[' is
-           0x5B in ASCII. Subtract 0x40 from 0x5B and we get 0x1B, which is the
-           code for the ESC control charater! :) */
+           characters fall between 0x00 and 0x1F, and all "caret notation"
+           control characters (i.e. the keys you actually press to enter the
+           control character) fall between 0x40 and 0x5F. This means that you
+           simply have to subtract 0x40 from the typed character to get the
+           actual control character! For instance, ESC is typed as '^[', the '['
+           is 0x5B in ASCII. Subtract 0x40 from 0x5B and we get 0x1B, which is
+           the code for the ESC control charater! :) */
 
         /* First though, we must convert all alphabetic characters to uppercase
            since the virtual scancodes for alphabetic characters map to
@@ -156,42 +167,44 @@ sendchar:
     putchar(ch);
 }
 
-static int handle_numpad(scancode_t sc)
+static bool handle_numpad(scancode_t sc)
 {
     if (!is_numpad_key(sc)) {
-        return 0;
+        return false;
     }
 
     if (sc == KB_RENTER) {
         putchar('\n');
     }
     else {
+        /* Another example of the niceties of the ASCII table.
+           Use our special offset to get the ASCII value. */
         putchar(sc - NUMPAD_OFFSET);
     }
 
-    return 1;
+    return true;
 }
 
-static int handle_special(scancode_t sc)
+static bool handle_nonchar(scancode_t sc)
 {
-    int isfunc, isspecial, ismisc;
+    int isfunc, isspecial, isspecial_set2;
 
     isfunc = is_func_key(sc);
     isspecial = is_special_key(sc);
-    ismisc = (sc == KB_PRTSC || sc == KB_PAUSE);
+    isspecial_set2 = (sc == KB_PRTSC || sc == KB_PAUSE);
 
     if (!isfunc && !isspecial) {
-        return 0;
+        return false;
     }
 
     if (isspecial) {
-        sc -= (ismisc) ? 0xA0 : 0x7F;
+        sc -= (isspecial_set2) ? SPECIAL2_OFFSET : SPECIAL1_OFFSET;
     }
     else {
-        sc -= 0xA5;
+        sc -= FUNC_OFFSET;
     }
 
 
     puts(ESC_SEQUENCES[sc]);
-    return 1;
+    return true;
 }
