@@ -29,7 +29,7 @@
 */
 #define IO_DELAY_PORT   0x80
 
-#ifndef __ASM__
+#ifndef __ASM
 #include <stdint.h>
 
 /**
@@ -109,6 +109,6 @@ static inline void outb_p(uint8_t data, uint16_t port)
     );
 }
 
-#endif /* __ASM__ */
+#endif /* __ASM */
 
 #endif /* __LYRA_IO_H */

@@ -25,7 +25,7 @@
 /* The interrupt vector used for system calls. */
 #define SYSCALL_VEC 0x80
 
-#ifndef __ASM__
+#ifndef __ASM
 #include <stdint.h>
 
 /* Interrupt handler stub function pointer. */

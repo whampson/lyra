@@ -43,7 +43,7 @@
 #define EXCEPT_MC   0x12    /* Machine Check */
 #define EXCEPT_XF   0x13    /* SIMD Floating-Point Exception */
 
-#ifndef __ASM__
+#ifndef __ASM
 
 /**
  * Common exception handler.
@@ -53,6 +53,6 @@
 __attribute__((fastcall))
 void do_exception(struct interrupt_frame *regs);
 
-#endif /* __ASM__ */
+#endif /* __ASM */
 
 #endif /* __LYRA_EXCEPTION_H */

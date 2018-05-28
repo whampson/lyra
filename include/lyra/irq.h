@@ -35,7 +35,7 @@
 #define IRQ_SLAVE_PIC   2
 #define IRQ_RTC         8
 
-#ifndef __ASM__
+#ifndef __ASM
 
 /**
  * Initialize device interrupts.
@@ -70,6 +70,6 @@ int irq_disable(unsigned int irq_num);
 __attribute__((fastcall))
 void do_irq(struct interrupt_frame *regs);
 
-#endif /* __ASM__ */
+#endif /* __ASM */
 
 #endif /* __LYRA_IRQ_H */

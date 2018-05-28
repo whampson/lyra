@@ -56,7 +56,7 @@
 #define DESC_TSS16  0x01
 #define DESC_TSS32  0x09
 
-#ifndef __ASM__
+#ifndef __ASM
 #include <stdint.h>
 
 /* Descriptor register structure (for GDTR and IDTR). */
@@ -234,6 +234,6 @@ static inline int get_gdt_index(int selector)
     return (selector & 0xF8) / sizeof(seg_desc_t);
 }
 
-#endif /* __ASM__ */
+#endif /* __ASM */
 
 #endif /* __LYRA_DESC_H */
