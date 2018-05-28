@@ -27,6 +27,7 @@
 #define INT64_MIN   (-0x7FFFFFFFFFFFFFFFLL - 1)
 #define INTPTR_MIN  INT32_MIN
 #define INTMAX_MIN  INT64_MIN
+#define PTRDIFF_MIN INT32_MIN
 
 /* i386 signed integer maximum values */
 #define INT8_MAX    0x7F
@@ -35,6 +36,7 @@
 #define INT64_MAX   0x7FFFFFFFFFFFFFFFLL
 #define INTPTR_MAX  INT32_MAX
 #define INTMAX_MAX  INT64_MAX
+#define PTRDIFF_MAX INT32_MAX
 
 /* i386 unsigned integer maximum values */
 #define UINT8_MAX    0xFF
@@ -43,6 +45,7 @@
 #define UINT64_MAX   0xFFFFFFFFFFFFFFFFULL
 #define UINTPTR_MAX  UINT32_MAX
 #define UINTMAX_MAX  UINT64_MAX
+#define SIZE_MAX     UINT32_MAX
 
 /* i386 signed integer types */
 typedef signed char             int8_t;

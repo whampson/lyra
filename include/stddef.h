@@ -51,4 +51,6 @@
 typedef uint32_t size_t;
 #endif
 
+typedef int32_t ptrdiff_t;
+
 #endif /* __STDDEF_H__ */
