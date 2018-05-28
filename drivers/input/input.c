@@ -16,6 +16,7 @@
  * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
+#include <ctype.h>
 #include <stdio.h>
 #include <lyra/input.h>
 
@@ -100,9 +101,7 @@ void sendkey(keystroke_t k)
         /* First though, we must convert all alphabetic characters to uppercase
            since the virtual scancodes for alphabetic characters map to
            lowercase letters. */
-        if (ch >= 'a' && ch <= 'z') {
-            ch -= CAPSLK_OFFSET;
-        }
+        ch = (char) toupper(ch);
 
         /* Do nothing for non-control characters. */
         if (ch < '@' || ch > '_') {
@@ -115,9 +114,9 @@ void sendkey(keystroke_t k)
     }
 
     /* Handle caps lock */
-    /* TODO: shift+caps not working properly */
-    if (is_capslk_on(k) && ch >= 'a' && ch <= 'z') {
-        ch += (is_shift_down(k)) ? CAPSLK_OFFSET : -CAPSLK_OFFSET;
+    if (is_capslk_on(k)) {
+        ch = is_shift_down(k)
+           ? (char) tolower(ch) : (char) toupper(ch);
     }
 
 sendchar:
@@ -142,10 +141,10 @@ static int handle_numpad(scancode_t sc)
 
 static int handle_special(scancode_t sc)
 {
-    if (!is_special_key(sc)) {
+    if (!is_special_key(sc) && !is_func_key(sc)) {
         return 0;
     }
 
-    putchar((char) sc);
+    //putchar((char) sc);
     return 1;
 }
