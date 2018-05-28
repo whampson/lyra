@@ -43,6 +43,39 @@ const char SHIFT_MAP[256] =
 /*F0-FF*/  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
+const char * const ESC_SEQUENCES[24] =
+{
+    /* "Special" keys */
+    "\x1B[3~",      /* Del */
+    "\x1B[2~",      /* Ins */
+    "\x1B[1~",      /* Home */
+    "\x1B[4~",      /* End */
+    "\x1B[5~",      /* PgUp */
+    "\x1B[6~",      /* PgDn */
+    "\x1B[A",       /* Up */
+    "\x1B[B",       /* Down */
+    "\x1B[C",       /* Right  */
+    "\x1B[D",       /* Left */
+
+    /* Misc. keys */
+    NULL,           /* PrntSc? */
+    "\x1B[P",       /* Pause */
+
+    /* Function keys */
+    "\x1B[[A",      /* F1 */
+    "\x1B[[B",      /* F2 */
+    "\x1B[[C",      /* F3 */
+    "\x1B[[D",      /* F4 */
+    "\x1B[[E",      /* F5 */
+    "\x1B[[17~",    /* F6 */
+    "\x1B[[18~",    /* F7 */
+    "\x1B[[19~",    /* F8 */
+    "\x1B[[20~",    /* F9 */
+    "\x1B[[21~",    /* F10 */
+    "\x1B[[23~",    /* F11 */
+    "\x1B[[24~",    /* F12 */
+};
+
 
 static int handle_numpad(scancode_t k);
 static int handle_special(scancode_t k);
@@ -141,10 +174,24 @@ static int handle_numpad(scancode_t sc)
 
 static int handle_special(scancode_t sc)
 {
-    if (!is_special_key(sc) && !is_func_key(sc)) {
+    int isfunc, isspecial, ismisc;
+
+    isfunc = is_func_key(sc);
+    isspecial = is_special_key(sc);
+    ismisc = (sc == KB_PRTSC || sc == KB_PAUSE);
+
+    if (!isfunc && !isspecial) {
         return 0;
     }
 
-    //putchar((char) sc);
+    if (isspecial) {
+        sc -= (ismisc) ? 0xA0 : 0x7F;
+    }
+    else {
+        sc -= 0xA5;
+    }
+
+
+    puts(ESC_SEQUENCES[sc]);
     return 1;
 }
