@@ -19,6 +19,8 @@
 
 #include <ctype.h>
 
+#define CASE_OFFSET 0x20
+
 int iscntrl(int ch)
 {
     return (ch >= 0x00 && ch <= 0x1F) || ch == 0x7F;
@@ -92,7 +94,7 @@ int isxdigit(int ch)
 int tolower(int ch)
 {
     if (isupper(ch)) {
-        ch += 0x20;
+        ch += CASE_OFFSET;
     }
 
     return ch;
@@ -101,7 +103,7 @@ int tolower(int ch)
 int toupper(int ch)
 {
     if (islower(ch)) {
-        ch -= 0x20;
+        ch -= CASE_OFFSET;
     }
 
     return ch;
