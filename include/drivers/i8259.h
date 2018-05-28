@@ -17,8 +17,8 @@
  *   Desc: Intel 8259 PIC interface.
  *----------------------------------------------------------------------------*/
 
-#ifndef __DRIVERS_i8259_H__
-#define __DRIVERS_i8259_H__
+#ifndef __DRIVERS_i8259_H
+#define __DRIVERS_i8259_H
 
 /* I/O ports for each 8259 PIC. */
 #define PORT_PIC0_CMD   0x20
@@ -63,4 +63,4 @@ void i8259_eoi(int irq_num);
 
 #endif /* __ASM__ */
 
-#endif /* __DRIVERS_i8259_H__ */
+#endif /* __DRIVERS_i8259_H */

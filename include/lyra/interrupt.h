@@ -16,8 +16,8 @@
  * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_INTERRUPT_H__
-#define __LYRA_INTERRUPT_H__
+#ifndef __LYRA_INTERRUPT_H
+#define __LYRA_INTERRUPT_H
 
 /* Number of entries in the IDT. */
 #define NUM_VEC     256
@@ -110,4 +110,4 @@ void idt_init(void);
 
 #endif /* __ASM __ */
 
-#endif /* __LYRA_INTERRUPT_H__ */
+#endif /* __LYRA_INTERRUPT_H */

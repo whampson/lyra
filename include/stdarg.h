@@ -17,8 +17,8 @@
  *   Desc: Part of wklibc - Wes's Kernel C Standard Library.
  *----------------------------------------------------------------------------*/
 
-#ifndef __STDARG_H__
-#define __STDARG_H__
+#ifndef __STDARG_H
+#define __STDARG_H
 
 /**
  * Holds the information need by va_start, va_arg, va_copy, and va_end.
@@ -62,4 +62,4 @@ typedef char * va_list;
 #define va_end(ap)                          \
     (ap = (void *) 0)
 
-#endif /* __STDARG_H__ */
+#endif /* __STDARG_H */

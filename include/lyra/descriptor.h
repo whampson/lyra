@@ -17,8 +17,8 @@
  *   Desc: i386 descriptor structure definitions and macros.
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_DESC_H__
-#define __LYRA_DESC_H__
+#ifndef __LYRA_DESC_H
+#define __LYRA_DESC_H
 
 /* Segment selectors */
 #define KERNEL_CS   0x10
@@ -236,4 +236,4 @@ static inline int get_gdt_index(int selector)
 
 #endif /* __ASM__ */
 
-#endif /* __LYRA_DESC_H__ */
+#endif /* __LYRA_DESC_H */

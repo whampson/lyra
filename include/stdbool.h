@@ -17,8 +17,8 @@
  *   Desc: Part of wklibc - Wes's Kernel C Standard Library.
  *----------------------------------------------------------------------------*/
 
-#ifndef __STDBOOL_H__
-#define __STDBOOL_H__
+#ifndef __STDBOOL_H
+#define __STDBOOL_H
 
 /* Define 'bool' type. */
 #define bool    _Bool
@@ -30,4 +30,4 @@
 /* Mark that all stdbool definitions are defined. */
 #define __bool_true_false_are_defined 1
 
-#endif /* __STDBOOL_H__ */
+#endif /* __STDBOOL_H */

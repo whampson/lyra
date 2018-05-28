@@ -16,8 +16,8 @@
  * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_IRQ_H__
-#define __LYRA_IRQ_H__
+#ifndef __LYRA_IRQ_H
+#define __LYRA_IRQ_H
 
 #include <lyra/interrupt.h>
 #include <drivers/i8259.h>
@@ -72,4 +72,4 @@ void do_irq(struct interrupt_frame *regs);
 
 #endif /* __ASM__ */
 
-#endif /* __LYRA_IRQ_H__ */
+#endif /* __LYRA_IRQ_H */

@@ -16,8 +16,8 @@
  * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_INPUT_H__
-#define __LYRA_INPUT_H__
+#ifndef __LYRA_INPUT_H
+#define __LYRA_INPUT_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -260,4 +260,4 @@ static inline bool is_special_key(keystroke_t k)
  */
 void sendkey(keystroke_t k);
 
-#endif /* __LYRA_INPUT_H__ */
+#endif /* __LYRA_INPUT_H */

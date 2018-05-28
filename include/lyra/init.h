@@ -18,8 +18,8 @@
  *         kernel.
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_INIT_H__
-#define __LYRA_INIT_H__
+#ifndef __LYRA_INIT_H
+#define __LYRA_INIT_H
 
 #define KERNEL_ENTRY        kernel_init
 #define KERNEL_START        0x100000    /* 1 MiB */
@@ -27,4 +27,4 @@
 #define GDT_BASE            0x0500
 #define IDT_BASE            0x0600
 
-#endif /* __LYRA_INIT_H__ */
+#endif /* __LYRA_INIT_H */

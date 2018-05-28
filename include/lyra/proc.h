@@ -17,8 +17,8 @@
  *   Desc: Process management prototypes and macros.
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_PROC_H__
-#define __LYRA_PROC_H__
+#ifndef __LYRA_PROC_H
+#define __LYRA_PROC_H
 
 #include <stdint.h>
 
@@ -32,4 +32,4 @@ struct proc_ctx {
     uint32_t eax;
 };
 
-#endif /* __LYRA_PROC_H__ */
+#endif /* __LYRA_PROC_H */

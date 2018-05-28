@@ -18,8 +18,8 @@
  *         kernel.
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_IO_H__
-#define __LYRA_IO_H__
+#ifndef __LYRA_IO_H
+#define __LYRA_IO_H
 
 /* BIOS POST code port.
    Reading/writing to this port incurs about a 1us delay, according to various
@@ -111,4 +111,4 @@ static inline void outb_p(uint8_t data, uint16_t port)
 
 #endif /* __ASM__ */
 
-#endif /* __LYRA_IO_H__ */
+#endif /* __LYRA_IO_H */

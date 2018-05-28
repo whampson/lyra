@@ -17,8 +17,8 @@
  *   Desc: Commonly-used function prototypes and macros.
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_KERNEL_H__
-#define __LYRA_KERNEL_H__
+#ifndef __LYRA_KERNEL_H
+#define __LYRA_KERNEL_H
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -85,4 +85,4 @@ void putix(uint32_t i);
 int kprintf(const char * fmt, ...);
 int vkprintf(const char * fmt, va_list args);
 
-#endif  /* __LYRA_KERNEL_H__ */
+#endif  /* __LYRA_KERNEL_H */
