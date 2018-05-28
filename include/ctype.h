@@ -17,43 +17,133 @@
  *   Desc: Part of wklibc - Wes's Kernel C Standard Library.
  *----------------------------------------------------------------------------*/
 
-/*******************************************************************************
- * Implementation Checklist:
- * Function             Status              Notes
- * --------             ------              -----
- * isalnum              NOT_IMPLEMENTED
- * isalpha              NOT_IMPLEMENTED
- * isblank              NOT_IMPLEMENTED     Part of C11, may not implement.
- * iscntrl              NOT_IMPLEMENTED
- * isdigit              NOT_IMPLEMENTED
- * isgraph              NOT_IMPLEMENTED
- * islower              NOT_IMPLEMENTED
- * isprint              NOT_IMPLEMENTED
- * ispunct              NOT_IMPLEMENTED
- * isspace              NOT_IMPLEMENTED
- * isupper              NOT_IMPLEMENTED
- * isxdigit             NOT_IMPLEMENTED
- * tolower              NOT_IMPLEMENTED
- * toupper              NOT_IMPLEMENTED
- *
- ******************************************************************************/
-
 #ifndef __CTYPE_H__
 #define __CTYPE_H__
 
+/**
+ * Checks if a character is a control character.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is a control character,
+ *         zero otherwise
+ */
 int iscntrl(int ch);
+
+/**
+ * Checks if a character is a printing character.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character can be printed,
+ *         zero otherwise
+ */
 int isprint(int ch);
+
+/**
+ * Checks if a character is a space character.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is a whitespace character,
+ *         zero otherwise
+ */
 int isspace(int ch);
+
+/**
+ * Checks if a character is a blank character.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is a blank character,
+ *         zero otherwise
+ */
 int isblank(int ch);
+
+/**
+ * Checks if a character is a graphical character.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character has a graphical representation,
+ *         zero otherwise
+ */
 int isgraph(int ch);
+
+/**
+ * Checks if a character is a punctuation character.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is a punctuation character,
+ *         zero otherwise
+ */
 int ispunct(int ch);
+
+/**
+ * Checks if a character is alphanumeric.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is an alphanumeric character,
+ *         zero otherwise
+ */
 int isalnum(int ch);
+
+/**
+ * Checks if a character is alphabetic.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is an alphabetic character,
+ *         zero otherwise
+ */
 int isalpha(int ch);
+
+/**
+ * Checks if a character is lowercase.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is a lowercase letter,
+ *         zero otherwise
+ */
 int islower(int ch);
+
+/**
+ * Checks if a character is uppercase.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is an uppercase letter,
+ *         zero otherwise
+ */
 int isupper(int ch);
+
+/**
+ * Checks if a character is a numeric character.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is a numeric character,
+ *         zero otherwise
+ */
 int isdigit(int ch);
+
+/**
+ * Checks if a character is a hexadecimal numeric character.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is a hexadecimal numeric character,
+ *         zero otherwise
+ */
 int isxdigit(int ch);
+
+/**
+ * Converts a character to lowercase.
+ *
+ * @param ch - character to be converted
+ * @return lowercase version of 'ch',
+ *         unmodified 'ch' if no lowercase version exists
+ */
 int tolower(int ch);
+
+/**
+ * Converts a character to uppercase.
+ *
+ * @param ch - character to be converted
+ * @return uppervase version of 'ch',
+ *         unmodified 'ch' if no uppercase version exists
+ */
 int toupper(int ch);
 
 #endif /* __CTYPE_H__ */
