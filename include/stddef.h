@@ -14,9 +14,27 @@
 /*-----------------------------------------------------------------------------
  *   File: include/stddef.h
  * Author: Wes Hampson
- *   Desc: Partial implementation of stddef.h from the C Standard Library.
- *         Part of wklibc - Wes's Kernel C Standard Library.
+ *   Desc: Part of wklibc - Wes's Kernel C Standard Library.
  *----------------------------------------------------------------------------*/
+
+/*******************************************************************************
+ * Implementation Checklist:
+ * Type                 Status              Notes
+ * ----                 ------              -----
+ * ptrdiff_t            NOT_IMPLEMENTED
+ * size_t               COMPLETE
+ * max_align_t          NOT_IMPLEMENTED     Part of C11, may not implement.
+ * nullptr_t            NOT_IMPLEMENTED     Part of C11, may not implement.
+ *
+ * Macro Function       Status              Notes
+ * --------------       ------              -----
+ * offsetof             NOT_IMPLEMENTED
+ *
+ * Macro Constant       Status              Notes
+ * --------------       ------              -----
+ * NULL                 COMPLETE
+ *
+ ******************************************************************************/
 
 #ifndef __STDDEF_H__
 #define __STDDEF_H__
