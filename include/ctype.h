@@ -17,8 +17,8 @@
  *   Desc: Part of wklibc - Wes's Kernel C Standard Library.
  *----------------------------------------------------------------------------*/
 
-#ifndef __CTYPE_H__
-#define __CTYPE_H__
+#ifndef __CTYPE_H
+#define __CTYPE_H
 
 /**
  * Checks if a character is a control character.
@@ -146,4 +146,4 @@ int tolower(int ch);
  */
 int toupper(int ch);
 
-#endif /* __CTYPE_H__ */
+#endif /* __CTYPE_H */

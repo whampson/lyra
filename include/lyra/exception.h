@@ -17,8 +17,8 @@
  *   Desc: Exception vector definitions and handler prototypes.
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_EXCEPTION_H__
-#define __LYRA_EXCEPTION_H__
+#ifndef __LYRA_EXCEPTION_H
+#define __LYRA_EXCEPTION_H
 
 #include <lyra/interrupt.h>
 
@@ -55,4 +55,4 @@ void do_exception(struct interrupt_frame *regs);
 
 #endif /* __ASM__ */
 
-#endif /* __LYRA_EXCEPTION_H__ */
+#endif /* __LYRA_EXCEPTION_H */

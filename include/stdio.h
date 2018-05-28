@@ -21,8 +21,8 @@
  * THIS FILE MAY BE REMOVED IN THE FUTURE. USE kprintf() FOR CONSOLE LOGGING. *
  ******************************************************************************/
 
-#ifndef __STDIO_H__
-#define __STDIO_H__
+#ifndef __STDIO_H
+#define __STDIO_H
 
 #include <stdint.h>
 
@@ -57,4 +57,4 @@ int putchar(int ch);
  */
 int puts(const char *str);
 
-#endif /* __STDIO_H__ */
+#endif /* __STDIO_H */

@@ -16,8 +16,8 @@
  * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
-#ifndef __BOOT_H__
-#define __BOOT_H__
+#ifndef __BOOT_H
+#define __BOOT_H
 
 #include <lyra/init.h>
 
@@ -45,4 +45,4 @@
        KERNEL_NUM_SECTORS   -- number of sectors used by kernel image
 */
 
-#endif /* __BOOT_H__ */
+#endif /* __BOOT_H */

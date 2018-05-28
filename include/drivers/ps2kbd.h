@@ -17,8 +17,8 @@
  *   Desc: PS/2 keyboard driver interface.
  *----------------------------------------------------------------------------*/
 
-#ifndef __DRIVERS_INPUT_PS2KBD_H__
-#define __DRIVERS_INPUT_PS2KBD_H__
+#ifndef __DRIVERS_INPUT_PS2KBD_H
+#define __DRIVERS_INPUT_PS2KBD_H
 
 /**
  * Test PS/2 controller and keyboard, then configure keyboard to transmit
@@ -32,4 +32,4 @@ void ps2kbd_init(void);
  */
 void ps2kbd_do_irq(void);
 
-#endif /* __DRIVERS_INPUT_PS2KBD_H__ */
+#endif /* __DRIVERS_INPUT_PS2KBD_H */

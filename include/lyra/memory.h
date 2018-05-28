@@ -17,10 +17,10 @@
  *   Desc: Memory management prototypes and macros.
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_MEMORY_H__
-#define __LYRA_MEMORY_H__
+#ifndef __LYRA_MEMORY_H
+#define __LYRA_MEMORY_H
 
 void mem_init(void);
 void flush_tlb(void);
 
-#endif /* __LYRA_MEMORY_H__ */
+#endif /* __LYRA_MEMORY_H */

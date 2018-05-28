@@ -17,8 +17,8 @@
  *   Desc: Floppy disk properties and driver behavior.
  *----------------------------------------------------------------------------*/
 
-#ifndef __FLOPPY_H__
-#define __FLOPPY_H__
+#ifndef __FLOPPY_H
+#define __FLOPPY_H
 
 /* Properties of a 1.4 MiB, 3.5in floppy disks. */
 #define HEAD_COUNT          2
@@ -30,4 +30,4 @@
 
 #define BIOS_READ_FLOPPY    0x02
 
-#endif /* __FLOPPY_H__ */
+#endif /* __FLOPPY_H */

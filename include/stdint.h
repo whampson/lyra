@@ -17,8 +17,8 @@
  *   Desc: Part of wklibc - Wes's Kernel C Standard Library.
  *----------------------------------------------------------------------------*/
 
-#ifndef __STDINT_H__
-#define __STDINT_H__
+#ifndef __STDINT_H
+#define __STDINT_H
 
 /* i386 signed integer minimum values */
 #define INT8_MIN    (-0x7F - 1)
@@ -63,4 +63,4 @@ typedef unsigned long long int  uint64_t;
 typedef uint32_t                uintptr_t;
 typedef uint64_t                uintmax_t;
 
-#endif /* __STDINT_H__ */
+#endif /* __STDINT_H */
