@@ -26,8 +26,8 @@
 
 #include <stdint.h>
 
-#ifndef __NULL_DEFINED__
-#define __NULL_DEFINED__
+#ifndef __NULL_DEFINED
+#define __NULL_DEFINED
 #define NULL    ((void *) 0)
 #endif
 
