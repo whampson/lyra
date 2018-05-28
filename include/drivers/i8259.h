@@ -29,7 +29,7 @@
 /* Number of IRQ lines per PIC. */
 #define PIC_NUM_IRQ     8
 
-#ifndef __ASM__
+#ifndef __ASM
 
 /**
  * Initialize the Intel 8259 PICs.
@@ -61,6 +61,6 @@ void i8259_unmask(unsigned int irq_num);
  */
 void i8259_eoi(int irq_num);
 
-#endif /* __ASM__ */
+#endif /* __ASM */
 
 #endif /* __DRIVERS_i8259_H */

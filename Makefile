@@ -22,7 +22,7 @@ GCC_WARNINGS    := -Wall -Wextra -Wpedantic -Wno-unused-function
 
 # Build tools and flags
 export AS       := gcc
-export ASFLAGS  := $(GCC_WARNINGS) -D__ASM__ -m32
+export ASFLAGS  := $(GCC_WARNINGS) -D__ASM -m32
 export CC       := gcc
 export CFLAGS   := $(GCC_WARNINGS) -m32 -ffreestanding -fomit-frame-pointer \
                    -fno-unwind-tables -fno-asynchronous-unwind-tables \
