@@ -20,6 +20,7 @@
 #ifndef __LYRA_KERNEL_H__
 #define __LYRA_KERNEL_H__
 
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -80,5 +81,8 @@ char * strrev(char *s);
 size_t strlen(const char *s);
 void puti(uint32_t i);
 void putix(uint32_t i);
+
+int kprintf(const char * fmt, ...);
+int vkprintf(const char * fmt, va_list args);
 
 #endif  /* __LYRA_KERNEL_H__ */
