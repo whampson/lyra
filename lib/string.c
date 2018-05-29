@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-char * strcpy(char * dest, const char * src)
+char * strcpy(char *dest, const char *src)
 {
     register int i;
 
@@ -36,7 +36,7 @@ char * strcpy(char * dest, const char * src)
     return dest;
 }
 
-char * strncpy(char * dest, const char * src, size_t n)
+char * strncpy(char *dest, const char *src, size_t n)
 {
     register size_t i;
     register int c;
@@ -55,7 +55,7 @@ char * strncpy(char * dest, const char * src, size_t n)
     return dest;
 }
 
-size_t strlen(const char * str)
+size_t strlen(const char *str)
 {
     register size_t len;
 
