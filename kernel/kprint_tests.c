@@ -22,7 +22,20 @@
 
 void kprintf_test(void)
 {
+    char *ptr = (char *) 0xb8000;
+
     kprintf("Hello, world!\n");
+    kprintf("Literal percent sign: %%\n");
+    kprintf("An octal integer (33): %o\n", 27);
+    kprintf("A decimal integer (42): %d\n", 42);
+    kprintf("A hex integer (BEEF): %x\n", 0xBEEF);
+    kprintf("A single character (q): %c\n", 'q');
+    kprintf("A string (foo): %s\n", "foo");
+    kprintf("A pointer: %p\n", ptr);
+
+    kprintf("A vector: <%d, %d, %d>\n", 45, -537, 17);
+    kprintf("Madlib: A %s went to the store and bought %i %s!\n",
+            "canary", 76, "limes");
 }
 
 #else
