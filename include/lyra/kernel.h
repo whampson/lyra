@@ -76,8 +76,10 @@ __asm__ volatile (          \
 
 void clear(void);
 
-char * itoa(unsigned int value, char *buf, int radix);
-char * strrev(char *s);
+/* Nonstandard string functions. */
+char * strrev(char *str);
+char * itoa(int val, char *str, int base);
+
 void puti(uint32_t i);
 void putix(uint32_t i);
 

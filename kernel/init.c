@@ -70,53 +70,6 @@ void kernel_init(void)
 }
 
 
-char * itoa(unsigned int value, char *buf, int radix) {
-    static char lookup[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    char *newbuf = buf;
-    size_t i;
-    unsigned int newval = value;
-
-    /* Special case for zero */
-    if (value == 0) {
-        buf[0] = '0';
-        buf[1] = '\0';
-        return buf;
-    }
-
-    /* Go through the number one place value at a time, and add the
-     * correct digit to "newbuf".  We actually add characters to the
-     * ASCII string from lowest place value to highest, which is the
-     * opposite of how the number should be printed.  We'll reverse the
-     * characters later. */
-    while (newval > 0) {
-        i = newval % radix;
-        *newbuf = lookup[i];
-        newbuf++;
-        newval /= radix;
-    }
-
-    /* Add a terminating NULL */
-    *newbuf = '\0';
-
-    /* Reverse the string and return */
-    return strrev(buf);
-}
-
-char * strrev(char *s) {
-    register char tmp;
-    register int beg = 0;
-    register int end = strlen(s) - 1;
-
-    while (beg < end) {
-        tmp = s[end];
-        s[end] = s[beg];
-        s[beg] = tmp;
-        beg++;
-        end--;
-    }
-    return s;
-}
-
 void puti(uint32_t i)
 {
     char buf[12];

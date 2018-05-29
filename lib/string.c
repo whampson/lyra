@@ -70,3 +70,70 @@ size_t strlen(const char *str)
 
     return len;
 }
+
+/* Non-standard but useful. */
+char * strrev(char *str)
+{
+    register char c;
+    register size_t len;
+    register size_t i;
+
+    len = strlen(str);
+
+    for (i = 0; i < len / 2; i++) {
+        c = str[i];
+        str[i] = str[len - i - 1];
+        str[len - i - 1] = c;
+    }
+
+    return str;
+}
+
+/* Non-standard but useful. */
+char * itoa(int val, char *str, int base)
+{
+    static char lookup[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    char *str_base;
+    size_t i;
+    int sign;
+    unsigned int uval;
+
+    if (str == NULL) {
+        return str;
+    }
+
+    if (base < 2 || base > 36) {
+        str[0] = '\0';
+        return str;
+    }
+
+    /* Special case for zero */
+    if (val == 0) {
+        str = "0";
+        return str;
+    }
+
+    str_base = str;
+
+    /* Check for negative */
+    sign = (val < 0);
+    if (sign && base == 10) {
+        val *= -1;
+    }
+    uval = (unsigned int) val;
+
+    while (uval > 0) {
+        i = (size_t) uval % base;
+        *str = lookup[i];
+        str++;
+        uval /= base;
+    }
+
+    if (sign && base == 10) {
+        *(str++) = '-';
+    }
+    *str = '\0';
+
+    return strrev(str_base);
+}
