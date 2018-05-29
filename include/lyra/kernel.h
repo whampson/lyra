@@ -78,7 +78,6 @@ void clear(void);
 
 char * itoa(unsigned int value, char *buf, int radix);
 char * strrev(char *s);
-size_t strlen(const char *s);
 void puti(uint32_t i);
 void putix(uint32_t i);
 

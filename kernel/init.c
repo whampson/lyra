@@ -113,13 +113,6 @@ char * strrev(char *s) {
     return s;
 }
 
-size_t strlen(const char *s) {
-    register size_t len = 0;
-    while (s[len] != '\0')
-        len++;
-    return len;
-}
-
 void puti(uint32_t i)
 {
     char buf[12];
