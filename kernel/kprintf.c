@@ -16,6 +16,8 @@
  * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
+#include <ctype.h>
+#include <stdbool.h>
 #include <lyra/kernel.h>
 
 /**
@@ -26,6 +28,26 @@
  *
  * Format Specifier Breakdown:
  *   %[flags][width][.precision][length]specifier
+ *
+*   specifier:
+ *     d/i      - signed decimal integer
+ *     u        - unsigned decimal integer
+ *     o        - unsigned octal integer
+ *     x        - unsigned hexadecimal integer
+ *     X        - unsigned hexadecimal integer (uppercase)
+ *     f        - NOT_SUPPORTED (may change if floats needed)
+ *     F        - NOT_SUPPORTED (may change if floats needed)
+ *     e        - NOT_SUPPORTED
+ *     E        - NOT_SUPPORTED
+ *     g        - NOT_SUPPORTED
+ *     G        - NOT_SUPPORTED
+ *     a        - NOT_SUPPORTED
+ *     A        - NOT_SUPPORTED
+ *     c        - character
+ *     s        - string of characters
+ *     p        - pointer address
+ *     n        - NOT_SUPPORTED
+ *     %        - '%'
  *
  *   flags:
  *     -        - NOT_SUPPORTED
@@ -54,26 +76,6 @@
  *     L        - NOT_SUPPORTED
  *     NOTE: 'wint_t' and 'wchar_t' are not supported yet. Length conversions to
  *           these types will be 'long int', and 'long int*' respectively.
- *
- *   specifier:
- *     d/i      - signed decimal integer
- *     u        - unsigned decimal integer
- *     o        - unsigned octal integer
- *     x        - unsigned hexadecimal integer
- *     X        - unsigned hexadecimal integer (uppercase)
- *     f        - NOT_SUPPORTED (may change if floats needed)
- *     F        - NOT_SUPPORTED (may change if floats needed)
- *     e        - NOT_SUPPORTED
- *     E        - NOT_SUPPORTED
- *     g        - NOT_SUPPORTED
- *     G        - NOT_SUPPORTED
- *     a        - NOT_SUPPORTED
- *     A        - NOT_SUPPORTED
- *     c        - character
- *     s        - string of characters
- *     p        - pointer address
- *     n        - NOT_SUPPORTED
- *     %        - '%'
  */
 int kprintf(const char * fmt, ...)
 {
@@ -96,5 +98,103 @@ int vkprintf(const char * fmt, va_list args)
         - 'p' automatically adds '0x' prefix
     */
 
-    return 0;
+    /* TODO:
+        - implement 'X'
+        - implement flags,width,precision,length
+        - allow for negative numbers in %d and %i
+    */
+
+    bool formatting;
+    int count;
+    char c;
+    char *s;
+    char fmtbuf[128];
+
+    formatting = false;
+    count = 0;
+
+//printf_loop:
+    while ((c = *(fmt++)) != '\0')
+    {
+        switch (c)
+        {
+            case 'd':
+            case 'i':
+                if (!formatting) {
+                    goto sendchar;
+                }
+
+                itoa(va_arg(args, int), fmtbuf, 10);
+                puts(fmtbuf);
+                formatting = false;
+                continue;
+
+            case 'o':
+                 if (!formatting) {
+                    goto sendchar;
+                }
+
+                itoa(va_arg(args, int), fmtbuf, 8);
+                puts(fmtbuf);
+                formatting = false;
+                continue;
+
+            case 'x':
+            /*case 'X':*/
+                if (!formatting) {
+                    goto sendchar;
+                }
+
+                itoa(va_arg(args, int), fmtbuf, 16);
+                puts(fmtbuf);
+                formatting = false;
+                continue;
+
+            case 'c':
+                if (!formatting) {
+                    goto sendchar;
+                }
+                c = (char) va_arg(args, int);
+                formatting = false;
+                goto sendchar;
+
+            case 's':
+                if (!formatting) {
+                    goto sendchar;
+                }
+                s = (char *) va_arg(args, char*);
+                puts(s);
+                formatting = false;
+                continue;
+
+            case 'p':
+                if (!formatting) {
+                    goto sendchar;
+                }
+                itoa((int) va_arg(args, void*), fmtbuf, 16);
+                puts("0x");
+                puts(fmtbuf);
+                formatting = false;
+                continue;
+
+            case '%':
+                if (!formatting) {
+                    formatting = true;
+                    continue;
+                }
+                formatting = false;
+                goto sendchar;
+
+            default:
+                if (!formatting) {
+                    goto sendchar;
+                }
+        }
+
+    sendchar:
+        count++;
+        putchar(c);
+    }
+
+    return count;
 }
