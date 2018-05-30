@@ -18,6 +18,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <string.h>
+#include <stdint.h>
 
 char * strcpy(char *dest, const char *src)
 {
@@ -90,14 +91,14 @@ char * strrev(char *str)
 }
 
 /* Non-standard but useful. */
-char * itoa(int val, char *str, int base)
+char * itoa(int64_t val, char *str, int base)
 {
     static char lookup[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     char *str_base;
     size_t i;
     int sign;
-    unsigned int uval;
+    uint64_t uval;
 
     if (str == NULL) {
         return str;
@@ -121,7 +122,7 @@ char * itoa(int val, char *str, int base)
     if (sign && base == 10) {
         val *= -1;
     }
-    uval = (unsigned int) val;
+    uval = (uint64_t) val;
 
     while (uval > 0) {
         i = (size_t) uval % base;
