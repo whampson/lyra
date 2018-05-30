@@ -28,7 +28,8 @@ void kprintf_test(void)
     kprintf("Literal percent sign: %%\n");
     kprintf("An octal integer (33): %o\n", 27);
     kprintf("A decimal integer (42): %d\n", 42);
-    kprintf("A hex integer (BEEF): %x\n", 0xBEEF);
+    kprintf("A hex integer (DEAD): %X\n", 0xDEAD);
+    kprintf("A hex integer (beef): %x\n", 0xBEEF);
     kprintf("A single character (q): %c\n", 'q');
     kprintf("A string (foo): %s\n", "foo");
     kprintf("A pointer: %p\n", ptr);
