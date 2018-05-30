@@ -83,8 +83,8 @@ char * itoa(int val, char *str, int base);
 void puti(uint32_t i);
 void putix(uint32_t i);
 
-int kprintf(const char * fmt, ...);
-int vkprintf(const char * fmt, va_list args);
+int kprintf(const char *fmt, ...);
+int vkprintf(const char *fmt, va_list args);
 
 #ifdef __DEBUG
 void kprintf_test(void);
