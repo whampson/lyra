@@ -228,6 +228,15 @@ int vkprintf(const char *fmt, va_list args)
                 }
                 continue;
 
+            case ' ':
+                if (!formatting) {
+                    goto sendchar;
+                }
+                else if (state == S_READF) {
+                    fl |= F_SPACE;
+                }
+                continue;
+
             case '#':
                 if (!formatting) {
                     goto sendchar;
@@ -373,14 +382,16 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
     int npad;
     int nchar;
     int ndigit;
-    bool print_sign;
+    bool print_plus;
+    bool sign_would_print;
     char tmpbuf[32];
     size_t tmpbuflen;
 
     padch = ' ';
     npad = 0;
     nchar = 0;
-    print_sign = (flag_set(fl, F_SIGN) && b == 10);
+    sign_would_print = (flag_set(fl, F_SPACE) && b == 10);
+    print_plus = (flag_set(fl, F_SIGN) && b == 10);
 
     val = va_arg(*ap, int);
 
@@ -409,7 +420,7 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
         }
     }
 
-    if (print_sign) {
+    if (print_plus || sign_would_print) {
         nchar += 1;
     }
 
@@ -435,8 +446,11 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
                 break;
         }
     }
-    else if (print_sign && val >= 0) {
+    else if (print_plus && val >= 0) {
         *(buf++) = '+';
+    }
+    else if (sign_would_print && val >= 0) {
+        *(buf++) = ' ';
     }
 
     while (p > ndigit) {
