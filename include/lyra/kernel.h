@@ -51,6 +51,9 @@ __asm__ volatile (          \
     : "memory", "cc"        \
 );
 
+/**
+ * Backup EFLAGS register, then clear interrupt flag.
+ */
 #define cli_save(flags)     \
 __asm__ volatile (          \
     "                       \n\
@@ -63,7 +66,10 @@ __asm__ volatile (          \
     : "memory", "cc"        \
 );
 
-#define set_flags(flags)    \
+/**
+ * Restore EFLAGS register.
+ */
+#define restore_flags(flags)\
 __asm__ volatile (          \
     "                       \n\
     push %0                 \n\
@@ -73,6 +79,35 @@ __asm__ volatile (          \
     : "r"(flags)            \
     : "memory", "cc"        \
 );
+
+/**
+ * Checks whether a given bit is set in a bitfield.
+ */
+#define flag_set(val, flag) \
+    ((val & flag) == flag)
+
+/**
+ * Returns the greater value.
+ *
+ * Adapted from https://stackoverflow.com/a/3437484.
+ */
+#define max(a, b)           \
+({  __typeof__(a) _a = (a); \
+    __typeof__(b) _b = (b); \
+    _a > _b ? _a : _b;      \
+})
+
+/**
+ * Returns the smaller value.
+ *
+ * Adapted from https://stackoverflow.com/a/3437484.
+ */
+#define min(a, b)           \
+({  __typeof__(a) _a = (a); \
+    __typeof__(b) _b = (b); \
+    _a < _b ? _a : _b;      \
+})
+
 
 void clear(void);
 
