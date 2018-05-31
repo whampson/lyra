@@ -42,6 +42,7 @@ enum fmt_state {
     S_READL
 };
 
+static char * make_lower(char *str);
 static size_t num2str(int val, char *str, int base, bool s);
 static void pad(char *buf, int n, char c);
 
@@ -128,9 +129,8 @@ int vkprintf(const char *fmt, va_list args)
     */
 
     /* TODO:
-        - implement 'X'
-        - implement flags,width,precision,length
-        - allow for negative numbers in %d and %i
+        - implement 's'
+        - read numbers embedded within format string
     */
 
     bool formatting;
@@ -191,7 +191,7 @@ int vkprintf(const char *fmt, va_list args)
                 }
                 fmt_int(fmtbuf, fl, w, p, false, 16, ljust, &args);
                 if (c == 'x') {
-                    // TODO: convert to lower
+                    make_lower(fmtbuf);
                 }
                 goto sendfmt;
 
@@ -204,6 +204,13 @@ int vkprintf(const char *fmt, va_list args)
 
             case 's':
             case 'p':
+                if (!formatting) {
+                    goto sendchar;
+                }
+                fl |= F_PREFIX;
+                fmt_int(fmtbuf, fl, w, p, false, 16, ljust, &args);
+                make_lower(fmtbuf);
+                goto sendfmt;
 
 
             /* Flags */
@@ -298,6 +305,19 @@ int vkprintf(const char *fmt, va_list args)
     }
 
     return count;
+}
+
+static char * make_lower(char *str)
+{
+    int i;
+
+    i = 0;
+    while (str[i] != '\0') {
+        str[i] = tolower(str[i]);
+        i++;
+    }
+
+    return str;
 }
 
 static size_t num2str(int val, char *str, int base, bool s)
