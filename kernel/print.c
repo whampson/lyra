@@ -26,6 +26,7 @@
 #define SCREEN_WIDTH    80
 #define SCREEN_HEIGHT   25
 #define SCREEN_SIZE     (SCREEN_WIDTH * SCREEN_HEIGHT)
+#define TAB_WIDTH       8
 
 #define XY2POS(x, y)    (y * SCREEN_WIDTH + x)
 
@@ -41,6 +42,7 @@ int putchar(int c)
 {
     char do_newline = 0;
     unsigned char printed;
+    int tmp;
 
     switch (c) {
         case '\n':
@@ -50,6 +52,19 @@ int putchar(int c)
         case '\r':
             printed = '\r';
             cursor.x = 0;
+            break;
+        case '\t':
+            printed = '\t';
+            tmp = cursor.x % TAB_WIDTH;
+            if (tmp == 0) {
+                cursor.x += TAB_WIDTH;
+            }
+            else {
+                cursor.x += (TAB_WIDTH - tmp);
+            }
+            if (cursor.x > SCREEN_WIDTH) {
+                cursor.x = SCREEN_WIDTH;
+            }
             break;
         default:
             printed = (unsigned char) c;
