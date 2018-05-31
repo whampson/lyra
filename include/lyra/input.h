@@ -71,7 +71,7 @@ enum ascii {
  * the '/?' key is 0x2F, the ASCII code for the '/' character). All keys on the
  * numeric keypad have their own scancodes.
  */
-enum kb_keys {
+enum kb_key {
     /* Control characters */
     KB_BACKSPACE    = ASCII_BS,
     KB_TAB          = ASCII_TAB,
