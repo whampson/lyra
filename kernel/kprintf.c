@@ -35,13 +35,6 @@ enum printf_fl {
     F_ZEROPAD   = 0x08
 };
 
-enum printf_len {
-    L_NONE,
-    L_L,
-    L_Z,
-    L_T
-};
-
 enum fmt_state {
     S_READF,
     S_READW,
@@ -51,8 +44,10 @@ enum fmt_state {
 
 static size_t num2str(int val, char *str, int base, bool s);
 static void pad(char *buf, int n, char c);
-static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
-                   int p, bool s, int b, bool ljust, va_list *ap);
+
+static void fmt_char(char *buf, int w, bool ljust, va_list *ap);
+static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
+                    bool ljust, va_list *ap);
 
 /**
  * Kernel printf(). Use this to print to the kernel console.
@@ -85,8 +80,8 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
  *
  *   flags:
  *     -        - left justify padding
- *     +        - NOT_SUPPORTED
- *     (space)  - NOT_SUPPORTED
+ *     +        - always print sign
+ *     (space)  - print a space if a sign would be printed (unless + specified)
  *     #        - (o,x,X) prepend (0,0x,0X) for nonzero values
  *     0        - left-pad the number with zeros instead of spaces
  *
@@ -142,10 +137,8 @@ int vkprintf(const char *fmt, va_list args)
     enum fmt_state state;
     int count;
     char c;
-    char *s;
     char fmtbuf[128];
     enum printf_fl fl;
-    enum printf_len len;
     int w, p;
     bool ljust;
 
@@ -161,7 +154,6 @@ int vkprintf(const char *fmt, va_list args)
                     state = S_READF;
                     /* Formatting defaults */
                     fl = F_NONE;
-                    len = L_NONE;
                     w = W_NONE;
                     p = P_NONE;
                     ljust = false;
@@ -175,21 +167,21 @@ int vkprintf(const char *fmt, va_list args)
                 if (!formatting) {
                     goto sendchar;
                 }
-                fmt_int(fmtbuf, fl, len, w, p, true, 10, ljust, &args);
+                fmt_int(fmtbuf, fl, w, p, true, 10, ljust, &args);
                 goto sendfmt;
 
             case 'u':
                 if (!formatting) {
                     goto sendchar;
                 }
-                fmt_int(fmtbuf, fl, len, w, p, false, 10, ljust, &args);
+                fmt_int(fmtbuf, fl, w, p, false, 10, ljust, &args);
                 goto sendfmt;
 
             case 'o':
                 if (!formatting) {
                     goto sendchar;
                 }
-                fmt_int(fmtbuf, fl, len, w, p, false, 8, ljust, &args);
+                fmt_int(fmtbuf, fl, w, p, false, 8, ljust, &args);
                 goto sendfmt;
 
             case 'x':
@@ -197,13 +189,18 @@ int vkprintf(const char *fmt, va_list args)
                 if (!formatting) {
                     goto sendchar;
                 }
-                fmt_int(fmtbuf, fl, len, w, p, false, 16, ljust, &args);
+                fmt_int(fmtbuf, fl, w, p, false, 16, ljust, &args);
                 if (c == 'x') {
                     // TODO: convert to lower
                 }
                 goto sendfmt;
 
             case 'c':
+                if (!formatting) {
+                    goto sendchar;
+                }
+                fmt_char(fmtbuf, w, ljust, &args);
+                goto sendfmt;
 
             case 's':
             case 'p':
@@ -372,12 +369,34 @@ static void pad(char *buf, int n, char c)
     }
 }
 
-static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
-                   int p, bool s, int b, bool ljust, va_list *ap)
+static void fmt_char(char *buf, int w, bool ljust, va_list *ap)
 {
-    int count;
+    int npad;
+    unsigned char val;
+
+    // TODO: decide how to handle non-printing characters
+
+    npad = w - 1;
+    val = (unsigned char) va_arg(*ap, int);
+
+    if (!ljust && w > 0) {
+        pad(buf, npad, ' ');
+        buf += npad;
+    }
+
+    *(buf++) = val;
+
+    if (ljust && w > 0) {
+        pad(buf, npad, ' ');
+        buf += npad;
+    }
+    *buf = '\0';
+}
+
+static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
+                    bool ljust, va_list *ap)
+{
     int val;
-    int i;
     char padch;
     int npad;
     int nchar;
@@ -387,9 +406,10 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
     char tmpbuf[32];
     size_t tmpbuflen;
 
+    // TODO: '+' and ' ' flags can be optimized
+
     padch = ' ';
     npad = 0;
-    nchar = 0;
     sign_would_print = (flag_set(fl, F_SPACE) && b == 10);
     print_plus = (flag_set(fl, F_SIGN) && b == 10);
 
@@ -403,7 +423,7 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
 
     tmpbuflen = num2str(val, tmpbuf, b, s);
     ndigit = tmpbuflen;
-    nchar += ndigit;
+    nchar = ndigit;
 
     if (flag_set(fl, F_ZEROPAD) && p == P_NONE) {
         padch = '0';
