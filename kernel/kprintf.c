@@ -21,12 +21,18 @@
 #include <string.h>
 #include <lyra/kernel.h>
 
-#define MAX_WIDTH       64
-#define MAX_PRECISION   64
+#define W_MAX   64
+#define P_MAX   64
+
+#define W_NONE  0
+#define P_NONE  (-1)
 
 enum printf_fl {
-    F_PREFIX    = 0x01,
-    F_ZEROPAD   = 0x02
+    F_NONE      = 0x00,
+    F_SIGN      = 0x01,
+    F_SPACE     = 0x02,
+    F_PREFIX    = 0x04,
+    F_ZEROPAD   = 0x08
 };
 
 enum printf_len {
@@ -44,9 +50,9 @@ enum fmt_state {
 };
 
 static size_t num2str(int val, char *str, int base, bool s);
-
+static void pad(char *buf, int n, char c);
 static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
-                   int p, bool s, int b, va_list *ap);
+                   int p, bool s, int b, bool ljust, va_list *ap);
 
 /**
  * Kernel printf(). Use this to print to the kernel console.
@@ -78,7 +84,7 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
  *     %        - '%'
  *
  *   flags:
- *     -        - NOT_SUPPORTED
+ *     -        - left justify padding
  *     +        - NOT_SUPPORTED
  *     (space)  - NOT_SUPPORTED
  *     #        - (o,x,X) prepend (0,0x,0X) for nonzero values
@@ -141,6 +147,7 @@ int vkprintf(const char *fmt, va_list args)
     enum printf_fl fl;
     enum printf_len len;
     int w, p;
+    bool ljust;
 
     formatting = false;
     count = 0;
@@ -153,10 +160,11 @@ int vkprintf(const char *fmt, va_list args)
                     formatting = true;
                     state = S_READF;
                     /* Formatting defaults */
-                    fl = 0;
+                    fl = F_NONE;
                     len = L_NONE;
-                    w = -1;
-                    p = -1;
+                    w = W_NONE;
+                    p = P_NONE;
+                    ljust = false;
                     continue;
                 }
                 formatting = false;
@@ -167,21 +175,21 @@ int vkprintf(const char *fmt, va_list args)
                 if (!formatting) {
                     goto sendchar;
                 }
-                fmt_int(fmtbuf, fl, len, w, p, true, 10, &args);
+                fmt_int(fmtbuf, fl, len, w, p, true, 10, ljust, &args);
                 goto sendfmt;
 
             case 'u':
                 if (!formatting) {
                     goto sendchar;
                 }
-                fmt_int(fmtbuf, fl, len, w, p, false, 10, &args);
+                fmt_int(fmtbuf, fl, len, w, p, false, 10, ljust, &args);
                 goto sendfmt;
 
             case 'o':
                 if (!formatting) {
                     goto sendchar;
                 }
-                fmt_int(fmtbuf, fl, len, w, p, false, 8, &args);
+                fmt_int(fmtbuf, fl, len, w, p, false, 8, ljust, &args);
                 goto sendfmt;
 
             case 'x':
@@ -189,62 +197,37 @@ int vkprintf(const char *fmt, va_list args)
                 if (!formatting) {
                     goto sendchar;
                 }
-                fmt_int(fmtbuf, fl, len, w, p, false, 16, &args);
+                fmt_int(fmtbuf, fl, len, w, p, false, 16, ljust, &args);
                 if (c == 'x') {
                     // TODO: convert to lower
                 }
                 goto sendfmt;
 
+            case 'c':
 
-            // case 'o':
-            //      if (!formatting) {
-            //         goto sendchar;
-            //     }
+            case 's':
+            case 'p':
 
-            //     itoa(va_arg(args, int), fmtbuf, 8);
-            //     puts(fmtbuf);
-            //     formatting = false;
-            //     continue;
-
-            // case 'X':
-            //     if (!formatting) {
-            //         goto sendchar;
-            //     }
-
-            //     fmt_hex(fmtbuf, false, false);
-            //     puts(fmtbuf);
-            //     formatting = false;
-            //     continue;
-
-            // case 'x':
-            // case 'p':
-            //     if (!formatting) {
-            //         goto sendchar;
-            //     }
-
-            //     fmt_hex(fmtbuf, true, c == 'p');
-            //     puts(fmtbuf);
-            //     formatting = false;
-            //     continue;
-
-            // case 'c':
-            //     if (!formatting) {
-            //         goto sendchar;
-            //     }
-            //     c = (char) va_arg(args, int);
-            //     formatting = false;
-            //     goto sendchar;
-
-            // case 's':
-            //     if (!formatting) {
-            //         goto sendchar;
-            //     }
-            //     s = (char *) va_arg(args, char*);
-            //     puts(s);
-            //     formatting = false;
-            //     continue;
 
             /* Flags */
+            case '-':
+                if (!formatting) {
+                    goto sendchar;
+                }
+                else if (state == S_READF) {
+                    ljust = true;
+                }
+                continue;
+
+            case '+':
+                if (!formatting) {
+                    goto sendchar;
+                }
+                else if (state == S_READF) {
+                    fl |= F_SIGN;
+                }
+                continue;
+
             case '#':
                 if (!formatting) {
                     goto sendchar;
@@ -269,6 +252,7 @@ int vkprintf(const char *fmt, va_list args)
                     goto sendchar;
                 }
                 state = S_READP;
+                p = 0;
                 continue;
 
             case '*':
@@ -276,39 +260,17 @@ int vkprintf(const char *fmt, va_list args)
                     goto sendchar;
                 }
                 if (state == S_READF) {
-                    state = S_READW;
                     w = va_arg(args, int);
+                    if (w < 0) {
+                        ljust = true;
+                        w = negate(w);
+                    }
+                    state = S_READW;
                 }
                 else if (state == S_READP) {
                     p = va_arg(args, int);
                 }
                 continue;
-
-
-            // /* Length specifiers */
-            // case 'l':
-            //     if (!formatting) {
-            //         goto sendchar;
-            //     }
-            //     reading_flags = false;
-            //     len = L_L;
-            //     continue;
-
-            // case 'z':
-            //     if (!formatting) {
-            //         goto sendchar;
-            //     }
-            //     reading_flags = false;
-            //     len = L_Z;
-            //     continue;
-
-            // case 't':
-            //     if (!formatting) {
-            //         goto sendchar;
-            //     }
-            //     reading_flags = false;
-            //     len = L_T;
-            //     continue;
 
             /* Invalid specifier */
             default:
@@ -362,7 +324,7 @@ static size_t num2str(int val, char *str, int base, bool s)
     if (s && base == 10) {
         sign = (val < 0);
         if (sign && base == 10) {
-            val = ~val + 1;
+            val = negate(val);
         }
         while (val > 0) {
             i = (size_t) val % base;
@@ -392,8 +354,17 @@ static size_t num2str(int val, char *str, int base, bool s)
     return (size_t) (str - str_base);
 }
 
+static void pad(char *buf, int n, char c)
+{
+    int i;
+
+    for (i = 0; i < n; i++) {
+        buf[i] = c;
+    }
+}
+
 static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
-                   int p, bool s, int b, va_list *ap)
+                   int p, bool s, int b, bool ljust, va_list *ap)
 {
     int count;
     int val;
@@ -402,11 +373,14 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
     int npad;
     int nchar;
     int ndigit;
+    bool print_sign;
     char tmpbuf[32];
+    size_t tmpbuflen;
 
     padch = ' ';
     npad = 0;
     nchar = 0;
+    print_sign = (flag_set(fl, F_SIGN) && b == 10);
 
     val = va_arg(*ap, int);
 
@@ -416,25 +390,11 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
         return;
     }
 
-    // switch (l) {
-    //     case L_L:
-    //         val = va_arg(*ap, long int);
-    //         break;
-    //     case L_Z:
-    //         val = va_arg(*ap, size_t);
-    //         break;
-    //     case L_T:
-    //         val = va_arg(*ap, ptrdiff_t);
-    //         break;
-    //     default:
-    //         val = va_arg(*ap, int);
-    //         break;
-    // }
-
-    ndigit = num2str(val, tmpbuf, b, s);
+    tmpbuflen = num2str(val, tmpbuf, b, s);
+    ndigit = tmpbuflen;
     nchar += ndigit;
 
-    if (flag_set(fl, F_ZEROPAD) && p < 0) {
+    if (flag_set(fl, F_ZEROPAD) && p == P_NONE) {
         padch = '0';
     }
 
@@ -449,17 +409,19 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
         }
     }
 
-    if (w > nchar) {
-        if (p > ndigit) {
-            npad = w - nchar - (p - ndigit);
-        }
-        else {
-            npad = w - nchar;
-        }
-        for (i = 0; i < npad; i++) {
-            *(buf++) = padch;
-        }
-        nchar += i;
+    if (print_sign) {
+        nchar += 1;
+    }
+
+    npad = w - nchar;
+    if (p > ndigit) {
+        npad -= p - ndigit;
+    }
+
+    if (!ljust && w > nchar) {
+        pad(buf, npad, padch);
+        nchar += npad;
+        buf += npad;
     }
 
     if (flag_set(fl, F_PREFIX)) {
@@ -473,11 +435,24 @@ static void fmt_int(char *buf, enum printf_fl fl, enum printf_len l, int w,
                 break;
         }
     }
+    else if (print_sign && val >= 0) {
+        *(buf++) = '+';
+    }
 
     while (p > ndigit) {
         *(buf++) = '0';
         ndigit++;
+        nchar++;
     }
 
     strncpy(buf, tmpbuf, sizeof(tmpbuf));
+
+    if (ljust && w > nchar) {
+        buf += tmpbuflen;
+        pad(buf, npad, ' ');
+        nchar += npad;
+        buf += npad;
+    }
+
+    buf[nchar] = '\0';
 }
