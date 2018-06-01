@@ -42,15 +42,17 @@ enum fmt_state {
     S_READL
 };
 
-static char * make_lower(char *str);
-static size_t num2str(int val, char *str, int base, bool s);
-static void pad(char *buf, int n, char c);
-
 static void fmt_char(char *buf, int w, bool ljust, va_list *ap);
 static void fmt_string(char *buf, enum printf_fl fl, int w, int p, bool ljust,
                        va_list *ap);
 static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
                     bool ljust, va_list *ap);
+
+
+static char * strlower(char *str);
+static size_t num2str(int val, char *str, int base, bool sign_allowed);
+static int atoi(const char *str);
+static void pad(char *buf, int n, char c);
 
 /**
  * Kernel printf(). Use this to print to the kernel console.
@@ -86,7 +88,7 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
  *     +        - always print sign
  *     (space)  - print a space if a sign would be printed (unless + specified)
  *     #        - (o,x,X) prepend (0,0x,0X) for nonzero values
- *     0        - left-pad the number with zeros instead of spaces
+ *     0        - (d,i,o,u,x,X) left-pad with zeros instead of spaces
  *
  *   width:
  *     (num)    - min. chars to be printed; padded w/ blank spaces or 0
@@ -94,18 +96,11 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
  *
  *   .precision:
  *     (num)    - (d,i,o,u,x,X) min. digits to be written; pad w/ zeros
+ *                (s) max. chars to be written
  *     *        - precision specified as next argument in arg list
  *
- *   length:      d i           u o x X             c       s       p
- *     (none)   - int           unsigned int        int     char*   void*
- *     hh       - N/S           N/S                 N/S
- *     h        - N/S           N/S                 N/S     N/S     N/S
- *     l        - long int      unsigned long int   N/S     N/S
- *     ll       - N/S           N/S                 N/S     N/S     N/S
- *     j        - N/S           N/S                 N/S     N/S     N/S
- *     z        - size_t        size_t              N/S     N/S     N/S
- *     t        - ptrdiff_t     ptrdiff_t           N/S     N/S     N/S
- *     L        - N/S           N/S                 N/S     N/S     N/S
+ *   length:
+ *      The length field is NOT_SUPPORTED at this time.
  *
  * NOTE: Using an unsupported specifier will cause undefined behavior.
  */
@@ -307,88 +302,6 @@ int vkprintf(const char *fmt, va_list args)
     return count;
 }
 
-static char * make_lower(char *str)
-{
-    int i;
-
-    i = 0;
-    while (str[i] != '\0') {
-        str[i] = tolower(str[i]);
-        i++;
-    }
-
-    return str;
-}
-
-static size_t num2str(int val, char *str, int base, bool s)
-{
-    static char lookup[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-    char *str_base;
-    size_t i;
-    bool sign;
-    unsigned int uval;
-
-    if (str == NULL) {
-        return 0;
-    }
-
-    if (base < 2 || base > 36) {
-        str[0] = '\0';
-        return 0;
-    }
-
-    /* Special case for zero */
-    if (val == 0) {
-        str[0] = '0';
-        str[1] = '\0';
-        return 1;
-    }
-
-    str_base = str;
-
-    if (s && base == 10) {
-        sign = (val < 0);
-        if (sign && base == 10) {
-            val = negate(val);
-        }
-        while (val > 0) {
-            i = (size_t) val % base;
-            *str = lookup[i];
-            str++;
-            val /= base;
-        }
-    }
-    else {
-        sign = false;
-        uval = (unsigned int) val;
-        while (uval > 0) {
-            i = (size_t) uval % base;
-            *str = lookup[i];
-            str++;
-            uval /= base;
-        }
-    }
-
-    if (sign) {
-        *(str++) = '-';
-    }
-    *str = '\0';
-
-    strrev(str_base);
-
-    return (size_t) (str - str_base);
-}
-
-static void pad(char *buf, int n, char c)
-{
-    int i;
-
-    for (i = 0; i < n; i++) {
-        buf[i] = c;
-    }
-}
-
 static void fmt_char(char *buf, int w, bool ljust, va_list *ap)
 {
     int npad;
@@ -443,6 +356,8 @@ static void fmt_string(char *buf, enum printf_fl fl, int w, int p, bool ljust,
 
     i = 0;
     while (i < len && (c = s[i++]) != '\0') {
+        // TODO: this is dangerous. String should be written directly to
+        // the terminal because it's length may exceed the 128 bytes
         *(buf++) = c;
     }
 
@@ -547,4 +462,129 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
     }
 
     buf[nchar] = '\0';
+}
+
+static char * strlower(char *str)
+{
+    int i;
+
+    i = 0;
+    while (str[i] != '\0') {
+        str[i] = tolower(str[i]);
+        i++;
+    }
+
+    return str;
+}
+
+/* itoa() but with more parameters :) */
+static size_t num2str(int val, char *str, int base, bool sign_allowed)
+{
+    static char lookup[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    char *str_base;
+    size_t i;
+    bool sign;
+    unsigned int uval;
+
+    if (str == NULL) {
+        return 0;
+    }
+
+    if (base < 2 || base > 36) {
+        str[0] = '\0';
+        return 0;
+    }
+
+    /* Special case for zero */
+    if (val == 0) {
+        str[0] = '0';
+        str[1] = '\0';
+        return 1;
+    }
+
+    str_base = str;
+
+    if (sign_allowed && base == 10) {
+        sign = (val < 0);
+        if (sign && base == 10) {
+            val = negate(val);
+        }
+        while (val > 0) {
+            i = (size_t) val % base;
+            *str = lookup[i];
+            str++;
+            val /= base;
+        }
+    }
+    else {
+        sign = false;
+        uval = (unsigned int) val;
+        while (uval > 0) {
+            i = (size_t) uval % base;
+            *str = lookup[i];
+            str++;
+            uval /= base;
+        }
+    }
+
+    if (sign) {
+        *(str++) = '-';
+    }
+    *str = '\0';
+
+    strrev(str_base);
+
+    return (size_t) (str - str_base);
+}
+
+/* TODO: make this public? */
+static int atoi(const char *str)
+{
+    size_t i;
+    int val;
+    bool sign;
+    char c;
+
+    if (str == NULL) {
+        return 0;
+    }
+
+    while (isspace(*str)) {
+        str++;
+    }
+
+    sign = false;
+    if (*str == '-') {
+        sign = true;
+        str++;
+    }
+    else if (*str == '+') {
+        str++;
+    }
+
+    val = 0;
+    i = 0;
+    while (i < 10 && (c = str[i++]) != '\0') {
+        if (!isdigit(c)) {
+            break;
+        }
+        val *= 10;
+        val += (c - '0');
+    }
+
+    if (sign) {
+        val = negate(val);
+    }
+
+    return val;
+}
+
+static void pad(char *buf, int n, char c)
+{
+    int i;
+
+    for (i = 0; i < n; i++) {
+        buf[i] = c;
+    }
 }
