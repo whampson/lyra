@@ -47,6 +47,8 @@ static size_t num2str(int val, char *str, int base, bool s);
 static void pad(char *buf, int n, char c);
 
 static void fmt_char(char *buf, int w, bool ljust, va_list *ap);
+static void fmt_string(char *buf, enum printf_fl fl, int w, int p, bool ljust,
+                       va_list *ap);
 static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
                     bool ljust, va_list *ap);
 
@@ -203,6 +205,12 @@ int vkprintf(const char *fmt, va_list args)
                 goto sendfmt;
 
             case 's':
+                if (!formatting) {
+                    goto sendchar;
+                }
+                fmt_string(fmtbuf, fl, w, p, ljust, &args);
+                goto sendfmt;
+
             case 'p':
                 if (!formatting) {
                     goto sendchar;
@@ -392,21 +400,61 @@ static void pad(char *buf, int n, char c)
 static void fmt_char(char *buf, int w, bool ljust, va_list *ap)
 {
     int npad;
-    unsigned char val;
+    unsigned char c;
 
     // TODO: decide how to handle non-printing characters
 
     npad = w - 1;
-    val = (unsigned char) va_arg(*ap, int);
+    c = (unsigned char) va_arg(*ap, int);
 
     if (!ljust && w > 0) {
         pad(buf, npad, ' ');
         buf += npad;
     }
 
-    *(buf++) = val;
+    *(buf++) = c;
 
     if (ljust && w > 0) {
+        pad(buf, npad, ' ');
+        buf += npad;
+    }
+    *buf = '\0';
+}
+
+static void fmt_string(char *buf, enum printf_fl fl, int w, int p, bool ljust,
+                       va_list *ap)
+{
+
+    int npad;
+    int i;
+    char *s;
+    char c;
+    size_t len;
+
+    if (p == 0) {
+        buf[0] = '\0';
+        return;
+    }
+
+    s = (char *) va_arg(*ap, char*);
+    len = strlen(s);
+
+    if (p > 0) {
+        len = p;
+    }
+    npad = w - len;
+
+    if (!ljust && npad > 0 && w > 0) {
+        pad(buf, npad, ' ');
+        buf += npad;
+    }
+
+    i = 0;
+    while (i < len && (c = s[i++]) != '\0') {
+        *(buf++) = c;
+    }
+
+    if (ljust && npad > 0 && w > 0) {
         pad(buf, npad, ' ');
         buf += npad;
     }
