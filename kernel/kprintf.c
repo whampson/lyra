@@ -441,6 +441,11 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
         return;
     }
 
+    /* A prefix should not be printed for 0. */
+    if (val == 0 && flag_set(fl, F_PREFIX)) {
+        fl &= ~F_PREFIX;
+    }
+
     tmpbuflen = num2str(val, tmpbuf, b, s);
     ndigit = tmpbuflen;
     nchar = ndigit;
