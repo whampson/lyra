@@ -29,8 +29,8 @@
 
 enum printf_fl {
     F_NONE      = 0x00,
-    F_SIGN      = 0x01,
-    F_SPACE     = 0x02,
+    F_PRINTSIGN = 0x01,
+    F_SIGNALIGN = 0x02,
     F_PREFIX    = 0x04,
     F_ZEROPAD   = 0x08
 };
@@ -123,15 +123,7 @@ int kprintf(const char *fmt, ...)
 
 int vkprintf(const char *fmt, va_list args)
 {
-    /* OBSERVATIONS:
-        - keeps reading flags until a # or '0' not found
-            - this means both # and 0 may be included int the same fmt spec
-        - invalid fmt specs are simply printed verbatim
-        - 'p' automatically adds '0x' prefix
-    */
-
     /* TODO:
-        - implement 's'
         - read numbers embedded within format string
     */
 
@@ -236,7 +228,7 @@ int vkprintf(const char *fmt, va_list args)
                     goto sendchar;
                 }
                 else if (state == S_READF) {
-                    fl |= F_SIGN;
+                    fl |= F_PRINTSIGN;
                 }
                 continue;
 
@@ -245,7 +237,7 @@ int vkprintf(const char *fmt, va_list args)
                     goto sendchar;
                 }
                 else if (state == S_READF) {
-                    fl |= F_SPACE;
+                    fl |= F_SIGNALIGN;
                 }
                 continue;
 
@@ -470,16 +462,14 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
     int nchar;
     int ndigit;
     bool print_plus;
-    bool sign_would_print;
+    bool sign_align;
     char tmpbuf[32];
     size_t tmpbuflen;
 
-    // TODO: '+' and ' ' flags can be optimized
-
     padch = ' ';
     npad = 0;
-    sign_would_print = (flag_set(fl, F_SPACE) && b == 10);
-    print_plus = (flag_set(fl, F_SIGN) && b == 10);
+    sign_align = (flag_set(fl, F_SIGNALIGN) && b == 10);
+    print_plus = (flag_set(fl, F_PRINTSIGN) && b == 10);
 
     val = va_arg(*ap, int);
 
@@ -508,7 +498,7 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
         }
     }
 
-    if (print_plus || sign_would_print) {
+    if (print_plus || sign_align) {
         nchar += 1;
     }
 
@@ -537,7 +527,7 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
     else if (print_plus && val >= 0) {
         *(buf++) = '+';
     }
-    else if (sign_would_print && val >= 0) {
+    else if (sign_align && val >= 0) {
         *(buf++) = ' ';
     }
 
