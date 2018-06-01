@@ -27,6 +27,7 @@
 
 #ifndef __ASM
 #include <stdint.h>
+#include <lyra/kernel.h>
 
 /* Interrupt handler stub function pointer. */
 typedef void (*intr_handler_stub)(void);

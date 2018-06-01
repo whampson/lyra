@@ -90,7 +90,7 @@ typedef union {
 
 void mem_init(void)
 {
-     puts("Initializing memory...");
+     kprintf("Initializing memory...");
 
     //  pde4m_t *page_dir = (pde4m_t *) PD_BASE;
     //  for (int i = 0; i < 1024; i++) {

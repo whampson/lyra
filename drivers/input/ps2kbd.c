@@ -161,7 +161,7 @@ void ps2kbd_init(void)
 {
     uint8_t data;
 
-    puts("Initializing PS/2 keyboard...\n");
+    kprintf("Initializing PS/2 keyboard...\n");
 
     /* disable ports */
     ctl_outb(CTL_CMD_P1OFF);
@@ -210,7 +210,7 @@ void ps2kbd_do_irq(void)
     kb_data = inb(PORT_KBD);
     if (kb_data == KBD_RES_ERROR1 || kb_data == KBD_RES_ERROR2) {
         /* TODO: handle error */
-        puts("Keyboard error!\n");
+        kprintf("Keyboard error!\n");
         goto irq_cleanup;
     }
     else if (kb_data == SC3_BREAK) {
@@ -345,9 +345,7 @@ static int kbd_sendcmd(uint8_t cmd)
                 retval = SENDCMD_ERROR;
                 goto sendcmd_done;
             default:
-                puts("Unrecognized response from PS/2 keyboard: ");
-                putix(data);
-                puts("\n");
+                kprintf("Keyboard sent unrecognized response! (%02x)\n", data);
                 retval = SENDCMD_ERROR;
                 goto sendcmd_done;
         }
@@ -384,14 +382,14 @@ static void ctl_test(void)
     ctl_outb(CTL_CMD_SELFTEST);
     data = kbd_inb();
     if (data != CTL_RES_TESTPASS) {
-        puts("PS/2 controller self-test failed!\n");
+        kprintf("PS/2 controller self-test failed!\n");
     }
 
     /* port tests */
     ctl_outb(CTL_CMD_P1TEST);
     data = kbd_inb();
     if (data != 0x00) {
-        puts("PS/2 controller port 1 test failed!\n");
+        kprintf("PS/2 controller port 1 test failed!\n");
     }
 }
 
@@ -404,14 +402,12 @@ static void kbd_test(void)
 
     /* keyboard self-test */
     if (kbd_sendcmd(KBD_CMD_SELFTEST) != SENDCMD_SUCCESS) {
-        puts("Failed to start PS/2 keyboard self-test!\n");
+        kprintf("Failed to start PS/2 keyboard self-test!\n");
     }
 
     data = kbd_inb();
     if (data != KBD_RES_TESTPASS) {
-        puts("PS/2 keyboard self-test failed! (");
-        putix(data);
-        puts(")\n");
+        kprintf("PS/2 keyboard self-test failed! (%02x)\n", data);
     }
 }
 
@@ -474,7 +470,7 @@ static void kbd_sc3init(void)
     return;
 
 sc3_fail:
-    puts("PS/2 keyboard: failed to switch to scancode 3!\n");
+    kprintf("PS/2 keyboard: failed to switch to scancode 3!\n");
 }
 
 /**
@@ -505,7 +501,7 @@ static void kbd_setled(int num, int caps, int scrl)
     goto setled_done;
 
 setled_fail:
-    puts("Failed to set PS/2 keyboard LEDs!\n");
+    kprintf("Failed to set PS/2 keyboard LEDs!\n");
 setled_done:
     kbd_sti();
 }
