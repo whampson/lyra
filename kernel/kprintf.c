@@ -43,8 +43,7 @@ enum fmt_state {
 };
 
 static void fmt_char(char *buf, int w, bool ljust, va_list *ap);
-static void fmt_string(char *buf, enum printf_fl fl, int w, int p, bool ljust,
-                       va_list *ap);
+static void fmt_string(char *buf, int w, int p, bool ljust, va_list *ap);
 static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
                     bool ljust, va_list *ap);
 
@@ -130,12 +129,15 @@ int vkprintf(const char *fmt, va_list args)
     enum printf_fl fl;
     int w, p;
     bool ljust;
+    char *numptr;
 
     formatting = false;
     count = 0;
 
-    while ((c = *(fmt++)) != '\0') {
-        switch (c) {
+    while ((c = *(fmt++)) != '\0')
+    {
+        switch (c)
+        {
             /* Format specifiers */
             case '%':
                 if (!formatting) {
@@ -146,6 +148,7 @@ int vkprintf(const char *fmt, va_list args)
                     w = W_NONE;
                     p = P_NONE;
                     ljust = false;
+                    numptr = NULL;
                     continue;
                 }
                 formatting = false;
@@ -156,6 +159,8 @@ int vkprintf(const char *fmt, va_list args)
                 if (!formatting) {
                     goto sendchar;
                 }
+                if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
+                if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
                 fmt_int(fmtbuf, fl, w, p, true, 10, ljust, &args);
                 goto sendfmt;
 
@@ -163,6 +168,8 @@ int vkprintf(const char *fmt, va_list args)
                 if (!formatting) {
                     goto sendchar;
                 }
+                if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
+                if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
                 fmt_int(fmtbuf, fl, w, p, false, 10, ljust, &args);
                 goto sendfmt;
 
@@ -170,6 +177,8 @@ int vkprintf(const char *fmt, va_list args)
                 if (!formatting) {
                     goto sendchar;
                 }
+                if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
+                if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
                 fmt_int(fmtbuf, fl, w, p, false, 8, ljust, &args);
                 goto sendfmt;
 
@@ -178,9 +187,11 @@ int vkprintf(const char *fmt, va_list args)
                 if (!formatting) {
                     goto sendchar;
                 }
+                if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
+                if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
                 fmt_int(fmtbuf, fl, w, p, false, 16, ljust, &args);
                 if (c == 'x') {
-                    make_lower(fmtbuf);
+                    strlower(fmtbuf);
                 }
                 goto sendfmt;
 
@@ -188,6 +199,7 @@ int vkprintf(const char *fmt, va_list args)
                 if (!formatting) {
                     goto sendchar;
                 }
+                if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
                 fmt_char(fmtbuf, w, ljust, &args);
                 goto sendfmt;
 
@@ -195,16 +207,20 @@ int vkprintf(const char *fmt, va_list args)
                 if (!formatting) {
                     goto sendchar;
                 }
-                fmt_string(fmtbuf, fl, w, p, ljust, &args);
+                if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
+                if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
+                fmt_string(fmtbuf, w, p, ljust, &args);
                 goto sendfmt;
 
             case 'p':
                 if (!formatting) {
                     goto sendchar;
                 }
+                if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
+                if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
                 fl |= F_PREFIX;
                 fmt_int(fmtbuf, fl, w, p, false, 16, ljust, &args);
-                make_lower(fmtbuf);
+                strlower(fmtbuf);
                 goto sendfmt;
 
 
@@ -251,21 +267,53 @@ int vkprintf(const char *fmt, va_list args)
                 }
                 else if (state == S_READF) {
                     fl |= F_ZEROPAD;
+                    continue;
+                }
+                goto handle_num;
+
+            /* Special */
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+        handle_num:
+                if (!formatting) {
+                    goto sendchar;
+                }
+                if (numptr == NULL) {
+                    numptr = (char *) (fmt - 1);
+                }
+                if (state == S_READF) {
+                    state = S_READW;
                 }
                 continue;
 
-            /* Special */
             case '.':
                 if (!formatting) {
                     goto sendchar;
                 }
                 state = S_READP;
                 p = 0;
+
+                if (numptr != NULL) {
+                    w = atoi(numptr);
+                    numptr = NULL;
+                }
                 continue;
 
             case '*':
                 if (!formatting) {
                     goto sendchar;
+                }
+                if (numptr != NULL) {
+                    /* Invalid format, cancel. */
+                    formatting = false;
+                    break;
                 }
                 if (state == S_READF) {
                     w = va_arg(args, int);
@@ -326,14 +374,13 @@ static void fmt_char(char *buf, int w, bool ljust, va_list *ap)
     *buf = '\0';
 }
 
-static void fmt_string(char *buf, enum printf_fl fl, int w, int p, bool ljust,
-                       va_list *ap)
+static void fmt_string(char *buf,  int w, int p, bool ljust, va_list *ap)
 {
 
     int npad;
-    int i;
     char *s;
     char c;
+    size_t i;
     size_t len;
 
     if (p == 0) {
