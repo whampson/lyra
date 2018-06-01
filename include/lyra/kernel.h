@@ -108,6 +108,10 @@ __asm__ volatile (          \
     _a < _b ? _a : _b;      \
 })
 
+static inline int negate(int x)
+{
+    return ~x + 1;
+}
 
 void clear(void);
 
