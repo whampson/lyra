@@ -17,7 +17,6 @@
  *   Desc: Exception handling.
  *----------------------------------------------------------------------------*/
 
-#include <lyra/kernel.h>
 #include <lyra/exception.h>
 
 /* Names of all non-Intel-reserved exceptions. */
@@ -105,7 +104,8 @@ void do_exception(struct interrupt_frame *regs)
 
     /* TODO: Register dump, show error code, etc. (BSOD?) */
     /* For now, just print the exception name and die */
-    puts(name);
+    kprintf("!!! EXCEPTION !!!:\n%s\n", name);
+    if (has_err_code) kprintf("Error code: %#08x\n", regs->err_code);
     exception_halt();
 }
 
@@ -113,7 +113,7 @@ __attribute__((fastcall))
 static void handle_unknown_exception(void)
 {
     /* TODO: print num */
-    puts("Unknown exception!\n");
+    kprintf("Unknown exception!\n");
     exception_halt();
 }
 

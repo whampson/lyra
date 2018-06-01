@@ -48,11 +48,11 @@ void kernel_init(void)
     tss_init();
     idt_init();
 
-    puts("Initializing IRQs...\n");
+    kprintf("Initializing IRQs...\n");
     irq_init();
     ps2kbd_init();
 
-    puts("Enabling interrupts...\n");
+    kprintf("Enabling interrupts...\n");
     irq_enable(IRQ_KEYBOARD);
     sti();
 
@@ -66,23 +66,7 @@ void kernel_init(void)
     kprintf_test();
 #endif
 
-   //puts("Halting system...");
-}
-
-
-void puti(uint32_t i)
-{
-    char buf[12];
-    itoa(i, buf, 10);
-    puts(buf);
-}
-
-void putix(uint32_t i)
-{
-    char buf[12];
-    itoa(i, buf, 16);
-    puts("0x");
-    puts(buf);
+   //kprintf("Halting system...");
 }
 
 
@@ -95,7 +79,7 @@ static void ldt_init(void)
     int ldt_desc_idx;
     size_t i;
 
-    puts("Initializing LDT...");
+    kprintf("Initializing LDT...");
 
     ldt_base = (uint32_t) ldt;
     ldt_size = sizeof(ldt);
@@ -114,7 +98,7 @@ static void ldt_init(void)
     SET_SYS_DESC_PARAMS(ldt_desc, ldt_base, ldt_size, DESC_LDT);
     lldt(KERNEL_LDT);
 
-    puts(" done.\n");
+    kprintf(" done.\n");
 }
 
 static void tss_init(void)
@@ -125,7 +109,7 @@ static void tss_init(void)
     size_t tss_size;
     int tss_desc_idx;
 
-    puts("Initializing TSS...");
+    kprintf("Initializing TSS...");
 
     /* Get TSS descriptor from GDT */
     gdt = (seg_desc_t *) GDT_BASE;
@@ -144,5 +128,5 @@ static void tss_init(void)
     tss.ss0 = KERNEL_DS;
     ltr(KERNEL_TSS);
 
-    puts(" done.\n");
+    kprintf(" done.\n");
 }

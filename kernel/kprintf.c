@@ -343,7 +343,7 @@ int vkprintf(const char *fmt, va_list args)
         continue;
 
     sendfmt:
-        count += puts(fmtbuf);
+        count += kprintf(fmtbuf);
         formatting = false;
     }
 

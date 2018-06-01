@@ -17,10 +17,8 @@
  *   Desc: IDT initialization anf general interrupt-handling.
  *----------------------------------------------------------------------------*/
 
-#include <lyra/kernel.h>
-#include <lyra/interrupt.h>
-#include <lyra/exception.h>
 #include <lyra/irq.h>
+#include <lyra/exception.h>
 #include <lyra/descriptor.h>
 #include <lyra/io.h>
 
@@ -66,7 +64,7 @@ void idt_init(void)
     int type;
     intr_handler_stub stub;
 
-    puts("Initializing IDT...");
+    kprintf("Initializing IDT...");
 
     idt = (idt_gate_t *) IDT_BASE;
     idt_len = NUM_VEC * sizeof(idt_gate_t);
@@ -106,5 +104,5 @@ void idt_init(void)
     idt_ptr.fields.padding = 0;
     lidt(idt_ptr);
 
-    puts(" done.\n");
+    kprintf(" done.\n");
 }

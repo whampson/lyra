@@ -61,7 +61,7 @@ void do_irq(struct interrupt_frame *regs)
             eoi(irq_num);
             break;
         default:
-            puts("Unknown IRQ!\n");
+            kprintf("Unknown IRQ! (%d)\n", irq_num);
             break;
     }
 }
