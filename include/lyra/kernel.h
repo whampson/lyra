@@ -115,10 +115,6 @@ static inline int negate(int x)
 
 void clear(void);
 
-/* Nonstandard string functions. */
-char * strrev(char *str);
-char * itoa(int val, char *str, int base);
-
 void puti(uint32_t i);
 void putix(uint32_t i);
 
