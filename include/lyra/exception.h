@@ -20,7 +20,6 @@
 #ifndef __LYRA_EXCEPTION_H
 #define __LYRA_EXCEPTION_H
 
-#include <lyra/kernel.h>
 #include <lyra/interrupt.h>
 
 #define NUM_EXCEPT  32

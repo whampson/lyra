@@ -17,7 +17,6 @@
  *   Desc: PS/2 keyboard driver.
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
 #include <lyra/kernel.h>
 #include <lyra/input.h>
 #include <lyra/io.h>

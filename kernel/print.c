@@ -16,7 +16,7 @@
  * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
+#include <lyra/kernel.h>
 
 /* VGA colors */
 #define BG_BLACK        0x00
