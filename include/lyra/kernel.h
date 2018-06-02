@@ -14,7 +14,7 @@
 /*-----------------------------------------------------------------------------
  *   File: include/lyra/kernel.h
  * Author: Wes Hampson
- *   Desc: Commonly-used function prototypes and macros.
+ *   Desc: Commonly-used and convenient function prototypes and macros.
  *----------------------------------------------------------------------------*/
 
 #ifndef __LYRA_KERNEL_H
@@ -23,7 +23,6 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <lyra/init.h>
 
 #define PRIVL_KERNEL 0
@@ -81,12 +80,6 @@ __asm__ volatile (          \
 );
 
 /**
- * Checks whether a given bit is set in a bitfield.
- */
-#define flag_set(val, flag) \
-    ((val & flag) == flag)
-
-/**
  * Returns the greater value.
  *
  * Adapted from https://stackoverflow.com/a/3437484.
@@ -108,21 +101,85 @@ __asm__ volatile (          \
     _a < _b ? _a : _b;      \
 })
 
+/**
+ * Checks whether a given bit is set in a bitfield.
+ */
+#define flag_set(val, flag) \
+    ((val & flag) == flag)
+
+/**
+ * Negates an int.
+ */
 static inline int negate(int x)
 {
     return ~x + 1;
 }
 
-void clear(void);
+/* Functions defined in kprintf.c */
 
-// void puti(uint32_t i);
-// void putix(uint32_t i);
-
+/**
+ * Kernel printf() -- prints messages to the kernel console.
+ * Works the same as printf() from the C Standard Library, though not all
+ * format specifiers are supported because I see no need for them in the context
+ * of this kernel. See below.
+ *
+ * @param fmt - the format specifier
+ * @param ... - format arguments
+ * @return number of characters printed
+ *
+ * Format Specifier Prototype:
+ *   %[flags][width][.precision][length]specifier
+ *
+ * specifier:
+ *     d/i      - signed decimal integer
+ *     u        - unsigned decimal integer
+ *     o        - unsigned octal integer
+ *     x        - unsigned hexadecimal integer
+ *     X        - unsigned hexadecimal integer (uppercase)
+ *     f        - NOT_SUPPORTED (may change if floats needed)
+ *     F        - NOT_SUPPORTED (may change if floats needed)
+ *     e        - NOT_SUPPORTED
+ *     E        - NOT_SUPPORTED
+ *     g        - NOT_SUPPORTED
+ *     G        - NOT_SUPPORTED
+ *     a        - NOT_SUPPORTED
+ *     A        - NOT_SUPPORTED
+ *     c        - character
+ *     s        - string of characters
+ *     p        - pointer address
+ *     n        - NOT_SUPPORTED
+ *     %        - literal '%'
+ *
+ *   flags:
+ *     -        - left justify padding
+ *     +        - always print sign
+ *     (space)  - print a space if a sign would be printed (unless + specified)
+ *     #        - (o,x,X) - prepend (0,0x,0X) for nonzero values
+ *     0        - (d,i,o,u,x,X) - left-pad with zeros instead of spaces
+ *
+ *   width:
+ *     (num)    - min. chars to be printed; padded w/ blank spaces or 0
+ *     *        - width specified as next argument in arg list
+ *
+ *   .precision:
+ *     (num)    - (d,i,o,u,x,X) - min. digits to be written; pad w/ zeros
+ *                (s) - max. chars to be written
+ *     *        - precision specified as next argument in arg list
+ *
+ *   length:
+ *      The length field is NOT_SUPPORTED at this time. May change if absolutely
+ *      needed.
+ */
 int kprintf(const char *fmt, ...);
 int vkprintf(const char *fmt, va_list args);
 
-#ifdef __DEBUG
-void kprintf_test(void);
-#endif
+int atoi(const char *str);
+
+
+/* Functions defined in print.c */
+
+void clear(void);
+int putchar(int ch);
+int puts(const char *str);
 
 #endif  /* __LYRA_KERNEL_H */

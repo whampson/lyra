@@ -50,59 +50,8 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
 
 static char * strlower(char *str);
 static size_t num2str(int val, char *str, int base, bool sign_allowed);
-static int atoi(const char *str);
 static void pad(char *buf, int n, char c);
 
-/**
- * Kernel printf(). Use this to print to the kernel console.
- * Most of the same rules as printf() apply, though some features have been left
- * out because I see no need for them in the context of this kernel. Details
- * below.
- *
- * Format Specifier Prototype:
- *   %[flags][width][.precision][length]specifier
- *
-*   specifier:
- *     d/i      - signed decimal integer
- *     u        - unsigned decimal integer
- *     o        - unsigned octal integer
- *     x        - unsigned hexadecimal integer
- *     X        - unsigned hexadecimal integer (uppercase)
- *     f        - NOT_SUPPORTED (may change if floats needed)
- *     F        - NOT_SUPPORTED (may change if floats needed)
- *     e        - NOT_SUPPORTED
- *     E        - NOT_SUPPORTED
- *     g        - NOT_SUPPORTED
- *     G        - NOT_SUPPORTED
- *     a        - NOT_SUPPORTED
- *     A        - NOT_SUPPORTED
- *     c        - character
- *     s        - string of characters
- *     p        - pointer address
- *     n        - NOT_SUPPORTED
- *     %        - '%'
- *
- *   flags:
- *     -        - left justify padding
- *     +        - always print sign
- *     (space)  - print a space if a sign would be printed (unless + specified)
- *     #        - (o,x,X) prepend (0,0x,0X) for nonzero values
- *     0        - (d,i,o,u,x,X) left-pad with zeros instead of spaces
- *
- *   width:
- *     (num)    - min. chars to be printed; padded w/ blank spaces or 0
- *     *        - width specified as next argument in arg list
- *
- *   .precision:
- *     (num)    - (d,i,o,u,x,X) min. digits to be written; pad w/ zeros
- *                (s) max. chars to be written
- *     *        - precision specified as next argument in arg list
- *
- *   length:
- *      The length field is NOT_SUPPORTED at this time.
- *
- * NOTE: Using an unsupported specifier will cause undefined behavior.
- */
 int kprintf(const char *fmt, ...)
 {
     int retval;
@@ -117,10 +66,6 @@ int kprintf(const char *fmt, ...)
 
 int vkprintf(const char *fmt, va_list args)
 {
-    /* TODO:
-        - read numbers embedded within format string
-    */
-
     bool formatting;
     enum fmt_state state;
     int count;
@@ -590,8 +535,7 @@ static size_t num2str(int val, char *str, int base, bool sign_allowed)
     return (size_t) (str - str_base);
 }
 
-/* TODO: make this public? */
-static int atoi(const char *str)
+int atoi(const char *str)
 {
     size_t i;
     int val;
