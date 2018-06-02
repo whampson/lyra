@@ -18,8 +18,8 @@
 
 #include <ctype.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <lyra/input.h>
+#include <lyra/kernel.h>
 
 /* Use this to convert control character "caret notation" to the actual
    control character. */

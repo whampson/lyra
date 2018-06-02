@@ -18,8 +18,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <stdint.h>
-#include <stdio.h>
 #include <lyra/irq.h>
+#include <lyra/kernel.h>
 #include <drivers/ps2kbd.h>
 
 static int eoi(unsigned int irq_num);
