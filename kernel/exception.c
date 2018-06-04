@@ -64,8 +64,7 @@ struct err_code {
     uint32_t selector   : 13;   /* segment selector index */
 };
 
-__attribute__((fastcall))
-static void handle_unknown_exception(void);
+static void handle_unknown_exception(int num);
 
 static void exception_halt(void);
 
@@ -115,7 +114,6 @@ void do_exception(struct interrupt_frame *regs)
     exception_halt();
 }
 
-__attribute__((fastcall))
 static void handle_unknown_exception(int num)
 {
     kprintf("Unknown exception! (%x)\n", num);
