@@ -78,13 +78,10 @@ void do_exception(struct interrupt_frame *regs)
 
     num = regs->vec_num;
     if (num >= NUM_EXCEPT) {
-        handle_unknown_exception();
+        handle_unknown_exception(num);
     }
 
     name = EXCEPTION_NAMES[num];
-    if (name == NULL) {
-        handle_unknown_exception();
-    }
 
     switch (num) {
         case EXCEPT_DF:
@@ -103,16 +100,25 @@ void do_exception(struct interrupt_frame *regs)
 
     /* TODO: Register dump, show error code, etc. (BSOD?) */
     /* For now, just print the exception name and die */
-    kprintf("!!! EXCEPTION !!!:\n%s\n", name);
-    if (has_err_code) kprintf("Error code: %#08x\n", regs->err_code);
+    kprintf("!!! EXCEPTION !!!\n");
+    if (name != NULL) {
+        kprintf("%s\n", name);
+    }
+    else {
+        kprintf("EXCEPTION_%X", num);
+    }
+
+    if (has_err_code) {
+        kprintf("Error code: %#08x\n", regs->err_code);
+    }
+
     exception_halt();
 }
 
 __attribute__((fastcall))
-static void handle_unknown_exception(void)
+static void handle_unknown_exception(int num)
 {
-    /* TODO: print num */
-    kprintf("Unknown exception!\n");
+    kprintf("Unknown exception! (%x)\n", num);
     exception_halt();
 }
 
