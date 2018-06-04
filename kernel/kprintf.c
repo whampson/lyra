@@ -76,6 +76,13 @@ int vkprintf(const char *fmt, va_list args)
     bool ljust;
     char *numptr;
 
+    state = S_READF;
+    fl = F_NONE;
+    w = W_NONE;
+    p = P_NONE;
+    ljust = false;
+    numptr = NULL;
+
     formatting = false;
     count = 0;
 
@@ -87,8 +94,8 @@ int vkprintf(const char *fmt, va_list args)
             case '%':
                 if (!formatting) {
                     formatting = true;
-                    state = S_READF;
                     /* Formatting defaults */
+                    state = S_READF;
                     fl = F_NONE;
                     w = W_NONE;
                     p = P_NONE;
