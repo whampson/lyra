@@ -27,7 +27,10 @@
  * @return non-zero if the character is a control character,
  *         zero otherwise
  */
-int iscntrl(int ch);
+static inline int iscntrl(int ch)
+{
+    return (ch >= 0x00 && ch <= 0x1F) || ch == 0x7F;
+}
 
 /**
  * Checks if a character is a printing character.
@@ -36,7 +39,10 @@ int iscntrl(int ch);
  * @return non-zero if the character can be printed,
  *         zero otherwise
  */
-int isprint(int ch);
+static inline int isprint(int ch)
+{
+    return ch >= ' ' && ch <= '~';
+}
 
 /**
  * Checks if a character is a space character.
@@ -45,7 +51,15 @@ int isprint(int ch);
  * @return non-zero if the character is a whitespace character,
  *         zero otherwise
  */
-int isspace(int ch);
+static inline int isspace(int ch)
+{
+    return ch == '\t'
+        || ch == '\n'
+        || ch == '\v'
+        || ch == '\f'
+        || ch == '\r'
+        || ch == ' ';
+}
 
 /**
  * Checks if a character is a blank character.
@@ -54,7 +68,10 @@ int isspace(int ch);
  * @return non-zero if the character is a blank character,
  *         zero otherwise
  */
-int isblank(int ch);
+static inline int isblank(int ch)
+{
+    return ch == '\t' || ch == ' ';
+}
 
 /**
  * Checks if a character is a graphical character.
@@ -63,7 +80,10 @@ int isblank(int ch);
  * @return non-zero if the character has a graphical representation,
  *         zero otherwise
  */
-int isgraph(int ch);
+static inline int isgraph(int ch)
+{
+    return ch >= ' ' && ch <= '~';
+}
 
 /**
  * Checks if a character is a punctuation character.
@@ -72,43 +92,13 @@ int isgraph(int ch);
  * @return non-zero if the character is a punctuation character,
  *         zero otherwise
  */
-int ispunct(int ch);
-
-/**
- * Checks if a character is alphanumeric.
- *
- * @param ch - character to classify
- * @return non-zero if the character is an alphanumeric character,
- *         zero otherwise
- */
-int isalnum(int ch);
-
-/**
- * Checks if a character is alphabetic.
- *
- * @param ch - character to classify
- * @return non-zero if the character is an alphabetic character,
- *         zero otherwise
- */
-int isalpha(int ch);
-
-/**
- * Checks if a character is lowercase.
- *
- * @param ch - character to classify
- * @return non-zero if the character is a lowercase letter,
- *         zero otherwise
- */
-int islower(int ch);
-
-/**
- * Checks if a character is uppercase.
- *
- * @param ch - character to classify
- * @return non-zero if the character is an uppercase letter,
- *         zero otherwise
- */
-int isupper(int ch);
+static inline int ispunct(int ch)
+{
+    return (ch >= '!' && ch <= '/')
+        || (ch >= ':' && ch <= '@')
+        || (ch >= '[' && ch <= '`')
+        || (ch >= '{' && ch <= '~');
+}
 
 /**
  * Checks if a character is a numeric character.
@@ -117,7 +107,10 @@ int isupper(int ch);
  * @return non-zero if the character is a numeric character,
  *         zero otherwise
  */
-int isdigit(int ch);
+static inline int isdigit(int ch)
+{
+    return ch >= '0' && ch <= '9';
+}
 
 /**
  * Checks if a character is a hexadecimal numeric character.
@@ -126,7 +119,60 @@ int isdigit(int ch);
  * @return non-zero if the character is a hexadecimal numeric character,
  *         zero otherwise
  */
-int isxdigit(int ch);
+static inline int isxdigit(int ch)
+{
+    return isdigit(ch)
+        || (ch >= 'A' && ch <= 'F')
+        || (ch >= 'a' && ch <= 'f');
+}
+
+/**
+ * Checks if a character is lowercase.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is a lowercase letter,
+ *         zero otherwise
+ */
+static inline int islower(int ch)
+{
+    return ch >= 'a' && ch <= 'z';
+}
+
+/**
+ * Checks if a character is uppercase.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is an uppercase letter,
+ *         zero otherwise
+ */
+static inline int isupper(int ch)
+{
+    return ch >= 'A' && ch <= 'Z';
+}
+
+/**
+ * Checks if a character is alphabetic.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is an alphabetic character,
+ *         zero otherwise
+ */
+static inline int isalpha(int ch)
+{
+    return isupper(ch) || islower(ch);
+}
+
+/**
+ * Checks if a character is alphanumeric.
+ *
+ * @param ch - character to classify
+ * @return non-zero if the character is an alphanumeric character,
+ *         zero otherwise
+ */
+static inline int isalnum(int ch)
+{
+    return isalpha(ch) || isdigit(ch);
+}
 
 /**
  * Converts a character to lowercase.
@@ -135,7 +181,14 @@ int isxdigit(int ch);
  * @return lowercase version of 'ch',
  *         unmodified 'ch' if no lowercase version exists
  */
-int tolower(int ch);
+static inline int tolower(int ch)
+{
+    if (isupper(ch)) {
+        ch += 0x20;
+    }
+
+    return ch;
+}
 
 /**
  * Converts a character to uppercase.
@@ -144,6 +197,13 @@ int tolower(int ch);
  * @return uppervase version of 'ch',
  *         unmodified 'ch' if no uppercase version exists
  */
-int toupper(int ch);
+static inline int toupper(int ch)
+{
+    if (islower(ch)) {
+        ch -= 0x20;
+    }
+
+    return ch;
+}
 
 #endif /* __CTYPE_H */
