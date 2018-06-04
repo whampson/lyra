@@ -67,7 +67,6 @@ struct err_code {
 __attribute__((fastcall))
 static void handle_unknown_exception(void);
 
-__attribute__((fastcall))
 static void exception_halt(void);
 
 __attribute__((fastcall))
@@ -117,9 +116,8 @@ static void handle_unknown_exception(void)
     exception_halt();
 }
 
-__attribute__((fastcall))
-void exception_halt(void)
+static void exception_halt(void)
 {
     /* Deathbed... */
-    __asm__ volatile ("rip: hlt; jmp rip" : : : "memory");
+    __asm__ volatile ("cli; rip: hlt; jmp rip" : : : "memory");
 }
