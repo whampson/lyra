@@ -166,7 +166,7 @@ struct tss_struct {
 __asm__ volatile (          \
     "lidt %0"               \
     :                       \
-    : "g"(desc)             \
+    : "m"(desc)             \
     : "memory", "cc"        \
 );
 
