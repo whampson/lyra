@@ -32,11 +32,83 @@
 typedef uint32_t size_t;
 #endif
 
-char * strcpy(char *dest, const char *src);
-char * strncpy(char *dest, const char *src, size_t n);
-size_t strlen(const char *str);
+/* TODO: These can definitely be optimized if need-be. */
+
+static inline char * strcpy(char *dest, const char *src)
+{
+    register int i;
+
+    if (src == NULL || dest == NULL) {
+        return dest;
+    }
+
+    i = -1;
+    do {
+        i++;
+        dest[i] = src[i];
+    } while (src[i] != '\0');
+
+    return dest;
+}
+
+static inline char * strncpy(char *dest, const char *src, size_t n)
+{
+    register size_t i;
+    register char c;
+
+    if (src == NULL || dest == NULL) {
+        return dest;
+    }
+
+    i = 0;
+    while (i < n && (c = src[i]) != '\0') {
+        dest[i++] = c;
+    }
+    dest[i] = '\0';
+
+    return dest;
+}
+
+static inline size_t strlen(const char *str)
+{
+    register size_t len;
+
+    if (str == NULL) {
+        return 0;
+    }
+
+    len = 0;
+    while (str[len] != '\0') {
+        len++;
+    }
+
+    return len;
+}
 
 /* Non-standard but useful. */
-char * strrev(char *str);
+static inline char * strrev(char *str)
+{
+    char *str_orig;
+    register char *a;
+    register char *b;
+
+    if (str == NULL) {
+        return NULL;
+    }
+
+    str_orig = str;
+    a = str;
+    b = str + strlen(str) - 1;
+
+    while (b > a) {
+        *a ^= *b;
+        *b ^= *a;
+        *a ^= *b;
+        a++;
+        b--;
+    }
+
+    return str_orig;
+}
 
 #endif /* __STRING_H */
