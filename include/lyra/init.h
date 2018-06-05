@@ -23,7 +23,7 @@
 
 #define KERNEL_ENTRY        kernel_init
 #define KERNEL_START        0x100000    /* 1 MiB */
-#define KERNEL_STACK_BASE   0x800000    /* 8 MiB */
+#define KERNEL_STACK_BASE   0x400000    /* 4 MiB */
 #define GDT_BASE            0x0500
 #define IDT_BASE            0x0600
 
