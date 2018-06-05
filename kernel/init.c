@@ -25,6 +25,7 @@
 #include <lyra/io.h>
 #include <lyra/memory.h>
 #include <drivers/ps2kbd.h>
+#include <drivers/vga.h>
 
 /* The TSS. */
 static struct tss_struct tss = { 0 };
@@ -44,17 +45,16 @@ void kernel_init(void)
 {
     clear();
 
+    vga_init();
     ldt_init();
     tss_init();
     idt_init();
 
     mem_init();
 
-    kprintf("Initializing IRQs...\n");
     irq_init();
     ps2kbd_init();
 
-    kprintf("Enabling interrupts...\n");
     irq_enable(IRQ_KEYBOARD);
     sti();
 
@@ -77,8 +77,6 @@ static void ldt_init(void)
     int ldt_desc_idx;
     size_t i;
 
-    kprintf("Initializing LDT...");
-
     ldt_base = (uint32_t) ldt;
     ldt_size = sizeof(ldt);
 
@@ -95,8 +93,6 @@ static void ldt_init(void)
     /* Set up the LDT descriptor and load the LDTR */
     SET_SYS_DESC_PARAMS(ldt_desc, ldt_base, ldt_size, DESC_LDT);
     lldt(KERNEL_LDT);
-
-    kprintf(" done.\n");
 }
 
 static void tss_init(void)
@@ -106,8 +102,6 @@ static void tss_init(void)
     uint32_t tss_base;
     size_t tss_size;
     int tss_desc_idx;
-
-    kprintf("Initializing TSS...");
 
     /* Get TSS descriptor from GDT */
     gdt = (seg_desc_t *) GDT_BASE;
@@ -125,6 +119,4 @@ static void tss_init(void)
     tss.esp0 = KERNEL_STACK_BASE;
     tss.ss0 = KERNEL_DS;
     ltr(KERNEL_TSS);
-
-    kprintf(" done.\n");
 }
