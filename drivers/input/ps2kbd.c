@@ -160,8 +160,6 @@ void ps2kbd_init(void)
 {
     uint8_t data;
 
-    kprintf("Initializing PS/2 keyboard...\n");
-
     /* disable ports */
     ctl_outb(CTL_CMD_P1OFF);
     ctl_outb(CTL_CMD_P2OFF);
