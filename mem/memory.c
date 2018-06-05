@@ -90,8 +90,6 @@ typedef union {
 
 void mem_init(void)
 {
-    kprintf("Initializing memory...");
-
     pde4m_t *page_dir = (pde4m_t *) PD_BASE;
     for (int i = 0; i < 1024; i++) {
         page_dir[i].value = 0;
@@ -104,7 +102,6 @@ void mem_init(void)
     page_dir[0].fields.base_addr = 0;
 
     paging_enable();
-    kprintf(" done.\n");
 }
 
 void flush_tlb(void)

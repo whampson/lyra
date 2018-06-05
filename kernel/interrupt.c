@@ -64,8 +64,6 @@ void idt_init(void)
     int type;
     intr_handler_stub stub;
 
-    kprintf("Initializing IDT...");
-
     idt = (idt_gate_t *) IDT_BASE;
     idt_len = NUM_VEC * sizeof(idt_gate_t);
 
@@ -103,6 +101,4 @@ void idt_init(void)
     idt_ptr.fields.limit = (uint16_t) idt_len;
     idt_ptr.fields.padding = 0;
     lidt(idt_ptr);
-
-    kprintf(" done.\n");
 }
