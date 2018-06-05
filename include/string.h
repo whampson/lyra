@@ -85,6 +85,26 @@ static inline size_t strlen(const char *str)
     return len;
 }
 
+static inline char * strcat(char *dest, const char *src)
+{
+    char *end;
+
+    end = dest + strlen(dest);
+    strcpy(end, src);
+
+    return dest;
+}
+
+static inline char * strncat(char *dest, const char *src, size_t n)
+{
+    char *end;
+
+    end = dest + strlen(dest);
+    strncpy(end, src, n);
+
+    return dest;
+}
+
 /* Non-standard but useful. */
 static inline char * strrev(char *str)
 {
