@@ -97,7 +97,6 @@ void show_cursor(void)
     outb(data, PORT_CRTC_DATA);
 }
 
-
 void set_cursor_type(int type)
 {
     uint8_t start;
