@@ -17,6 +17,7 @@
  *   Desc: Exception handling.
  *----------------------------------------------------------------------------*/
 
+#include <string.h>
 #include <lyra/exception.h>
 
 /* Names of all non-Intel-reserved exceptions. */
@@ -56,6 +57,18 @@ static const char * const EXCEPTION_NAMES[NUM_EXCEPT] =
     NULL
 };
 
+static const char * const FLAG_IDS[32] =
+{
+    "CF",   NULL,   "PF",   NULL,
+    "AF",   NULL,   "ZF",   "SF",
+    "TF",   "IF",   "DF",   "OF",
+    "IOPL0","IOPL1","NT",   NULL,
+    "RF",   "VM",   "AC",   "VIF",
+    "VIP",  "ID0",  "ID1",  "VAD0",
+    "VAD1", "VAD2", "VAD3", "VAD4",
+    "VAD6", "VAD7", "VAD8"  "VAD9"
+};
+
 /* Error code fields. */
 struct err_code {
     uint32_t external   : 1;    /* exception generated external to CPU */
@@ -65,8 +78,8 @@ struct err_code {
 };
 
 static void handle_unknown_exception(int num);
-
 static void exception_halt(void);
+static void dump_regs(struct interrupt_frame *regs);
 
 __attribute__((fastcall))
 void do_exception(struct interrupt_frame *regs)
@@ -108,9 +121,10 @@ void do_exception(struct interrupt_frame *regs)
     }
 
     if (has_err_code) {
-        kprintf("Error code: %#08x\n", regs->err_code);
+        kprintf("Error code: %#08x\n", regs->err_code);  /* TODO: debug printf */
     }
 
+    dump_regs(regs);
     exception_halt();
 }
 
@@ -124,4 +138,35 @@ static void exception_halt(void)
 {
     /* Deathbed... */
     __asm__ volatile ("cli; rip: hlt; jmp rip" : : : "memory");
+}
+
+static void dump_regs(struct interrupt_frame *regs)
+{
+    char fl_str[64];
+    const char * fl_id;
+    int i;
+    uint32_t flags;
+
+    fl_str[0] = '\0';
+    strncat(fl_str, "[ ", 2);
+    flags = regs->eflags;
+
+    for (i = 0; i < 32; i++) {
+        if (flags & 0x01) {
+            fl_id = FLAG_IDS[i];
+            if (fl_id != NULL) {
+                strcat(fl_str, fl_id);
+                strcat(fl_str, " ");
+            }
+        }
+        flags >>= 1;
+    }
+    strcat(fl_str, "]");
+
+    kprintf("EAX = %08X, EBX = %08X, ECX = %08X, EDX = %08X\n",
+        regs->eax, regs->ebx, regs->ecx, regs->edx);
+    kprintf("ESI = %08X, EDI = %08X, EBP = %08X, ESP = %08X\n",
+        regs->esi, regs->edi, regs->ebp, regs->esp);
+    kprintf("EIP = %08X, EFLAGS = %s\n",
+        regs->eip, fl_str);
 }
