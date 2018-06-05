@@ -12,28 +12,30 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #-------------------------------------------------------------------------------
-#   File: drivers/Makefile
+#   File: drivers/video/Makefile
 # Author: Wes Hampson
 #-------------------------------------------------------------------------------
 
 CUR_DIR         := $(notdir $(shell pwd))
-export OBJ      := $(OBJ)/$(CUR_DIR)
-export TREE     := $(CUR_DIR)
+OBJ             := $(OBJ)/$(CUR_DIR)
+TREE            := $(TREE)/$(CUR_DIR)
 
-DRIVERS         := $(shell find . -type d)
-DRIVERS         := $(patsubst $(CUR_DIR)/,, $(DRIVERS))
-DRIVERS         := $(filter-out ., $(DRIVERS))
-
-# Call Makefile in subdirectory
-define submake
-	@$(MAKE) $(MAKEFLAGS) -C $1
-
-endef
+ASM_SOURCES     := $(wildcard *.S)
+C_SOURCES       := $(wildcard *.c)
+OBJECTS         := $(ASM_SOURCES:.S=_asm.o) $(C_SOURCES:.c=.o)
+OBJECTS         := $(patsubst %.o, $(OBJ)/%.o, $(OBJECTS))
 
 .PHONY: all dirs
 
-all: dirs
-	$(foreach dir, $(DRIVERS), $(call submake, $(dir)))
+all: dirs $(OBJECTS)
 
 dirs:
 	@mkdir -p $(OBJ)
+
+$(OBJ)/%_asm.o: %.S
+	@echo AS $(TREE)/$<
+	@$(AS) $(ASFLAGS) -I$(INCLUDE) -c -o $@ $<
+
+$(OBJ)/%.o: %.c
+	@echo CC $(TREE)/$<
+	@$(CC) $(CFLAGS) -I$(INCLUDE) -c -o $@ $<
