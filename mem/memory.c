@@ -20,11 +20,11 @@
 #include <lyra/memory.h>
 
 /* Page directory base address */
-#define PD_BASE     0x100000    /* 1 MiB */
+#define PD_BASE     0x1000
 
-#define PAGING_ENABLE_BIT   (1 << 31)
+#define PG_BIT      (1 << 31)   /* CR0 - enable paging */
+#define PSE_BIT     (1 << 4)    /* CR4 - allow for 4 MiB pages */
 
-static void load_cr3(uint32_t pdba);
 static void paging_enable(void);
 
 /* ===== Intel i386 Paging Structures ===== */
@@ -90,24 +90,21 @@ typedef union {
 
 void mem_init(void)
 {
-     kprintf("Initializing memory...");
+    kprintf("Initializing memory...");
 
-    //  pde4m_t *page_dir = (pde4m_t *) PD_BASE;
-    //  for (int i = 0; i < 1024; i++) {
-    //      page_dir[i].value = 0;
-    //  }
+    pde4m_t *page_dir = (pde4m_t *) PD_BASE;
+    for (int i = 0; i < 1024; i++) {
+        page_dir[i].value = 0;
+    }
 
-    //  page_dir[0].fields.p = 1;
-    //  page_dir[0].fields.rw = 1;
-    //  page_dir[0].fields.ps = 1;
-    //  page_dir[0].fields.base_addr = 0;
-    //  page_dir[1].fields.p = 1;
-    //  page_dir[1].fields.rw = 1;
-    //  page_dir[1].fields.ps = 1;
-    //  page_dir[1].fields.base_addr = 1;
+    page_dir[0].fields.p = 1;
+    page_dir[0].fields.rw = 1;
+    page_dir[0].fields.ps = 1;
+    page_dir[0].fields.g = 1;
+    page_dir[0].fields.base_addr = 0;
 
-    //  load_cr3(PD_BASE);
-    //  paging_enable();
+    paging_enable();
+    kprintf(" done.\n");
 }
 
 void flush_tlb(void)
@@ -122,34 +119,19 @@ void flush_tlb(void)
     );
 }
 
-/**
- * Loads CR3 with the page directory base address.
- *
- * @param pdba - page directory base address.
- */
-static void load_cr3(uint32_t pdba)
-{
-    __asm__ volatile (
-        "movl   %0, %%cr3"
-        : /* no outputs */
-        : "r"(pdba)
-    );
-}
-
-/**
- * Turns paging on or off.
- *
- * @param status - 0 to disable paging, nonzero to enable paging.
- */
 static void paging_enable(void)
 {
     __asm__ volatile (
         "                       \n\
-        movl    %%cr0, %%eax    \n\
+        movl    %%cr4, %%eax    \n\
         orl     %0, %%eax       \n\
+        movl    %%eax, %%cr4    \n\
+        movl    %1, %%cr3       \n\
+        movl    %%cr0, %%eax    \n\
+        orl     %2, %%eax       \n\
         movl    %%eax, %%cr0    \n\
         "
         : /* no outputs */
-        : "r"(PAGING_ENABLE_BIT)
+        : "b"(PSE_BIT), "c"(PD_BASE), "d"(PG_BIT)
     );
 }

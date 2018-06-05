@@ -48,6 +48,8 @@ void kernel_init(void)
     tss_init();
     idt_init();
 
+    mem_init();
+
     kprintf("Initializing IRQs...\n");
     irq_init();
     ps2kbd_init();
@@ -62,11 +64,7 @@ void kernel_init(void)
         setup paging
     */
 
-#ifdef __DEBUG
-    kprintf_test();
-#endif
-
-   //kprintf("Halting system...");
+   __asm__ volatile ("idle: hlt; jmp idle" : : : "memory");
 }
 
 
