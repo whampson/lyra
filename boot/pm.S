@@ -55,8 +55,4 @@ move_kernel:
 rep movsb   (%esi), (%edi)
 
 invoke_kernel:
-    call    *KERNEL_START
-
-pm_halt:
-    hlt
-    jmp     pm_halt
+    jmp     *KERNEL_START
