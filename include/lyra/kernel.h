@@ -175,11 +175,4 @@ int vkprintf(const char *fmt, va_list args);
 
 int atoi(const char *str);
 
-
-/* Functions defined in print.c */
-
-void clear(void);
-int putchar(int ch);
-int puts(const char *str);
-
 #endif  /* __LYRA_KERNEL_H */
