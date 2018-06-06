@@ -64,7 +64,7 @@ void kernel_init(void)
         setup paging
     */
 
-   __asm__ volatile ("idle: hlt; jmp idle" : : : "memory");
+   __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
 }
 
 
