@@ -156,7 +156,7 @@ static inline void * memset(void *dest, int c, size_t n)
         rep     stosl                   \n\
     .memset_bottom%=:                   \n\
         testl   %%edx, %%edx            \n\
-        jz      .memse_done%=           \n\
+        jz      .memset_done%=          \n\
         movb    %%al, (%%edi)           \n\
         addl    $1, %%edi               \n\
         subl    $1, %%edx               \n\
