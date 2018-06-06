@@ -137,7 +137,7 @@ static void handle_unknown_exception(int num)
 static void exception_halt(void)
 {
     /* Deathbed... */
-    __asm__ volatile ("cli; .rip: hlt; jmp .rip" : : : "memory");
+    __asm__ volatile ("cli; .rip%=: hlt; jmp .rip%=" : : : "memory");
 }
 
 static void dump_regs(struct interrupt_frame *regs)
