@@ -23,15 +23,21 @@
 #include <drivers/vga.h>
 #include <drivers/ps2kbd.h>
 
+enum state {
+    S_NORMAL,
+    S_ESC
+};
+
 struct console {
     bool initialized;
     bool active;
+    int state;
     short cursor_x;
     short cursor_y;
     char cursor_type;
     bool cursor_hidden;
-    struct vga_attr color;
-    char *framebuf;
+    union vga_attr color;
+    union vga_cell *framebuf;
     char tab_width;
     char bs_char;
 };
@@ -42,6 +48,7 @@ static int curr_cons;
 /* Stole this idea from Linux, very convenient! */
 #define m_initialized       (cons[curr_cons].initialized)
 #define m_active            (cons[curr_cons].active)
+#define state               (cons[curr_cons].state)
 #define m_cursor_x          (cons[curr_cons].cursor_x)
 #define m_cursor_y          (cons[curr_cons].cursor_y)
 #define m_color             (cons[curr_cons].color)
@@ -53,6 +60,7 @@ static int curr_cons;
 
 static void console_defaults(void);
 static void switch_console(int old_cons, int new_cons);
+static void scroll(int n);
 static void backspace(void);
 static void tab(void);
 static void carriage_return(void);
@@ -131,10 +139,21 @@ void console_putchar(char c)
         case ASCII_BS:
             backspace();
             goto move_cursor;
+        case ASCII_ESC:
+            state = S_ESC;
+            break;
+        default:
+            if (c < 0x20) {
+                return;
+            }
+            break;
     }
 
+    state = S_NORMAL;
+
     pos = xy2pos(m_cursor_x, m_cursor_y);
-    m_framebuf[pos * 2] = c;    /* TODO: color */
+    m_framebuf[pos].ch = c;
+    m_framebuf[pos].attr = m_color;
     m_cursor_x++;
     if (m_cursor_x >= CON_COLS) {
         newline();
@@ -144,22 +163,59 @@ move_cursor:
     set_cursor_pos(xy2pos(m_cursor_x, m_cursor_y));
 }
 
+static void scroll(int n)
+{
+    /* TODO: reverse scroll */
+    if (n == 0 || n < 0) {
+        return;
+    }
+
+    int n_cells;            /* number of screen cells to move off-screen */
+    int n_bytes;            /* number of bytes to move back in buffer */
+    int blank_start;        /* start offset of cells to blank */
+    union vga_cell cell;
+    int i;
+
+    /* Limit n to the total number of rows */
+    if (n >= CON_ROWS) {
+        n = CON_ROWS;
+    }
+
+    /* Compute number of cells to erase from the top of the buffer.
+       This is also the number of blank spaces at the end of the buffer. */
+    n_cells = n * CON_COLS;
+
+    /* Compute the start offset of the cells to blank */
+    blank_start = CON_AREA - n_cells;
+
+    /* Compute the number of bytes to move in the buffer (2 bytes per cell) */
+    n_bytes = blank_start * sizeof(uint16_t);
+
+    /* Give the impression of scrolling by moving characters back by n_cells */
+    memmove(m_framebuf, &(m_framebuf[n_cells]), n_bytes);
+
+    /* Blank-out the rest of the terminal, preserve the attribute */
+    // memset(&(m_framebuf[blank_start]), m_bs_char, n_cells);
+    cell.attr = m_color;
+    cell.ch = m_bs_char;
+    for (i = 0; i < n_cells; i++) {
+        m_framebuf[blank_start + i] = cell;
+    }
+}
+
 static void backspace(void)
 {
+    /* todo: backspace cntl */
+
     int pos;
 
-    m_cursor_x--;
-    if (m_cursor_x < 0) {
-        m_cursor_x = CON_COLS - 1;
-        m_cursor_y--;
-    }
-    if (m_cursor_y < 0) {
-        m_cursor_x = 0;
-        m_cursor_y = 0;
+    pos = xy2pos(m_cursor_x, m_cursor_y);
+    if (pos == 0) {
+        return;
     }
 
-    pos = xy2pos(m_cursor_x, m_cursor_y);
-    m_framebuf[pos * 2] = m_bs_char;
+    m_framebuf[--pos].ch = m_bs_char;
+    pos2xy(pos, &m_cursor_x, &m_cursor_y);
 }
 
 static void tab(void)
@@ -182,8 +238,11 @@ static void newline(void)
 {
     m_cursor_x = 0;
     m_cursor_y++;
+
     if (m_cursor_y >= CON_ROWS) {
-        m_cursor_y = 0;
+        scroll(1);
+        m_cursor_y--;
+        m_cursor_x = 0;
     }
 }
 
@@ -216,14 +275,15 @@ void set_console(int num)
 static void console_defaults(void)
 {
     m_color.bg = VGA_BLK;
-    m_color.fg = VGA_GRY;
-    m_framebuf = (char *) VGA_FRAMEBUF;
+    m_color.fg = VGA_WHT;
+    m_framebuf = (union vga_cell *) VGA_FRAMEBUF;
     m_cursor_x = 0;
     m_cursor_y = 0;
     m_cursor_type = CURSOR_BLOCK;
     m_cursor_hidden = false;
     m_tab_width = 8;
     m_bs_char = ' ';
+    state = S_NORMAL;
 }
 
 static void switch_console(int old_cons, int new_cons)
