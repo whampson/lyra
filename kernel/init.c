@@ -19,13 +19,12 @@
 
 
 #include <lyra/kernel.h>
+#include <lyra/console.h>
 #include <lyra/descriptor.h>
 #include <lyra/interrupt.h>
 #include <lyra/irq.h>
 #include <lyra/io.h>
 #include <lyra/memory.h>
-#include <drivers/ps2kbd.h>
-#include <drivers/vga.h>
 
 /* The TSS. */
 static struct tss_struct tss = { 0 };
@@ -43,25 +42,18 @@ static void tss_init(void);
  */
 void kernel_init(void)
 {
-    clear();
-
-    vga_init();
     ldt_init();
     tss_init();
     idt_init();
-
-    mem_init();
-
     irq_init();
-    ps2kbd_init();
-
+    console_init();
+    mem_init();
     irq_enable(IRQ_KEYBOARD);
     sti();
 
     /* TODO:
         terminal driver
         finish exception handler (BSOD, reg dump, etc.)
-        setup paging
     */
 
    __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
