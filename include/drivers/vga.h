@@ -22,43 +22,41 @@
 
 #include <stdint.h>
 
-/* Screen dimensions (in terms of characters) */
-#define SCREEN_X    80
-#define SCREEN_Y    25
-#define SCREEN_SIZE (SCREEN_X * SCREEN_Y)
+#define VGA_FRAMEBUF    0xB8000
 
-/**
- * Cursor shapes.
- */
+enum vga_color {
+    VGA_BLK,
+    VGA_BLU,
+    VGA_GRN,
+    VGA_CYN,
+    VGA_RED,
+    CGA_MGT,
+    VGA_BRN,
+    VGA_WHT,
+    VGA_GRY,
+    VGA_BBLU,
+    VGA_BGRN,
+    VGA_BCYN,
+    VGA_BRED,
+    VGA_BMGT,
+    VGA_YLW,
+    VGA_BWHT
+};
+
 enum cursor_type {
     CURSOR_UNDERBAR,
     CURSOR_BLOCK
 };
 
-/**
- * Converts a 1-D screen corrdinate to a 2-D screen coordinate.
- *
- * @param pos - 1-D coordinate to convert
- * @param x   - pointer to store x-component
- * @param y   - pointer to store y-component
- */
-static inline void pos2xy(int pos, int *x, int *y)
-{
-    *x = pos % SCREEN_X;
-    *y = pos / SCREEN_X;
-}
+struct vga_attr {
+    unsigned char fg : 4;   /* foreground color */
+    unsigned char bg : 4;   /* background color; high bit is blink field */
+};
 
-/**
- * Converts a 2-D screen corrdinate to a 1-D screen coordinate.
- *
- * @param x - the x-component of the coordinate to convert
- * @param y - the y-component of the coordinate to convert
- * @return the 1-D coordinate
- */
-static inline int xy2pos(int x, int y)
-{
-    return y * SCREEN_X + x;
-}
+struct vga_cell {
+    unsigned char ch;
+    struct vga_attr attr;
+};
 
 /**
  * Set VGA driver to defaults.
