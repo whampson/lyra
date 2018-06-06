@@ -131,6 +131,11 @@ static inline char * strrev(char *str)
     return str_orig;
 }
 
+static inline void * memset(void *dest, int c, size_t n)
+{
+    return dest;
+}
+
 static inline void * memmove(void *dest, const void *src, size_t n)
 {
     __asm__ volatile (
@@ -139,16 +144,17 @@ static inline void * memmove(void *dest, const void *src, size_t n)
         movw    %%dx, %%es              \n\
         cld                             \n\
         cmpl    %%edi, %%esi            \n\
-        jae     memmove_start           \n\
+        jae     memmove_start%=         \n\
         leal    -1(%%esi, %%ecx), %%esi \n\
         leal    -1(%%edi, %%ecx), %%edi \n\
         std                             \n\
-        memmove_start:                  \n\
+        memmove_start%=:                \n\
         rep     movsb                   \n\
         "
         :
         : "D"(dest), "S"(src), "c"(n)
-        : "cc", "memory");
+        : "cc", "memory"
+    );
 
     return dest;
 }
