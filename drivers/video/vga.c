@@ -68,7 +68,7 @@ void vga_init(void)
     outb(inb(PORT_MISCOUTPUT_R) | IOAS, PORT_MISCOUTPUT_W);
 
     set_cursor_type(CURSOR_UNDERBAR);;
-    vga_blink_enable();
+    blink_enable();
 }
 
 void hide_cursor(void)
@@ -145,7 +145,7 @@ void set_cursor_pos(uint16_t pos)
     outb(pos & 0xFF, PORT_CRTC_DATA);
 }
 
-void vga_blink_disable(void)
+void blink_disable(void)
 {
     uint8_t data;
 
@@ -165,7 +165,7 @@ void vga_blink_disable(void)
     outb(data, PORT_AC_DATA_W);
 }
 
-void vga_blink_enable(void)
+void blink_enable(void)
 {
     uint8_t data;
 

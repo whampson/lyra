@@ -106,13 +106,13 @@ void set_cursor_pos(uint16_t pos);
  * Enables character blinking.
  * When enabled, bit 7 of the attribute byte toggles blinking.
  */
-void vga_blink_disable(void);
+void blink_disable(void);
 
 /**
  * Enables character blinking.
  * When disabled, bit 7 of the attribute byte is used to select the
  * background color.
  */
-void vga_blink_enable(void);
+void blink_enable(void);
 
 #endif /* __DRIVERS_VGA_H */
