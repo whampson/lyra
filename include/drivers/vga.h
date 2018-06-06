@@ -48,14 +48,20 @@ enum cursor_type {
     CURSOR_BLOCK
 };
 
-struct vga_attr {
-    unsigned char fg : 4;   /* foreground color */
-    unsigned char bg : 4;   /* background color; high bit is blink field */
+union vga_attr {
+    struct {
+        uint8_t fg : 4;     /* foreground color */
+        uint8_t bg : 4;     /* background color; high bit is blink field */
+    };
+    uint8_t value;
 };
 
-struct vga_cell {
-    unsigned char ch;
-    struct vga_attr attr;
+union vga_cell {
+    struct {
+        uint8_t ch;
+        union vga_attr attr;
+    };
+    uint16_t value;
 };
 
 /**
