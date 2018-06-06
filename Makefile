@@ -18,6 +18,14 @@
 
 .PHONY: all img boot kernel kernel_build debug debug_echo clean remake floppy
 
+# Enable/disable debug build
+DEBUG           := 1
+DEBUGFLAGS      := -D__DEBUG -g
+
+# Enable/disable optimizations
+OPTIMIZE        := 1
+OPTIMIZEFLAGS   := -O2
+
 GCC_WARNINGS    := -Wall -Wextra -Wpedantic -Wno-unused-function
 
 # Build tools and flags
@@ -25,8 +33,8 @@ export AS       := gcc
 export ASFLAGS  := $(GCC_WARNINGS) -D__ASM -m32
 export CC       := gcc
 export CFLAGS   := $(GCC_WARNINGS) -m32 -ffreestanding -fomit-frame-pointer \
-                   -fno-unwind-tables -fno-asynchronous-unwind-tables \
-				   -fno-stack-protector -Og
+                   -fno-unwind-tables -fno-asynchronous-unwind-tables       \
+				   -fno-stack-protector
 export LD       := ld
 export LDFLAGS  :=
 export MAKEFLAGS:= --no-print-directory
@@ -64,9 +72,23 @@ KERNEL_OBJS     := $(foreach dir, $(KERNEL_DIRS),                       \
 
 # Call Makefile in subdirectory
 define submake
-	@$(MAKE) $(MAKEFLAGS) -C $1
+@$(MAKE) $(MAKEFLAGS) -C $1
 
 endef
+
+# Enable debug flags
+ifeq ($(DEBUG), 1)
+$(info [INFO]: Debug build)
+ASFLAGS += $(DEBUGFLAGS)
+CFLAGS  += $(DEBUGFLAGS)
+OPTIMIZEFLAGS := -Og
+endif
+
+# Enable optimizations
+ifeq ($(OPTIMIZE), 1)
+$(info [INFO]: Optimizing build with $(OPTIMIZEFLAGS))
+CFLAGS += $(OPTIMIZEFLAGS)
+endif
 
 all: img
 
@@ -77,12 +99,6 @@ dirs:
 	@mkdir -p $(BIN)
 	@mkdir -p $(OBJ)
 	@mkdir -p $(OBJ_BOOT)
-
-debug: export ASFLAGS += -D__DEBUG -g
-debug: export CFLAGS += -D__DEBUG -g
-debug: debug_echo $(filter-out debug, $(MAKECMDGOALS))
-debug_echo:
-	@echo [INFO] Compiling with debugging symbols.
 
 boot: dirs
 	$(call submake, $(BOOT_DIR))
@@ -105,5 +121,5 @@ clean:
 remake: clean all
 
 floppy: img
-	@echo [WARNING]: Overwriting floppy disk on /dev/fd0!
+	$(info [WARNING]: Overwriting floppy disk on /dev/fd0!)
 	@sudo dd if=$(OSIMG) of=/dev/fd0 bs=512
