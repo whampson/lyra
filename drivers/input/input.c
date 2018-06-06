@@ -16,9 +16,12 @@
  * Author: Wes Hampson
  *----------------------------------------------------------------------------*/
 
+/* TODO: send typed char to input buffer before console */
+
 #include <ctype.h>
 #include <stdbool.h>
 #include <lyra/input.h>
+#include <lyra/console.h>
 #include <lyra/kernel.h>
 
 /* Use this to convert control character "caret notation" to the actual
@@ -164,7 +167,7 @@ void sendkey(keystroke_t k)
     }
 
 sendchar:
-    putchar(ch);
+    console_putchar(ch);
 }
 
 static bool handle_numpad(scancode_t sc)
@@ -174,12 +177,12 @@ static bool handle_numpad(scancode_t sc)
     }
 
     if (sc == KB_RENTER) {
-        putchar('\n');
+        console_putchar('\n');
     }
     else {
         /* Another example of the niceties of the ASCII table.
            Use our special offset to get the ASCII value. */
-        putchar(sc - NUMPAD_OFFSET);
+        console_putchar(sc - NUMPAD_OFFSET);
     }
 
     return true;
@@ -205,6 +208,6 @@ static bool handle_nonchar(scancode_t sc)
     }
 
 
-    puts(ESC_SEQUENCES[sc]);
+    console_puts(ESC_SEQUENCES[sc]);
     return true;
 }
