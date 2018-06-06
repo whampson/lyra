@@ -19,6 +19,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
+#include <lyra/console.h>
 #include <lyra/kernel.h>
 
 #define W_MAX   64
@@ -290,12 +291,12 @@ int vkprintf(const char *fmt, va_list args)
         }
 
     sendchar:
-        putchar(c);
+        console_putchar(c);
         count++;
         continue;
 
     sendfmt:
-        count += kprintf(fmtbuf);
+        count += console_puts(fmtbuf);
         formatting = false;
     }
 
@@ -355,8 +356,8 @@ static void fmt_string(char *buf,  int w, int p, bool ljust, va_list *ap)
 
     i = 0;
     while (i < len && (c = s[i++]) != '\0') {
-        // TODO: this is dangerous. String should be written directly to
-        // the terminal because it's length may exceed the 128 bytes
+        /* TODO: this is dangerous. String should be written directly to
+           the terminal because it's length may exceed the 128 bytes */
         *(buf++) = c;
     }
 
