@@ -20,12 +20,17 @@
 #include <string.h>
 #include <lyra/console.h>
 #include <lyra/input.h>
+#include <lyra/io.h>
 #include <drivers/vga.h>
 #include <drivers/ps2kbd.h>
 
+#define PIT_CLK     1193182
+#define BEL_FREQ    880     /* 880Hz = A5, if you're curious :) */
+
 enum state {
     S_NORMAL,
-    S_ESC
+    S_ESC,
+    S_CSI,
 };
 
 struct console {
@@ -126,30 +131,69 @@ void console_putchar(char c)
 {
     int pos;
 
-    switch (c) {
-        case ASCII_LF:
-            newline();
-            goto move_cursor;
-        case ASCII_CR:
-            carriage_return();
-            goto move_cursor;
-        case ASCII_TAB:
-            tab();
-            goto move_cursor;
-        case ASCII_BS:
-            backspace();
-            goto move_cursor;
-        // case ASCII_ESC:
-        //     m_state = S_ESC;
-        //     break;
-        // default:
-        //     if (c < 0x20) {
-        //         return;
-        //     }
-        //     break;
-    }
+    switch (m_state) {
+        case S_ESC:
+            switch (c) {
+                case '[':
+                    m_state = S_CSI;
+                    return;
+                default:
+                    m_state = S_NORMAL;
+                    return;
+            }
+        case S_CSI:
+            switch (c) {
+                case 'A':
+                    m_cursor_y--;
+                    if (m_cursor_y < 0) m_cursor_y = 0;
+                    m_state = S_NORMAL;
+                    goto move_cursor;
+                case 'B':
+                    m_cursor_y++;
+                    if (m_cursor_y >= CON_ROWS) m_cursor_y = CON_ROWS - 1;
+                    m_state = S_NORMAL;
+                    goto move_cursor;
+                case 'C':
+                    m_cursor_x++;
+                    if (m_cursor_x >= CON_COLS) m_cursor_x = CON_COLS - 1;
+                    m_state = S_NORMAL;
+                    goto move_cursor;
+                case 'D':
+                    m_cursor_x--;
+                    if (m_cursor_x < 0) m_cursor_x = 0;
+                    m_state = S_NORMAL;
+                    goto move_cursor;
+                default:
+                    if (c >= 0x40 && c <= 0x7E) {
+                        m_state = S_NORMAL;
+                    }
+                    return;
+            }
 
-    // m_state = S_NORMAL;
+        default:
+            switch (c) {
+                case ASCII_LF:
+                    newline();
+                    goto move_cursor;
+                case ASCII_CR:
+                    carriage_return();
+                    goto move_cursor;
+                case ASCII_TAB:
+                    tab();
+                    goto move_cursor;
+                case ASCII_BS:
+                    backspace();
+                    goto move_cursor;
+                case ASCII_ESC:
+                    m_state = S_ESC;
+                    return;
+                // default:
+                //     if (c < 0x20) {
+                //         return;
+                //     }
+                //     break;
+            }
+    }
 
     pos = xy2pos(m_cursor_x, m_cursor_y);
     m_vidmem[pos].ch = c;
@@ -246,6 +290,11 @@ static void newline(void)
 static void carriage_return(void)
 {
     m_cursor_x = 0;
+}
+
+static void bell(void)
+{
+    /* TODO: */
 }
 
 void set_console(int num)
