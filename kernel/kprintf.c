@@ -427,12 +427,6 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
         npad -= p - ndigit;
     }
 
-    if (!ljust && w > nchar) {
-        pad(buf, npad, padch);
-        nchar += npad;
-        buf += npad;
-    }
-
     if (flag_set(fl, F_PREFIX)) {
         switch (b) {
             case 8:
@@ -449,6 +443,12 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
     }
     else if (sign_align && val >= 0) {
         *(buf++) = ' ';
+    }
+
+    if (!ljust && w > nchar) {
+        pad(buf, npad, padch);
+        nchar += npad;
+        buf += npad;
     }
 
     while (p > ndigit) {
