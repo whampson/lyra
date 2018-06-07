@@ -78,18 +78,19 @@ const char * const ESC_SEQUENCES[24] =
     "\x1B[P",       /* Pause */
 
     /* Function keys */
-    "\x1B[[A",      /* F1 */
-    "\x1B[[B",      /* F2 */
-    "\x1B[[C",      /* F3 */
-    "\x1B[[D",      /* F4 */
-    "\x1B[[E",      /* F5 */
-    "\x1B[[17~",    /* F6 */
-    "\x1B[[18~",    /* F7 */
-    "\x1B[[19~",    /* F8 */
-    "\x1B[[20~",    /* F9 */
-    "\x1B[[21~",    /* F10 */
-    "\x1B[[23~",    /* F11 */
-    "\x1B[[24~",    /* F12 */
+    /* TODO: shift-func keys */
+    "\x1B[11~",     /* F1 */
+    "\x1B[12~",     /* F2 */
+    "\x1B[13~",     /* F3 */
+    "\x1B[14~",     /* F4 */
+    "\x1B[15~",     /* F5 */
+    "\x1B[17~",     /* F6 */
+    "\x1B[18~",     /* F7 */
+    "\x1B[19~",     /* F8 */
+    "\x1B[20~",     /* F9 */
+    "\x1B[21~",     /* F10 */
+    "\x1B[23~",     /* F11 */
+    "\x1B[24~",     /* F12 */
 };
 
 static bool handle_numpad(scancode_t k);
@@ -149,6 +150,12 @@ void sendkey(keystroke_t k)
            since the virtual scancodes for alphabetic characters map to
            lowercase letters. */
         ch = (char) toupper(ch);
+
+        /* Special case for ^? */
+        if (ch == '?') {
+            ch = ASCII_DEL;
+            goto sendchar;
+        }
 
         /* Do nothing for non-control characters. */
         if (ch < '@' || ch > '_') {
