@@ -53,7 +53,6 @@ void kernel_init(void)
 
     /* TODO:
         terminal driver
-        finish exception handler (BSOD, reg dump, etc.)
     */
 
    __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");

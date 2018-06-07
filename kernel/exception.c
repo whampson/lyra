@@ -110,8 +110,7 @@ void do_exception(struct interrupt_frame *regs)
             break;
     }
 
-    /* TODO: Register dump, show error code, etc. (BSOD?) */
-    /* For now, just print the exception name and die */
+    /* TODO: Fancy crash screen :) Mimic Windows 95? */
     kprintf("!!! EXCEPTION !!!\n");
     if (name != NULL) {
         kprintf("%s\n", name);
@@ -121,7 +120,7 @@ void do_exception(struct interrupt_frame *regs)
     }
 
     if (has_err_code) {
-        kprintf("Error code: %#08x\n", regs->err_code);  /* TODO: debug printf */
+        kprintf("Error code: %#.8x\n", regs->err_code);
     }
 
     dump_regs(regs);

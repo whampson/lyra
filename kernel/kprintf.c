@@ -327,7 +327,7 @@ static void fmt_char(char *buf, int w, bool ljust, va_list *ap)
     *buf = '\0';
 }
 
-static void fmt_string(char *buf,  int w, int p, bool ljust, va_list *ap)
+static void fmt_string(char *buf, int w, int p, bool ljust, va_list *ap)
 {
 
     int npad;
