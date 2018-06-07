@@ -206,8 +206,7 @@ void ps2kbd_do_irq(void)
     /* Read raw scancode from keyboard */
     kb_data = inb(PORT_KBD);
     if (kb_data == KBD_RES_ERROR1 || kb_data == KBD_RES_ERROR2) {
-        /* TODO: handle error */
-        kprintf("Keyboard error!\n");
+        kprintf("Keyboard error! (%02x)\n", kb_data);
         goto irq_cleanup;
     }
     else if (kb_data == SC3_BREAK) {
@@ -220,7 +219,6 @@ void ps2kbd_do_irq(void)
     /* Convert to virtual scancode */
     sc = SCANCODE3[kb_data];
     if (sc == 0) {
-        /* TODO: not mapped. log? */
         goto irq_cleanup;
     }
 
@@ -478,9 +476,6 @@ sc3_fail:
  */
 static void kbd_setled(int num, int caps, int scrl)
 {
-    /* TODO: debug this, QEMU keyboard responds to SETLED with 0xF0
-       (Mac only) */
-
     uint8_t data;
 
     kbd_cli();

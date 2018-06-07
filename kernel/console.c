@@ -37,7 +37,7 @@ struct console {
     char cursor_type;
     bool cursor_hidden;
     union vga_attr color;
-    union vga_cell *framebuf;
+    union vga_cell *vidmem;
     char tab_width;
     char bs_char;
 };
@@ -48,13 +48,13 @@ static int curr_cons;
 /* Stole this idea from Linux, very convenient! */
 #define m_initialized       (cons[curr_cons].initialized)
 #define m_active            (cons[curr_cons].active)
-#define state               (cons[curr_cons].state)
+#define m_state             (cons[curr_cons].state)
 #define m_cursor_x          (cons[curr_cons].cursor_x)
 #define m_cursor_y          (cons[curr_cons].cursor_y)
 #define m_color             (cons[curr_cons].color)
 #define m_cursor_type       (cons[curr_cons].cursor_type)
 #define m_cursor_hidden     (cons[curr_cons].cursor_hidden)
-#define m_framebuf          (cons[curr_cons].framebuf)
+#define m_vidmem            (cons[curr_cons].vidmem)
 #define m_tab_width         (cons[curr_cons].tab_width)
 #define m_bs_char           (cons[curr_cons].bs_char)
 
@@ -139,21 +139,21 @@ void console_putchar(char c)
         case ASCII_BS:
             backspace();
             goto move_cursor;
-        case ASCII_ESC:
-            state = S_ESC;
-            break;
-        default:
-            if (c < 0x20) {
-                return;
-            }
-            break;
+        // case ASCII_ESC:
+        //     m_state = S_ESC;
+        //     break;
+        // default:
+        //     if (c < 0x20) {
+        //         return;
+        //     }
+        //     break;
     }
 
-    state = S_NORMAL;
+    // m_state = S_NORMAL;
 
     pos = xy2pos(m_cursor_x, m_cursor_y);
-    m_framebuf[pos].ch = c;
-    m_framebuf[pos].attr = m_color;
+    m_vidmem[pos].ch = c;
+    m_vidmem[pos].attr = m_color;
     m_cursor_x++;
     if (m_cursor_x >= CON_COLS) {
         newline();
@@ -192,21 +192,18 @@ static void scroll(int n)
     n_bytes = blank_start * sizeof(uint16_t);
 
     /* Give the impression of scrolling by moving characters back by n_cells */
-    memmove(m_framebuf, &(m_framebuf[n_cells]), n_bytes);
+    memmove(m_vidmem, &(m_vidmem[n_cells]), n_bytes);
 
     /* Blank-out the rest of the terminal, preserve the attribute */
-    // memset(&(m_framebuf[blank_start]), m_bs_char, n_cells);
     cell.attr = m_color;
     cell.ch = m_bs_char;
     for (i = 0; i < n_cells; i++) {
-        m_framebuf[blank_start + i] = cell;
+        m_vidmem[blank_start + i] = cell;
     }
 }
 
 static void backspace(void)
 {
-    /* todo: backspace cntl */
-
     int pos;
 
     pos = xy2pos(m_cursor_x, m_cursor_y);
@@ -214,7 +211,7 @@ static void backspace(void)
         return;
     }
 
-    m_framebuf[--pos].ch = m_bs_char;
+    m_vidmem[--pos].ch = m_bs_char;
     pos2xy(pos, &m_cursor_x, &m_cursor_y);
 }
 
@@ -276,14 +273,14 @@ static void console_defaults(void)
 {
     m_color.bg = VGA_BLK;
     m_color.fg = VGA_WHT;
-    m_framebuf = (union vga_cell *) VGA_FRAMEBUF;
+    m_vidmem = (union vga_cell *) VGA_FRAMEBUF;
     m_cursor_x = 0;
     m_cursor_y = 0;
     m_cursor_type = CURSOR_BLOCK;
     m_cursor_hidden = false;
     m_tab_width = 8;
     m_bs_char = ' ';
-    state = S_NORMAL;
+    m_state = S_NORMAL;
 }
 
 static void switch_console(int old_cons, int new_cons)
