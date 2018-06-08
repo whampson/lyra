@@ -35,7 +35,7 @@ enum ascii {
     ASCII_ACK,
     ASCII_BEL,  /* '\a' */
     ASCII_BS,   /* '\b' */
-    ASCII_TAB,  /* '\t' */
+    ASCII_HT,   /* '\t' */
     ASCII_LF,   /* '\n' */
     ASCII_VT,   /* '\v' */
     ASCII_FF,   /* '\f' */
@@ -74,7 +74,7 @@ enum ascii {
 enum kb_key {
     /* Control characters */
     KB_BACKSPACE    = ASCII_BS,
-    KB_TAB          = ASCII_TAB,
+    KB_TAB          = ASCII_HT,
     KB_ENTER        = ASCII_LF,
     KB_ESCAPE       = ASCII_ESC,
 
