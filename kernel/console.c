@@ -29,8 +29,23 @@
 #define PIT_CLK     1193182
 #define BEL_FREQ    880     /* 880Hz = A5, if you're curious :) */
 
-#define CSI_MAX_PARAMS  2
+#define CSI_MAX_PARAMS  8
 #define PARAM_DEFAULT   (-1)
+
+#define DEFAULT_FG  (VGA_WHT)
+#define DEFAULT_BG  (VGA_BLK)
+#define BRIGHT      (1 << 3)
+
+static const char COLOR_TABLE[8] = {
+    VGA_BLK,
+    VGA_RED,
+    VGA_GRN,
+    VGA_YLW,
+    VGA_BLU,
+    VGA_MGT,
+    VGA_CYN,
+    VGA_WHT
+};
 
 enum state {
     S_NORMAL,
@@ -38,29 +53,47 @@ enum state {
     S_CSI,
 };
 
+struct gfx_attr {
+    unsigned char bold      : 1;
+    unsigned char faint     : 1;
+    unsigned char invert    : 1;
+    unsigned char conceal   : 1;
+    char fg;
+    char bg;
+};
+
 struct console {
     bool initialized;
     bool active;
     int state;
+    struct gfx_attr gfxattr;
     short cursor_x;
     short cursor_y;
     char cursor_type;
     bool cursor_hidden;
-    union vga_attr color;
     union vga_cell *vidmem;
     char tab_width;
     char bs_char;
-    char csiparam[2];
+    char csiparam[CSI_MAX_PARAMS];
     int paramidx;
 };
 
 static struct console cons[NUM_CONSOLES];
 static int curr_cons;
 
+static const struct gfx_attr default_attr = {
+    .bold = 0,
+    .faint = 0,
+    .invert = 0,
+    .fg = DEFAULT_FG,
+    .bg = DEFAULT_BG
+};
+
 /* Stole this idea from Linux, very convenient! */
 #define m_initialized       (cons[curr_cons].initialized)
 #define m_active            (cons[curr_cons].active)
 #define m_state             (cons[curr_cons].state)
+#define m_gfxattr           (cons[curr_cons].gfxattr)
 #define m_cursor_x          (cons[curr_cons].cursor_x)
 #define m_cursor_y          (cons[curr_cons].cursor_y)
 #define m_color             (cons[curr_cons].color)
@@ -88,6 +121,8 @@ static void cursor_down(int n);
 static void cursor_right(int n);
 static void cursor_left(int n);
 static void csi_m(void);
+static void set_cell_attr(union vga_attr *a);
+static void do_cursor_update(void);
 
 /**
  * Converts a 1-D screen corrdinate to a 2-D screen coordinate.
@@ -155,8 +190,7 @@ void set_console(int num)
 
 static void console_defaults(void)
 {
-    m_color.bg = VGA_BLK;
-    m_color.fg = VGA_WHT;
+    m_gfxattr = default_attr;
     m_vidmem = (union vga_cell *) VGA_FRAMEBUF;
     m_cursor_x = 0;
     m_cursor_y = 0;
@@ -200,6 +234,16 @@ int console_puts(const char *s)
 void console_putchar(char c)
 {
     int pos;
+    bool update_char;
+    bool update_attr;
+    bool update_cursor;
+    bool needs_newline;
+
+    pos = xy2pos(m_cursor_x, m_cursor_y);
+    update_char = false;
+    update_attr = false;
+    update_cursor = true;
+    needs_newline = false;
 
     if (iscntrl(c)) {
         goto ctrl_char;
@@ -224,6 +268,9 @@ void console_putchar(char c)
                     return;
                 case ASCII_BS:
                     backspace();
+                    c = m_bs_char;
+                    update_char = true;
+                    update_attr = true;
                     goto move_cursor;
                 case ASCII_HT:
                     tab();
@@ -245,32 +292,40 @@ void console_putchar(char c)
                     if (iscntrl(c)) {
                         return;
                     }
-                    break;
+                    if (++m_cursor_x >= CON_COLS) {
+                        needs_newline = true;
+                    }
+                    update_char = true;
+                    update_attr = true;
             }
     }
 
-    pos = xy2pos(m_cursor_x, m_cursor_y);
-    m_vidmem[pos].ch = c;
-    m_vidmem[pos].attr = m_color;
-    m_cursor_x++;
-    if (m_cursor_x >= CON_COLS) {
-        linefeed();
-    }
-
 move_cursor:
-    pos = xy2pos(m_cursor_x, m_cursor_y);
-    m_vidmem[pos].attr = m_color;               /* TODO: temp */
-    set_cursor_pos(xy2pos(m_cursor_x, m_cursor_y));
+    if (update_char) {
+        m_vidmem[pos].ch = c;
+    }
+    if (update_attr) {
+        set_cell_attr(&(m_vidmem[pos].attr));
+    }
+    if (update_cursor) {
+        do_cursor_update();
+    }
+    if (needs_newline) {
+        linefeed();     /* TODO: cr-lf? */
+    }
 }
 
 static void handle_esc(char c)
 {
+    int i;
+
     switch (c) {
         case '[':
-            m_state = S_CSI;
-            m_csiparam[0] = PARAM_DEFAULT;
-            m_csiparam[1] = PARAM_DEFAULT;
+            for (i = 0; i < CSI_MAX_PARAMS; i++) {
+                m_csiparam[i] = PARAM_DEFAULT;
+            }
             m_paramidx = 0;
+            m_state = S_CSI;
             return;
         default:
             m_state = S_NORMAL;
@@ -405,7 +460,6 @@ static void scroll_up(int n)
     union vga_cell cell;
     int i;
 
-    /* Limit n to the total number of rows */
     if (n >= CON_ROWS) {
         n = CON_ROWS;
     }
@@ -424,8 +478,8 @@ static void scroll_up(int n)
     memmove(m_vidmem, &(m_vidmem[n_cells]), n_bytes);
 
     /* Blank-out the rest of the terminal, preserve the attribute */
-    cell.attr = m_color;
     cell.ch = m_bs_char;
+    set_cell_attr(&cell.attr);
     for (i = 0; i < n_cells; i++) {
         m_vidmem[blank_start + i] = cell;
     }
@@ -450,8 +504,8 @@ static void scroll_down(int n)
     n_bytes = (CON_AREA - n_cells) * sizeof(uint16_t);
     memmove(&(m_vidmem[n_cells]), m_vidmem, n_bytes);
 
-    cell.attr = m_color;
     cell.ch = m_bs_char;
+    set_cell_attr(&cell.attr);
     for (i = 0; i < n_cells; i++) {
         m_vidmem[i] = cell;
     }
@@ -459,15 +513,9 @@ static void scroll_down(int n)
 
 static void backspace(void)
 {
-    int pos;
-
-    pos = xy2pos(m_cursor_x, m_cursor_y);
-    if (pos == 0) {
-        return;
+    if (--m_cursor_x < 0) {
+        m_cursor_x = 0;
     }
-
-    m_vidmem[--pos].ch = m_bs_char;
-    pos2xy(pos, &m_cursor_x, &m_cursor_y);
 }
 
 static void tab(void)
@@ -548,16 +596,76 @@ static void csi_m(void)
     i = 0;
     while (i < CSI_MAX_PARAMS) {
         p = m_csiparam[i++];
-        if (p == 7) {
-            m_color.fg ^= m_color.bg;
-            m_color.bg ^= m_color.fg;
-            m_color.fg ^= m_color.bg;
+        if (p == PARAM_DEFAULT) {
+            continue;
         }
-        if (p >= 30 && p <= 37) {
-            m_color.fg = (p - 30);
-        }
-        else if (p >= 40 && p <= 47) {
-            m_color.bg = (p - 40);
+
+        switch (p) {
+            case 0:
+                m_gfxattr = default_attr;
+                break;
+            case 1:
+                m_gfxattr.bold = 1;
+                break;
+            case 2:
+                m_gfxattr.faint = 1;
+                break;
+            case 7:
+                m_gfxattr.invert = 1;
+                break;
+            case 8:
+                m_gfxattr.conceal = 1;
+                break;
+            case 21:
+                m_gfxattr.bold = 0;
+                break;
+            case 22:
+                m_gfxattr.faint = 0;
+                break;
+            case 27:
+                m_gfxattr.invert = 0;
+                break;
+            case 28:
+                m_gfxattr.conceal = 0;
+                break;
+            case 39:
+                m_gfxattr.fg = DEFAULT_FG;
+                break;
+            case 49:
+                m_gfxattr.bg = DEFAULT_BG;
+                break;
+            default:
+                if (p >= 30 && p <= 37) {
+                    m_gfxattr.fg = COLOR_TABLE[(p - 30)];
+                }
+                else if (p >= 40 && p <= 47) {
+                    m_gfxattr.bg = COLOR_TABLE[(p - 40)];
+                }
+                break;
         }
     }
+}
+
+static void set_cell_attr(union vga_attr *a)
+{
+    a->fg = m_gfxattr.fg;
+    a->bg = m_gfxattr.bg;
+
+    if (m_gfxattr.bold) {
+        a->fg |= BRIGHT;
+    }
+    if (m_gfxattr.faint) {
+        a->fg = VGA_GRY;
+    }
+    if (m_gfxattr.invert) {
+        swap(a->fg, a->bg);
+    }
+    if (m_gfxattr.conceal) {
+        a->fg = a->bg;
+    }
+}
+
+static void do_cursor_update(void)
+{
+    set_cursor_pos(xy2pos(m_cursor_x, m_cursor_y));
 }
