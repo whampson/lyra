@@ -85,10 +85,11 @@ __asm__ volatile (          \
  * Adapted from https://stackoverflow.com/a/3437484.
  */
 #define max(a, b)           \
-({  __typeof__(a) _a = (a); \
+do {                        \
+    __typeof__(a) _a = (a); \
     __typeof__(b) _b = (b); \
     _a > _b ? _a : _b;      \
-})
+} while (0)
 
 /**
  * Returns the smaller value.
@@ -96,11 +97,15 @@ __asm__ volatile (          \
  * Adapted from https://stackoverflow.com/a/3437484.
  */
 #define min(a, b)           \
-({  __typeof__(a) _a = (a); \
+do {                        \
+    __typeof__(a) _a = (a); \
     __typeof__(b) _b = (b); \
     _a < _b ? _a : _b;      \
-})
+} while (0)
 
+/**
+ * Swaps two values quickly.
+ */
 #define swap(a, b)          \
 do {                        \
     a ^= b;                 \
