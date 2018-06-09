@@ -14,6 +14,9 @@
 /*-----------------------------------------------------------------------------
  *   File: kernel/console.c
  * Author: Wes Hampson
+ *   Desc: Console driver. Much of the information on escape sequences was
+ *         gathered from http://www.real-world-systems.com/docs/ANSIcode.html
+ *         and http://man7.org/linux/man-pages/man4/console_codes.4.html.
  *----------------------------------------------------------------------------*/
 
 #include <ctype.h>
@@ -35,6 +38,7 @@
 #define DEFAULT_FG  (VGA_WHT)
 #define DEFAULT_BG  (VGA_BLK)
 #define BRIGHT      (1 << 3)
+#define BLINK       (1 << 3)
 
 static const char COLOR_TABLE[8] = {
     VGA_BLK,
@@ -56,6 +60,8 @@ enum state {
 struct gfx_attr {
     unsigned char bold      : 1;
     unsigned char faint     : 1;
+    unsigned char underline : 1;
+    unsigned char blink     : 1;
     unsigned char invert    : 1;
     unsigned char conceal   : 1;
     char fg;
@@ -105,6 +111,7 @@ static const struct gfx_attr default_attr = {
 #define m_csiparam          (cons[curr_cons].csiparam)
 #define m_paramidx          (cons[curr_cons].paramidx)
 
+/* TODO: many of these need to be virtualized to support multiple consoles */
 static void console_defaults(void);
 static void switch_console(int old_cons, int new_cons);
 static void handle_esc(char c);
@@ -120,6 +127,8 @@ static void cursor_up(int n);
 static void cursor_down(int n);
 static void cursor_right(int n);
 static void cursor_left(int n);
+static void csi_J(void);
+static void csi_K(void);
 static void csi_m(void);
 static void set_cell_attr(union vga_attr *a);
 static void do_cursor_update(void);
@@ -166,7 +175,7 @@ void console_init(void)
     m_active = 1;
 }
 
-
+/* TODO: consider rename */
 void set_console(int num)
 {
     int old_cons;
@@ -267,6 +276,10 @@ void console_putchar(char c)
                     bell();
                     return;
                 case ASCII_BS:
+                    /* TODO: consider rethinking this */
+                    if (m_cursor_x > 0) {
+                        pos--;
+                    }
                     backspace();
                     c = m_bs_char;
                     update_char = true;
@@ -278,8 +291,6 @@ void console_putchar(char c)
                 case ASCII_LF:
                 case ASCII_VT:
                 case ASCII_FF:
-                    /* TODO: technically this should only go to the next line
-                       and not do a cr */
                     linefeed();
                     goto move_cursor;
                 case ASCII_CR:
@@ -307,11 +318,12 @@ move_cursor:
     if (update_attr) {
         set_cell_attr(&(m_vidmem[pos].attr));
     }
+    if (needs_newline) {
+        carriage_return();
+        linefeed();
+    }
     if (update_cursor) {
         do_cursor_update();
-    }
-    if (needs_newline) {
-        linefeed();     /* TODO: cr-lf? */
     }
 }
 
@@ -320,7 +332,18 @@ static void handle_esc(char c)
     int i;
 
     switch (c) {
-        case '[':
+        // case 'c':    /* reset console */
+        case 'D':       /* linefeed */
+            linefeed();
+            break;
+        case 'E':       /* newline */
+            carriage_return();
+            linefeed();
+            break;
+        // case 'M':    /* reverse linefeed */
+        // case '7':    /* save console state */
+        // case '8':    /* restore console state */
+        case '[':       /* (control sequence introducer) */
             for (i = 0; i < CSI_MAX_PARAMS; i++) {
                 m_csiparam[i] = PARAM_DEFAULT;
             }
@@ -336,35 +359,38 @@ static void handle_esc(char c)
 static void handle_csi(char c)
 {
     switch (c) {
-        case 'A':
+        // case '@':    /* insert character */
+        case 'A':       /* move cursor up */
             if (m_csiparam[0] == PARAM_DEFAULT) {
                 m_csiparam[0] = 1;
             }
             cursor_up(m_csiparam[0]);
             m_state = S_NORMAL;
             break;
-        case 'B':
+        case 'B':       /* move cursor down */
+        case 'e':
             if (m_csiparam[0] == PARAM_DEFAULT) {
                 m_csiparam[0] = 1;
             }
             cursor_down(m_csiparam[0]);
             m_state = S_NORMAL;
             break;
-        case 'C':
+        case 'C':       /* move cursor right */
+        case 'a':
             if (m_csiparam[0] == PARAM_DEFAULT) {
                 m_csiparam[0] = 1;
             }
             cursor_right(m_csiparam[0]);
             m_state = S_NORMAL;
             break;
-        case 'D':
+        case 'D':       /* move cursor left */
             if (m_csiparam[0] == PARAM_DEFAULT) {
                 m_csiparam[0] = 1;
             }
             cursor_left(m_csiparam[0]);
             m_state = S_NORMAL;
             break;
-        case 'E':
+        case 'E':       /* move cursor to next line */
             if (m_csiparam[0] == PARAM_DEFAULT) {
                 m_csiparam[0] = 1;
             }
@@ -372,7 +398,7 @@ static void handle_csi(char c)
             m_cursor_x = 0;
             m_state = S_NORMAL;
             break;
-        case 'F':
+        case 'F':       /* move cursor to previous line */
             if (m_csiparam[0] == PARAM_DEFAULT) {
                 m_csiparam[0] = 1;
             }
@@ -380,7 +406,8 @@ static void handle_csi(char c)
             m_cursor_x = 0;
             m_state = S_NORMAL;
             break;
-        case 'G':
+        case 'G':       /* move cursor to column */
+        case '`':
             if (m_csiparam[0] < 1) {
                 m_csiparam[0] = 1;
             }
@@ -390,7 +417,17 @@ static void handle_csi(char c)
             m_cursor_x = m_csiparam[0] - 1;
             m_state = S_NORMAL;
             break;
-        case 'H':
+        case 'd':       /* move cursor to row */
+            if (m_csiparam[0] < 1) {
+                m_csiparam[0] = 1;
+            }
+            else if (m_csiparam[0] > CON_ROWS) {
+                m_csiparam[0] = CON_ROWS;
+            }
+            m_cursor_y = m_csiparam[0] - 1;
+            m_state = S_NORMAL;
+            break;
+        case 'H':       /* move cursor to row, column */
         case 'f':
             if (m_csiparam[0] < 1) {
                 m_csiparam[0] = 1;
@@ -408,27 +445,41 @@ static void handle_csi(char c)
             m_cursor_x = m_csiparam[1] - 1;
             m_state = S_NORMAL;
             break;
-        // case 'J':
-        // case 'K':
-        case 'S':
+        case 'J':       /* erase display */
+            csi_J();
+            m_state = S_NORMAL;
+            break;
+        case 'K':       /* erase line */
+            csi_K();
+            m_state = S_NORMAL;
+            break;
+        // case 'L':    /* insert line */
+        // case 'M':    /* delete line */
+        // case 'P':    /* delete character */
+        case 'S':       /* scroll up */
             if (m_csiparam[0] == PARAM_DEFAULT) {
                 m_csiparam[0] = 1;
             }
             scroll_up(m_csiparam[0]);
             m_state = S_NORMAL;
             break;
-        case 'T':
+        case 'T':       /* scroll down */
             if (m_csiparam[0] == PARAM_DEFAULT) {
                 m_csiparam[0] = 1;
             }
             scroll_down(m_csiparam[0]);
             m_state = S_NORMAL;
             break;
-        case 'm':
+        // case 'X':    /* erase character */
+        // case 'Z':    /* backtab */
+        case 'm':       /* set attributes */
             csi_m();
             m_state = S_NORMAL;
             break;
-        case ';':
+        // case 'n':    /* report cursor pos (send to tty input buf) */
+        // case 's':    /* save cursor pos */
+        // case 'u':    /* restore saved cursor pos */
+        case ';':       /* (parameter separator) */
             if (++m_paramidx >= CSI_MAX_PARAMS) {
                 m_state = S_NORMAL;
             }
@@ -536,13 +587,9 @@ static void tab(void)
 
 static void linefeed(void)
 {
-    m_cursor_x = 0;
-    m_cursor_y++;
-
-    if (m_cursor_y >= CON_ROWS) {
+    if (++m_cursor_y >= CON_ROWS) {
         scroll_up(1);
         m_cursor_y--;
-        m_cursor_x = 0;
     }
 }
 
@@ -588,6 +635,16 @@ static void cursor_left(int n)
     }
 }
 
+static void csi_J(void)
+{
+
+}
+
+static void csi_K(void)
+{
+
+}
+
 static void csi_m(void)
 {
     int i;
@@ -610,6 +667,12 @@ static void csi_m(void)
             case 2:
                 m_gfxattr.faint = 1;
                 break;
+            case 4:
+                m_gfxattr.underline = 1;
+                break;
+            case 5:
+                m_gfxattr.blink = 1;
+                break;
             case 7:
                 m_gfxattr.invert = 1;
                 break;
@@ -621,6 +684,12 @@ static void csi_m(void)
                 break;
             case 22:
                 m_gfxattr.faint = 0;
+                break;
+            case 24:
+                m_gfxattr.underline = 0;
+                break;
+            case 25:
+                m_gfxattr.blink = 0;
                 break;
             case 27:
                 m_gfxattr.invert = 0;
@@ -655,7 +724,16 @@ static void set_cell_attr(union vga_attr *a)
         a->fg |= BRIGHT;
     }
     if (m_gfxattr.faint) {
+        /* simulate with color */
         a->fg = VGA_GRY;
+    }
+    if (m_gfxattr.underline) {
+        /* simulate with color */
+        a->fg = VGA_CYN;
+    }
+    if (m_gfxattr.blink) {
+        /* must be enabled in VGA driver or this will do a bright bg instead */
+        a->bg |= BLINK;
     }
     if (m_gfxattr.invert) {
         swap(a->fg, a->bg);
