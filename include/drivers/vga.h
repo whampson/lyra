@@ -30,7 +30,7 @@ enum vga_color {
     VGA_GRN,
     VGA_CYN,
     VGA_RED,
-    CGA_MGT,
+    VGA_MGT,
     VGA_BRN,
     VGA_WHT,
     VGA_GRY,
