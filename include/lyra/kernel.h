@@ -101,6 +101,13 @@ __asm__ volatile (          \
     _a < _b ? _a : _b;      \
 })
 
+#define swap(a, b)          \
+do {                        \
+    a ^= b;                 \
+    b ^= a;                 \
+    a ^= b;                 \
+} while(0)
+
 /**
  * Checks whether a given bit is set in a bitfield.
  */
