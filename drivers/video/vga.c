@@ -150,7 +150,8 @@ void blink_disable(void)
     uint8_t data;
 
     /* Reading this register ensures that the attribute controller interprets
-       the next write to 0x3C0 as a write to the attribute address register. */
+       the next write to PORT_AC_ADDR as a write to the attribute address
+       register. */
     (void)inb(PORT_INPUTSTATUS1);
 
     /* Write modectl register index, keep PAS set; then read modectl register */
@@ -170,7 +171,8 @@ void blink_enable(void)
     uint8_t data;
 
     /* Reading this register ensures that the attribute controller interprets
-       the next write to 0x3C0 as a write to the attribute address register. */
+       the next write to PORT_AC_ADDR as a write to the attribute address
+       register. */
     (void)inb(PORT_INPUTSTATUS1);
 
     /* Write modectl register index, keep PAS set; then read modectl register */
