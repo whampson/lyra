@@ -26,6 +26,10 @@
 #define CON_AREA        (CON_COLS * CON_ROWS)   /* total characters */
 #define CON_SIZE        (CON_AREA * 2)          /* total bytes */
 
+/**
+ * Initializes keyboard and VGA drivers, creates virtual consoles,
+ * and switches to console 0.
+ */
 void console_init(void);
 
 int console_puts(const char *s);

@@ -40,23 +40,6 @@
 #define BRIGHT      (1 << 3)
 #define BLINK       (1 << 3)
 
-static const char COLOR_TABLE[8] = {
-    VGA_BLK,
-    VGA_RED,
-    VGA_GRN,
-    VGA_YLW,
-    VGA_BLU,
-    VGA_MGT,
-    VGA_CYN,
-    VGA_WHT
-};
-
-enum state {
-    S_NORMAL,
-    S_ESC,
-    S_CSI,
-};
-
 struct gfx_attr {
     unsigned char bold      : 1;
     unsigned char faint     : 1;
@@ -68,15 +51,25 @@ struct gfx_attr {
     char bg;
 };
 
+struct cursor {
+    short x;
+    short y;
+    char type;
+    bool hidden;
+};
+
+enum state {
+    S_NORMAL,
+    S_ESC,
+    S_CSI,
+};
+
 struct console {
     bool initialized;
     bool active;
     int state;
     struct gfx_attr gfxattr;
-    short cursor_x;
-    short cursor_y;
-    char cursor_type;
-    bool cursor_hidden;
+    struct cursor cursor;
     union vga_cell *vidmem;
     char tab_width;
     char bs_char;
@@ -84,32 +77,41 @@ struct console {
     int paramidx;
 };
 
-static struct console cons[NUM_CONSOLES];
-static int curr_cons;
-
-static const struct gfx_attr default_attr = {
-    .bold = 0,
-    .faint = 0,
-    .invert = 0,
-    .fg = DEFAULT_FG,
-    .bg = DEFAULT_BG
-};
-
 /* Stole this idea from Linux, very convenient! */
 #define m_initialized       (cons[curr_cons].initialized)
 #define m_active            (cons[curr_cons].active)
 #define m_state             (cons[curr_cons].state)
 #define m_gfxattr           (cons[curr_cons].gfxattr)
-#define m_cursor_x          (cons[curr_cons].cursor_x)
-#define m_cursor_y          (cons[curr_cons].cursor_y)
-#define m_color             (cons[curr_cons].color)
-#define m_cursor_type       (cons[curr_cons].cursor_type)
-#define m_cursor_hidden     (cons[curr_cons].cursor_hidden)
+#define m_cursor            (cons[curr_cons].cursor)
 #define m_vidmem            (cons[curr_cons].vidmem)
 #define m_tab_width         (cons[curr_cons].tab_width)
 #define m_bs_char           (cons[curr_cons].bs_char)
 #define m_csiparam          (cons[curr_cons].csiparam)
 #define m_paramidx          (cons[curr_cons].paramidx)
+
+static struct console cons[NUM_CONSOLES];
+static int curr_cons;
+
+static const struct gfx_attr default_gfx = {
+    .bold = 0,
+    .faint = 0,
+    .underline = 0,
+    .blink = 0,
+    .invert = 0,
+    .fg = DEFAULT_FG,
+    .bg = DEFAULT_BG
+};
+
+static const char COLOR_TABLE[8] = {
+    VGA_BLK,
+    VGA_RED,
+    VGA_GRN,
+    VGA_YLW,
+    VGA_BLU,
+    VGA_MGT,
+    VGA_CYN,
+    VGA_WHT
+};
 
 /* TODO: many of these need to be virtualized to support multiple consoles */
 static void console_defaults(void);
@@ -169,10 +171,12 @@ void console_init(void)
 
     curr_cons = 0;
     console_defaults();
+
     pos = get_cursor_pos();
-    pos2xy(pos, &m_cursor_x, &m_cursor_y);
+    pos2xy(pos, &m_cursor.x, &m_cursor.y);
+
+    switch_console(curr_cons, curr_cons);
     m_initialized = 1;
-    m_active = 1;
 }
 
 /* TODO: consider rename */
@@ -199,12 +203,12 @@ void set_console(int num)
 
 static void console_defaults(void)
 {
-    m_gfxattr = default_attr;
+    m_gfxattr = default_gfx;
     m_vidmem = (union vga_cell *) VGA_FRAMEBUF;
-    m_cursor_x = 0;
-    m_cursor_y = 0;
-    m_cursor_type = CURSOR_BLOCK;
-    m_cursor_hidden = false;
+    m_cursor.x = 0;
+    m_cursor.y = 0;
+    m_cursor.type = CURSOR_UNDERBAR;
+    m_cursor.hidden = false;
     m_tab_width = 8;
     m_bs_char = ' ';
     m_state = S_NORMAL;
@@ -214,9 +218,9 @@ static void switch_console(int old_cons, int new_cons)
 {
     /* TODO switch video memory paging*/
 
-    set_cursor_pos(xy2pos(m_cursor_x, m_cursor_y));
-    set_cursor_type(m_cursor_type);
-    if (m_cursor_hidden) {
+    do_cursor_update();
+    set_cursor_type(m_cursor.type);
+    if (m_cursor.hidden) {
         hide_cursor();
     }
     else {
@@ -248,7 +252,7 @@ void console_putchar(char c)
     bool update_cursor;
     bool needs_newline;
 
-    pos = xy2pos(m_cursor_x, m_cursor_y);
+    pos = xy2pos(m_cursor.x, m_cursor.y);
     update_char = false;
     update_attr = false;
     update_cursor = true;
@@ -276,8 +280,7 @@ void console_putchar(char c)
                     bell();
                     return;
                 case ASCII_BS:
-                    /* TODO: consider rethinking this */
-                    if (m_cursor_x > 0) {
+                    if (m_cursor.x > 0) {
                         pos--;
                     }
                     backspace();
@@ -303,7 +306,7 @@ void console_putchar(char c)
                     if (iscntrl(c)) {
                         return;
                     }
-                    if (++m_cursor_x >= CON_COLS) {
+                    if (++m_cursor.x >= CON_COLS) {
                         needs_newline = true;
                     }
                     update_char = true;
@@ -397,7 +400,7 @@ static void handle_csi(char c)
                 m_csiparam[0] = 1;
             }
             cursor_down(m_csiparam[0]);
-            m_cursor_x = 0;
+            m_cursor.x = 0;
             m_state = S_NORMAL;
             break;
         case 'F':       /* move cursor to previous line */
@@ -405,7 +408,7 @@ static void handle_csi(char c)
                 m_csiparam[0] = 1;
             }
             cursor_up(m_csiparam[0]);
-            m_cursor_x = 0;
+            m_cursor.x = 0;
             m_state = S_NORMAL;
             break;
         case 'G':       /* move cursor to column */
@@ -416,7 +419,7 @@ static void handle_csi(char c)
             else if (m_csiparam[0] > CON_COLS) {
                 m_csiparam[0] = CON_COLS;
             }
-            m_cursor_x = m_csiparam[0] - 1;
+            m_cursor.x = m_csiparam[0] - 1;
             m_state = S_NORMAL;
             break;
         case 'd':       /* move cursor to row */
@@ -426,7 +429,7 @@ static void handle_csi(char c)
             else if (m_csiparam[0] > CON_ROWS) {
                 m_csiparam[0] = CON_ROWS;
             }
-            m_cursor_y = m_csiparam[0] - 1;
+            m_cursor.y = m_csiparam[0] - 1;
             m_state = S_NORMAL;
             break;
         case 'H':       /* move cursor to row, column */
@@ -443,8 +446,8 @@ static void handle_csi(char c)
             else if (m_csiparam[1] > CON_COLS) {
                 m_csiparam[1] = CON_COLS;
             }
-            m_cursor_y = m_csiparam[0] - 1;
-            m_cursor_x = m_csiparam[1] - 1;
+            m_cursor.y = m_csiparam[0] - 1;
+            m_cursor.x = m_csiparam[1] - 1;
             m_state = S_NORMAL;
             break;
         case 'J':       /* erase display */
@@ -506,15 +509,15 @@ static void handle_csi(char c)
 
 static void scroll_up(int n)
 {
-    if (n <= 0) {
-        return;
-    }
-
     int n_cells;
     int n_bytes;
     int blank_start;
     union vga_cell cell;
     int i;
+
+    if (n <= 0) {
+        return;
+    }
 
     if (n >= CON_ROWS) {
         n = CON_ROWS;
@@ -534,14 +537,14 @@ static void scroll_up(int n)
 
 static void scroll_down(int n)
 {
-    if (n <= 0) {
-        return;
-    }
-
     int n_cells;
     int n_bytes;
     union vga_cell cell;
     int i;
+
+    if (n <= 0) {
+        return;
+    }
 
     if (n >= CON_ROWS) {
         n = CON_ROWS;
@@ -560,8 +563,8 @@ static void scroll_down(int n)
 
 static void backspace(void)
 {
-    if (--m_cursor_x < 0) {
-        m_cursor_x = 0;
+    if (--m_cursor.x < 0) {
+        m_cursor.x = 0;
     }
 }
 
@@ -569,29 +572,29 @@ static void tab(void)
 {
     char tmp;
 
-    tmp = m_cursor_x % m_tab_width;
+    tmp = m_cursor.x % m_tab_width;
     if (tmp == 0) {
-        m_cursor_x += m_tab_width;
+        m_cursor.x += m_tab_width;
     }
     else {
-        m_cursor_x += (m_tab_width - tmp);
+        m_cursor.x += (m_tab_width - tmp);
     }
-    if (m_cursor_x >= CON_COLS) {
-        m_cursor_x = CON_COLS - 1;
+    if (m_cursor.x >= CON_COLS) {
+        m_cursor.x = CON_COLS - 1;
     }
 }
 
 static void linefeed(void)
 {
-    if (++m_cursor_y >= CON_ROWS) {
+    if (++m_cursor.y >= CON_ROWS) {
         scroll_up(1);
-        m_cursor_y--;
+        m_cursor.y--;
     }
 }
 
 static void carriage_return(void)
 {
-    m_cursor_x = 0;
+    m_cursor.x = 0;
 }
 
 static void bell(void)
@@ -601,33 +604,33 @@ static void bell(void)
 
 static void cursor_up(int n)
 {
-    m_cursor_y -= n;
-    if (m_cursor_y < 0) {
-        m_cursor_y = 0;
+    m_cursor.y -= n;
+    if (m_cursor.y < 0) {
+        m_cursor.y = 0;
     }
 }
 
 static void cursor_down(int n)
 {
-    m_cursor_y += n;
-    if (m_cursor_y >= CON_ROWS) {
-        m_cursor_y = CON_ROWS - 1;
+    m_cursor.y += n;
+    if (m_cursor.y >= CON_ROWS) {
+        m_cursor.y = CON_ROWS - 1;
     }
 }
 
 static void cursor_right(int n)
 {
-    m_cursor_x += n;
-    if (m_cursor_x >= CON_COLS) {
-        m_cursor_x = CON_COLS - 1;
+    m_cursor.x += n;
+    if (m_cursor.x >= CON_COLS) {
+        m_cursor.x = CON_COLS - 1;
     }
 }
 
 static void cursor_left(int n)
 {
-    m_cursor_x -= n;
-    if (m_cursor_x < 0) {
-        m_cursor_x = 0;
+    m_cursor.x -= n;
+    if (m_cursor.x < 0) {
+        m_cursor.x = 0;
     }
 }
 
@@ -641,14 +644,14 @@ static void erase_display(int cmd)
     switch (cmd) {
         case PARAM_DEFAULT:
         case 0:
-            pos = xy2pos(m_cursor_x, m_cursor_y);
+            pos = xy2pos(m_cursor.x, m_cursor.y);
             for (; pos < CON_AREA; pos++) {
                 m_vidmem[pos].ch = m_bs_char;
                 m_vidmem[pos].attr = attr;
             }
             break;
         case 1:
-            pos = xy2pos(m_cursor_x, m_cursor_y);
+            pos = xy2pos(m_cursor.x, m_cursor.y);
             for (; pos > -1; pos--) {
                 m_vidmem[pos].ch = m_bs_char;
                 m_vidmem[pos].attr = attr;
@@ -674,21 +677,21 @@ static void erase_line(int cmd)
     switch (cmd) {
         case PARAM_DEFAULT:
         case 0:
-            pos = xy2pos(m_cursor_x, m_cursor_y);
-            for (i = m_cursor_x; i < CON_COLS; i++, pos++) {
+            pos = xy2pos(m_cursor.x, m_cursor.y);
+            for (i = m_cursor.x; i < CON_COLS; i++, pos++) {
                 m_vidmem[pos].ch = m_bs_char;
                 m_vidmem[pos].attr = attr;
             }
             break;
         case 1:
-            pos = xy2pos(m_cursor_x, m_cursor_y);
-            for (i = m_cursor_x; i > -1; i--, pos--) {
+            pos = xy2pos(m_cursor.x, m_cursor.y);
+            for (i = m_cursor.x; i > -1; i--, pos--) {
                 m_vidmem[pos].ch = m_bs_char;
                 m_vidmem[pos].attr = attr;
             }
             break;
         case 2:
-            pos = xy2pos(0, m_cursor_y);
+            pos = xy2pos(0, m_cursor.y);
             for (i = 0; i < CON_COLS; i++, pos++) {
                 m_vidmem[pos].ch = m_bs_char;
                 m_vidmem[pos].attr = attr;
@@ -701,7 +704,7 @@ static void csi_m(int param)
 {
     switch (param) {
         case 0:
-            m_gfxattr = default_attr;
+            m_gfxattr = default_gfx;
             break;
         case 1:
             m_gfxattr.bold = 1;
@@ -786,5 +789,5 @@ static void set_cell_attr(union vga_attr *a)
 
 static void do_cursor_update(void)
 {
-    set_cursor_pos(xy2pos(m_cursor_x, m_cursor_y));
+    set_cursor_pos(xy2pos(m_cursor.x, m_cursor.y));
 }
