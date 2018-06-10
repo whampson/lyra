@@ -127,9 +127,9 @@ static void cursor_up(int n);
 static void cursor_down(int n);
 static void cursor_right(int n);
 static void cursor_left(int n);
-static void csi_J(void);
-static void csi_K(void);
-static void csi_m(void);
+static void erase_display(int cmd);
+static void erase_line(int cmd);
+static void csi_m(int param);
 static void set_cell_attr(union vga_attr *a);
 static void do_cursor_update(void);
 
@@ -262,7 +262,7 @@ void console_putchar(char c)
     {
         case S_ESC:
             handle_esc(c);
-            return;
+            goto move_cursor;
 
         case S_CSI:
             handle_csi(c);
@@ -358,6 +358,8 @@ static void handle_esc(char c)
 
 static void handle_csi(char c)
 {
+    int i;
+
     switch (c) {
         // case '@':    /* insert character */
         case 'A':       /* move cursor up */
@@ -446,11 +448,11 @@ static void handle_csi(char c)
             m_state = S_NORMAL;
             break;
         case 'J':       /* erase display */
-            csi_J();
+            erase_display(m_csiparam[0]);
             m_state = S_NORMAL;
             break;
         case 'K':       /* erase line */
-            csi_K();
+            erase_line(m_csiparam[0]);
             m_state = S_NORMAL;
             break;
         // case 'L':    /* insert line */
@@ -473,7 +475,10 @@ static void handle_csi(char c)
         // case 'X':    /* erase character */
         // case 'Z':    /* backtab */
         case 'm':       /* set attributes */
-            csi_m();
+            i = 0;
+            while (i <= m_paramidx) {
+                csi_m(m_csiparam[i++]);
+            }
             m_state = S_NORMAL;
             break;
         // case 'n':    /* report cursor pos (send to tty input buf) */
@@ -505,9 +510,9 @@ static void scroll_up(int n)
         return;
     }
 
-    int n_cells;            /* number of screen cells to move off-screen */
-    int n_bytes;            /* number of bytes to move back in buffer */
-    int blank_start;        /* start offset of cells to blank */
+    int n_cells;
+    int n_bytes;
+    int blank_start;
     union vga_cell cell;
     int i;
 
@@ -515,20 +520,11 @@ static void scroll_up(int n)
         n = CON_ROWS;
     }
 
-    /* Compute number of cells to erase from the top of the buffer.
-       This is also the number of blank spaces at the end of the buffer. */
     n_cells = n * CON_COLS;
-
-    /* Compute the start offset of the cells to blank */
     blank_start = CON_AREA - n_cells;
-
-    /* Compute the number of bytes to move in the buffer (2 bytes per cell) */
     n_bytes = blank_start * sizeof(uint16_t);
-
-    /* Give the impression of scrolling by moving characters back by n_cells */
     memmove(m_vidmem, &(m_vidmem[n_cells]), n_bytes);
 
-    /* Blank-out the rest of the terminal, preserve the attribute */
     cell.ch = m_bs_char;
     set_cell_attr(&cell.attr);
     for (i = 0; i < n_cells; i++) {
@@ -635,83 +631,128 @@ static void cursor_left(int n)
     }
 }
 
-static void csi_J(void)
+static void erase_display(int cmd)
 {
+    int pos;
+    union vga_attr attr;
 
+    set_cell_attr(&attr);
+
+    switch (cmd) {
+        case PARAM_DEFAULT:
+        case 0:
+            pos = xy2pos(m_cursor_x, m_cursor_y);
+            for (; pos < CON_AREA; pos++) {
+                m_vidmem[pos].ch = m_bs_char;
+                m_vidmem[pos].attr = attr;
+            }
+            break;
+        case 1:
+            pos = xy2pos(m_cursor_x, m_cursor_y);
+            for (; pos > -1; pos--) {
+                m_vidmem[pos].ch = m_bs_char;
+                m_vidmem[pos].attr = attr;
+            }
+            break;
+        case 2:
+            for (pos = 0; pos < CON_AREA; pos++) {
+                m_vidmem[pos].ch = m_bs_char;
+                m_vidmem[pos].attr = attr;
+            }
+            break;
+    }
 }
 
-static void csi_K(void)
-{
-
-}
-
-static void csi_m(void)
+static void erase_line(int cmd)
 {
     int i;
-    int p;
+    int pos;
+    union vga_attr attr;
 
-    i = 0;
-    while (i < CSI_MAX_PARAMS) {
-        p = m_csiparam[i++];
-        if (p == PARAM_DEFAULT) {
-            continue;
-        }
+    set_cell_attr(&attr);
 
-        switch (p) {
-            case 0:
-                m_gfxattr = default_attr;
-                break;
-            case 1:
-                m_gfxattr.bold = 1;
-                break;
-            case 2:
-                m_gfxattr.faint = 1;
-                break;
-            case 4:
-                m_gfxattr.underline = 1;
-                break;
-            case 5:
-                m_gfxattr.blink = 1;
-                break;
-            case 7:
-                m_gfxattr.invert = 1;
-                break;
-            case 8:
-                m_gfxattr.conceal = 1;
-                break;
-            case 21:
-                m_gfxattr.bold = 0;
-                break;
-            case 22:
-                m_gfxattr.faint = 0;
-                break;
-            case 24:
-                m_gfxattr.underline = 0;
-                break;
-            case 25:
-                m_gfxattr.blink = 0;
-                break;
-            case 27:
-                m_gfxattr.invert = 0;
-                break;
-            case 28:
-                m_gfxattr.conceal = 0;
-                break;
-            case 39:
-                m_gfxattr.fg = DEFAULT_FG;
-                break;
-            case 49:
-                m_gfxattr.bg = DEFAULT_BG;
-                break;
-            default:
-                if (p >= 30 && p <= 37) {
-                    m_gfxattr.fg = COLOR_TABLE[(p - 30)];
-                }
-                else if (p >= 40 && p <= 47) {
-                    m_gfxattr.bg = COLOR_TABLE[(p - 40)];
-                }
-                break;
-        }
+    switch (cmd) {
+        case PARAM_DEFAULT:
+        case 0:
+            pos = xy2pos(m_cursor_x, m_cursor_y);
+            for (i = m_cursor_x; i < CON_COLS; i++, pos++) {
+                m_vidmem[pos].ch = m_bs_char;
+                m_vidmem[pos].attr = attr;
+            }
+            break;
+        case 1:
+            pos = xy2pos(m_cursor_x, m_cursor_y);
+            for (i = m_cursor_x; i > -1; i--, pos--) {
+                m_vidmem[pos].ch = m_bs_char;
+                m_vidmem[pos].attr = attr;
+            }
+            break;
+        case 2:
+            pos = xy2pos(0, m_cursor_y);
+            for (i = 0; i < CON_COLS; i++, pos++) {
+                m_vidmem[pos].ch = m_bs_char;
+                m_vidmem[pos].attr = attr;
+            }
+            break;
+    }
+}
+
+static void csi_m(int param)
+{
+    switch (param) {
+        case 0:
+            m_gfxattr = default_attr;
+            break;
+        case 1:
+            m_gfxattr.bold = 1;
+            break;
+        case 2:
+            m_gfxattr.faint = 1;
+            break;
+        case 4:
+            m_gfxattr.underline = 1;
+            break;
+        case 5:
+            m_gfxattr.blink = 1;
+            break;
+        case 7:
+            m_gfxattr.invert = 1;
+            break;
+        case 8:
+            m_gfxattr.conceal = 1;
+            break;
+        case 21:
+            m_gfxattr.bold = 0;
+            break;
+        case 22:
+            m_gfxattr.faint = 0;
+            break;
+        case 24:
+            m_gfxattr.underline = 0;
+            break;
+        case 25:
+            m_gfxattr.blink = 0;
+            break;
+        case 27:
+            m_gfxattr.invert = 0;
+            break;
+        case 28:
+            m_gfxattr.conceal = 0;
+            break;
+        case 39:
+            m_gfxattr.fg = DEFAULT_FG;
+            break;
+        case 49:
+            m_gfxattr.bg = DEFAULT_BG;
+            break;
+        default:
+            if (param >= 30 && param <= 37) {
+                m_gfxattr.fg = COLOR_TABLE[(param - 30)];
+            }
+            else if (param >= 40 && param <= 47) {
+                m_gfxattr.bg = COLOR_TABLE[(param - 40)];
+            }
+            break;
     }
 }
 
