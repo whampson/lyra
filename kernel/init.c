@@ -25,6 +25,7 @@
 #include <lyra/irq.h>
 #include <lyra/io.h>
 #include <lyra/memory.h>
+#include <drivers/timer.h>
 
 /* The TSS. */
 static struct tss_struct tss = { 0 };
@@ -48,6 +49,8 @@ void kernel_init(void)
     irq_init();
     console_init();
     mem_init();
+    timer_set_rate(TIMER_CH_INTR, 1000);
+    irq_enable(IRQ_TIMER);
     irq_enable(IRQ_KEYBOARD);
     sti();
 
