@@ -21,6 +21,7 @@
 #include <lyra/irq.h>
 #include <lyra/kernel.h>
 #include <drivers/ps2kbd.h>
+#include <drivers/timer.h>
 
 static int eoi(unsigned int irq_num);
 
@@ -56,13 +57,21 @@ void do_irq(struct interrupt_frame *regs)
     unsigned int irq_num = ~(regs->vec_num);
 
     switch (irq_num) {
+        case IRQ_TIMER:
+            timer_do_irq();
+            break;
         case IRQ_KEYBOARD:
             ps2kbd_do_irq();
-            eoi(irq_num);
             break;
         default:
             kprintf("Unknown IRQ! (%d)\n", irq_num);
             break;
+    }
+
+    if (irq_num != 7) {
+        /* TODO: this is naive spurious IRQ handling,
+           will not work if IRQ7 enabled for real IRQs  */
+        eoi(irq_num);
     }
 }
 
