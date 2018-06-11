@@ -107,7 +107,7 @@ static const char COLOR_TABLE[8] = {
     VGA_BLK,
     VGA_RED,
     VGA_GRN,
-    VGA_YLW,
+    VGA_BRN,
     VGA_BLU,
     VGA_MGT,
     VGA_CYN,

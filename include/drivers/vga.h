@@ -33,14 +33,7 @@ enum vga_color {
     VGA_MGT,
     VGA_BRN,
     VGA_WHT,
-    VGA_GRY,
-    VGA_BBLU,
-    VGA_BGRN,
-    VGA_BCYN,
-    VGA_BRED,
-    VGA_BMGT,
-    VGA_YLW,
-    VGA_BWHT
+    VGA_GRY
 };
 
 enum cursor_type {
@@ -50,8 +43,8 @@ enum cursor_type {
 
 union vga_attr {
     struct {
-        uint8_t fg : 4;     /* foreground color */
-        uint8_t bg : 4;     /* background color; high bit is blink field */
+        uint8_t fg : 4; /* foreground color; high bit is bright field */
+        uint8_t bg : 4; /* background color; high bit is bright/blink field */
     };
     uint8_t value;
 };
