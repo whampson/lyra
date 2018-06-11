@@ -17,22 +17,45 @@
  *   Desc: PC Speaker driver, controlled by the PIT.
  *----------------------------------------------------------------------------*/
 
+#include <stdint.h>
+#include <lyra/interrupt.h>
+#include <lyra/io.h>
+#include <drivers/timer.h>
+
+#define PCSPK_ENABLE    0x03
+#define PORT_PCSPK      0x61
+
+int beep_ticks;
+
 void pcspk_set_freq(int hz)
 {
-
+    timer_set_rate(TIMER_CH_PCSPK, hz);
 }
 
 void pcspk_on(void)
 {
+    uint8_t data;
 
+    data = inb(PORT_PCSPK);
+    data |= PCSPK_ENABLE;
+    outb(data, PORT_PCSPK);
 }
 
 void pcspk_off(void)
 {
+    uint8_t data;
 
+    data = inb(PORT_PCSPK);
+    data &= ~PCSPK_ENABLE;
+    outb(data, PORT_PCSPK);
 }
 
-void pcspk_beep(unsigned int ticks)
+void pcspk_beep(int ticks)
 {
+    uint32_t flags;
+
+    cli_save(flags);
+    beep_ticks = ticks;
     pcspk_on();
+    restore_flags(flags);
 }

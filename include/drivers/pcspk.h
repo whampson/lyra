@@ -25,7 +25,7 @@
  *
  * @param hz - the PC speaker frequency in Hz.
  */
-void pcspk_set_freq(int hz);
+void pcspk_set_freq(unsigned int hz);
 
 /**
  * Causes the PC speaker to emit a tone at the set rate.
@@ -42,6 +42,6 @@ void pcspk_off(void);
  * The amount of time between ticks varies depending on the current
  * configuration of PIT channel 0.
  */
-void pcspk_beep(unsigned int ticks);
+void pcspk_beep(int ticks);
 
 #endif /* __DRIVERS_PCSPK_H */

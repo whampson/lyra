@@ -18,8 +18,9 @@
  *----------------------------------------------------------------------------*/
 
 #include <stdint.h>
-#include <drivers/timer.h>
 #include <lyra/io.h>
+#include <drivers/timer.h>
+#include <drivers/pcspk.h>
 
 /* PIT clock rate */
 #define PIT_CLK         1193182
@@ -44,9 +45,9 @@
 /* Operating mode masks */
 #define SQUARE_WAVE     0x06
 
-int beep_ticks = 0;
+int beep_ticks = -1;
 
-void timer_set_rate(int ch, int hz)
+void timer_set_rate(int ch, unsigned int hz)
 {
     uint16_t timer_port;
     uint16_t divisor;
@@ -66,7 +67,10 @@ void timer_set_rate(int ch, int hz)
             return;
     }
 
-    if (hz > TIMER_MAX_FREQ) {
+    if (hz < TIMER_MIN_FREQ) {
+        hz = TIMER_MIN_FREQ;
+    }
+    else if (hz > TIMER_MAX_FREQ) {
         hz = TIMER_MAX_FREQ;
     }
     divisor = PIT_CLK / hz;
@@ -80,11 +84,15 @@ void timer_set_rate(int ch, int hz)
     outb((uint8_t) (divisor >> 8), timer_port);
 }
 
-/**
- * Timer tick interrupt handler.
- */
 void timer_do_irq(void)
 {
+    if (beep_ticks >= 0) {
+        beep_ticks--;
+    }
 
+    if (beep_ticks == 0) {
+        pcspk_off();
+    }
+
+    /* TODO: invoke scheduler */
 }
-
