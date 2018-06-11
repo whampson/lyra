@@ -29,57 +29,6 @@
 #define PRIVL_USER   3
 
 /**
- * Clear interrupt flag.
- */
-#define cli()               \
-__asm__ volatile (          \
-    "cli"                   \
-    :                       \
-    :                       \
-    : "memory", "cc"        \
-);
-
-/**
- * Set interrupt flag.
- */
-#define sti()               \
-__asm__ volatile (          \
-    "sti"                   \
-    :                       \
-    :                       \
-    : "memory", "cc"        \
-);
-
-/**
- * Backup EFLAGS register, then clear interrupt flag.
- */
-#define cli_save(flags)     \
-__asm__ volatile (          \
-    "                       \n\
-    pushfl                  \n\
-    popl %0                 \n\
-    cli                     \n\
-    "                       \
-    : "=r"(flags)           \
-    :                       \
-    : "memory", "cc"        \
-);
-
-/**
- * Restore EFLAGS register.
- */
-#define restore_flags(flags)\
-__asm__ volatile (          \
-    "                       \n\
-    push %0                 \n\
-    popfl                   \n\
-    "                       \
-    :                       \
-    : "r"(flags)            \
-    : "memory", "cc"        \
-);
-
-/**
  * Returns the greater value.
  *
  * Adapted from https://stackoverflow.com/a/3437484.
