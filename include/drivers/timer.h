@@ -20,7 +20,11 @@
 #ifndef __DRIVERS_TIMER_H
 #define __DRIVERS_TIMER_H
 
+#define TIMER_MIN_FREQ  19
 #define TIMER_MAX_FREQ  596591
+
+#define TIMER_CH_INTR   0
+#define TIMER_CH_PCSPK  2
 
 /**
  * Sets the tick rate of the timer on the specified channel.
@@ -28,13 +32,13 @@
  * Channel 0 is connected to IRQ0 and will generate interrupts at the specified
  * rate. Channel 1 is unused. Channel 2 is connected to the PC speaker.
  *
- * If the specified rate exceeds TIMER_MAX_FREQ, the rate will be set to
- * TIMER_MAX_FREQ.
+ * If the specified rate exceeds TIMER_MAX_FREQ, or falls below TIMER_MIN_FREQ,
+ * the rate will be set to TIMER_MAX_FREQ or TIMER_MIN_FREQ respectively.
  *
  * @param ch - timer channel (0 or 2, 1 is unused)
  * @param hz - the rate at which to generate timer interrupts in Hz
  */
-void timer_set_rate(int ch, int hz);
+void timer_set_rate(int ch, unsigned int hz);
 
 /**
  * Timer tick interrupt handler.
