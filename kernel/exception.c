@@ -17,8 +17,11 @@
  *   Desc: Exception handling.
  *----------------------------------------------------------------------------*/
 
+#include <stdbool.h>
 #include <string.h>
+#include <lyra/console.h>
 #include <lyra/exception.h>
+#include <drivers/vga.h>
 
 /* Names of all non-Intel-reserved exceptions. */
 static const char * const EXCEPTION_NAMES[NUM_EXCEPT] =
@@ -80,11 +83,11 @@ struct err_code {
 static void handle_unknown_exception(int num);
 static void exception_halt(void);
 static void dump_regs(struct interrupt_frame *regs);
+static void blue_screen(int num, bool has_error_code, struct interrupt_frame *regs);
 
 __attribute__((fastcall))
 void do_exception(struct interrupt_frame *regs)
 {
-    const char *name;
     int num;
     int has_err_code;
 
@@ -92,8 +95,6 @@ void do_exception(struct interrupt_frame *regs)
     if (num >= NUM_EXCEPT) {
         handle_unknown_exception(num);
     }
-
-    name = EXCEPTION_NAMES[num];
 
     switch (num) {
         case EXCEPT_DF:
@@ -110,20 +111,9 @@ void do_exception(struct interrupt_frame *regs)
             break;
     }
 
-    /* TODO: Fancy crash screen :) Mimic Windows 95? */
-    kprintf("!!! EXCEPTION !!!\n");
-    if (name != NULL) {
-        kprintf("%s\n", name);
-    }
-    else {
-        kprintf("EXCEPTION_%X", num);
-    }
+    /* TODO: kill process unless exception happens in kernel */
 
-    if (has_err_code) {
-        kprintf("Error code: %#.8x\n", regs->err_code);
-    }
-
-    dump_regs(regs);
+    blue_screen(num, has_err_code, regs);
     exception_halt();
 }
 
@@ -162,10 +152,58 @@ static void dump_regs(struct interrupt_frame *regs)
     }
     strcat(fl_str, "]");
 
-    kprintf("EAX = %08X, EBX = %08X, ECX = %08X, EDX = %08X\n",
+    kprintf("EAX = %08X, EBX = %08X, ECX = %08X, EDX = %08X\r\n",
         regs->eax, regs->ebx, regs->ecx, regs->edx);
-    kprintf("ESI = %08X, EDI = %08X, EBP = %08X, ESP = %08X\n",
+    kprintf("ESI = %08X, EDI = %08X, EBP = %08X, ESP = %08X\r\n",
         regs->esi, regs->edi, regs->ebp, regs->esp);
-    kprintf("EIP = %08X, EFLAGS = %s\n",
+    kprintf("EIP = %08X, EFLAGS = %s",
         regs->eip, fl_str);
+}
+
+static void blue_screen(int num, bool has_error_code, struct interrupt_frame *regs)
+{
+    const char *s;
+    size_t len;
+    int row, col;
+
+    kprintf("\033[0;44m\033[2J");
+
+    /* TODO: sprintf would be really useful here... */
+
+    s = OS_NAME;
+    len = strlen(s) + 4;
+    row = 4;
+    col = (CON_COLS / 2) - (len / 2);
+    kprintf("\033[%d;%dH\033[34;47m  %s  ", row, col, OS_NAME);
+
+    row = 7;
+    col = (CON_COLS / 2) - 23;
+    kprintf("\033[%d;%dH\033[37;44m", row, col);
+    kprintf("A fatal exception \033[1m%02X\033[21m has occurred at \033[1m%08X\033[21m.",
+        num, regs->eip);
+
+    s = "Your computer must be restarted.";
+    len = strlen(s);
+    row = 8;
+    col = (CON_COLS / 2) - (len / 2);
+    kprintf("\033[%d;%dH%s", row, col, s);
+
+    s = EXCEPTION_NAMES[num];
+    len = strlen(s);
+    row = 11;
+    col = (CON_COLS / 2) - (len / 2);
+    kprintf("\033[%d;%dH\033[1m%s\033[21m", row, col, s);
+
+    if (has_error_code) {
+        row = 12;
+        col = (CON_COLS / 2) - 2;
+        kprintf("\033[%d;%dH%04X", row, col, regs->err_code);
+    }
+
+    row = CON_ROWS - 2;
+    col = 1;
+    kprintf("\033[%d;%dH", row, col);
+    dump_regs(regs);
+
+    hide_cursor();
 }
