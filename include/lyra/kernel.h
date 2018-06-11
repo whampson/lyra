@@ -25,6 +25,8 @@
 #include <stdint.h>
 #include <lyra/init.h>
 
+extern const char * const OS_NAME;
+
 #define PRIVL_KERNEL 0
 #define PRIVL_USER   3
 

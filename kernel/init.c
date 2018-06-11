@@ -27,6 +27,8 @@
 #include <lyra/memory.h>
 #include <drivers/timer.h>
 
+const char * const OS_NAME = "Lyra";
+
 /* The TSS. */
 static struct tss_struct tss = { 0 };
 
@@ -49,7 +51,7 @@ void kernel_init(void)
     irq_init();
     console_init();
     mem_init();
-    timer_set_rate(TIMER_CH_INTR, 1000);
+    timer_set_rate(TIMER_CH_INTR, 1000);    /* timer interrupts every 1ms */
     irq_enable(IRQ_TIMER);
     irq_enable(IRQ_KEYBOARD);
     sti();
