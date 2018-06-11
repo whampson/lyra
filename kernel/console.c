@@ -125,6 +125,7 @@ static void backspace(void);
 static void tab(void);
 static void carriage_return(void);
 static void linefeed(void);
+static void reverse_linefeed(void);
 static void bell(void);
 static void cursor_up(int n);
 static void cursor_down(int n);
@@ -344,7 +345,9 @@ static void handle_esc(char c)
             carriage_return();
             linefeed();
             break;
-        // case 'M':    /* reverse linefeed */
+        case 'M':       /* reverse linefeed */
+            reverse_linefeed();
+            break;
         // case '7':    /* save console state */
         // case '8':    /* restore console state */
         case '[':       /* (control sequence introducer) */
@@ -590,6 +593,14 @@ static void linefeed(void)
     if (++m_cursor.y >= CON_ROWS) {
         scroll_up(1);
         m_cursor.y--;
+    }
+}
+
+static void reverse_linefeed(void)
+{
+    if (--m_cursor.y < 0) {
+        scroll_down(1);
+        m_cursor.y++;
     }
 }
 
