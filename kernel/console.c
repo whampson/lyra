@@ -28,9 +28,10 @@
 #include <lyra/kernel.h>
 #include <drivers/vga.h>
 #include <drivers/ps2kbd.h>
+#include <drivers/pcspk.h>
 
-#define PIT_CLK     1193182
-#define BEL_FREQ    880     /* 880Hz = A5, if you're curious :) */
+#define BEL_TICKS   150
+#define BEL_FREQ    880
 
 #define CSI_MAX_PARAMS  8
 #define PARAM_DEFAULT   (-1)
@@ -599,7 +600,8 @@ static void carriage_return(void)
 
 static void bell(void)
 {
-    /* TODO: */
+    pcspk_set_freq(BEL_FREQ);
+    pcspk_beep(BEL_TICKS);
 }
 
 static void cursor_up(int n)
