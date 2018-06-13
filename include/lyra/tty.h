@@ -21,6 +21,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <lyra/console.h>
 
 #define TTY_QUEUE_BUFLEN    128
 
@@ -36,7 +37,18 @@ struct tty_queue {
 struct tty {
     int console;
     struct tty_queue read_buf;
+    struct tty_queue write_buf;
+    int (*write)(struct tty *tty);
+    bool auto_flush;
 };
+
+/* TODO: kernel tty, this is temporary */
+extern struct tty sys_tty;
+
+void tty_init(void);
+int tty_read(struct tty *tty, char *buf, int n);
+int tty_write(struct tty *tty, const char *buf, int n);
+void tty_flush(struct tty *tty);
 
 /* tty_queue functions */
 void tty_queue_init(struct tty_queue *q);
