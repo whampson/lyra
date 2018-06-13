@@ -20,6 +20,44 @@
 #include <lyra/tty.h>
 #include <lyra/interrupt.h>
 
+struct tty sys_tty = {
+    .console = 0
+};
+
+void tty_init(void)
+{
+    sys_tty.write = console_write;
+}
+
+int tty_read(struct tty *tty, char *buf, int n)
+{
+    return -1;
+}
+
+int tty_write(struct tty *tty, const char *buf, int n)
+{
+    int i;
+
+    i = 0;
+    while (i < n) {
+        if (tty->write_buf.full) {
+            tty_flush(tty);
+        }
+        tty_queue_put(&tty->write_buf, buf[i++]);
+    }
+
+    return i;
+}
+
+void tty_flush(struct tty *tty)
+{
+    if (tty == NULL) {
+        return;
+    }
+
+    (void) tty->write(tty);
+}
+
 void tty_queue_init(struct tty_queue *q)
 {
     memset(q->data, 0, TTY_QUEUE_BUFLEN);
