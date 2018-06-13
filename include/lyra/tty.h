@@ -39,7 +39,6 @@ struct tty {
     struct tty_queue read_buf;
     struct tty_queue write_buf;
     int (*write)(struct tty *tty);
-    bool auto_flush;
 };
 
 /* TODO: kernel tty, this is temporary */
