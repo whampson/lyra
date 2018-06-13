@@ -20,12 +20,14 @@
 
 #include <lyra/kernel.h>
 #include <lyra/console.h>
+#include <lyra/tty.h>
 #include <lyra/descriptor.h>
 #include <lyra/interrupt.h>
 #include <lyra/irq.h>
 #include <lyra/io.h>
 #include <lyra/memory.h>
 #include <drivers/timer.h>
+#include <string.h>
 
 const char * const OS_NAME = "Lyra";
 
@@ -38,6 +40,7 @@ static seg_desc_t ldt[2];
 
 static void ldt_init(void);
 static void tss_init(void);
+static void mini_shell(void);
 
 /**
  * "Fire 'er up, man!"
@@ -50,15 +53,54 @@ void kernel_init(void)
     idt_init();
     irq_init();
     console_init();
+    tty_init();
     mem_init();
     timer_set_rate(TIMER_CH_INTR, 1000);    /* timer interrupts every 1ms */
     irq_enable(IRQ_TIMER);
     irq_enable(IRQ_KEYBOARD);
     sti();
 
-   __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
+    mini_shell();
+
+    __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
 }
 
+static void mini_shell(void)
+{
+    const char *prompt = "$ ";
+    char rd_buf[64];
+    char c;
+    int i;
+
+    i = 0;
+    memset(rd_buf, 0, 64);
+    kprintf("%s", prompt);
+
+    while (1) {
+        if (i >= 64) {
+            goto sendcmd;
+        }
+        if (tty_read(&sys_tty, &c, 1) > 0) {
+            rd_buf[i++] = c;
+        }
+        kprintf("%c", c);
+        if (c != '\n') {
+            continue;
+        }
+
+    sendcmd:
+        if (rd_buf[0] == 'h' &&
+            rd_buf[1] == 'e' &&     /* no strcmp() yet lol */
+            rd_buf[2] == 'l' &&
+            rd_buf[3] == 'l' &&
+            rd_buf[4] == 'o') {
+                kprintf("Hello, world!\n");
+            }
+        i = 0;
+        memset(rd_buf, 0, 64);
+        kprintf("%s", prompt);
+    }
+}
 
 static void ldt_init(void)
 {

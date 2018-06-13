@@ -12,32 +12,48 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- *   File: include/lyra/kernel.h
+ *   File: include/lyra/tty.h
  * Author: Wes Hampson
- *   Desc: Commonly-used and convenient function prototypes and macros.
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_CONSOLE_H
-#define __LYRA_CONSOLE_H
+#ifndef __LYRA_TTY_H
+#define __LYRA_TTY_H
 
-#include <lyra/tty.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <lyra/console.h>
 
-#define NUM_CONSOLES    8
-#define CON_COLS        80
-#define CON_ROWS        25
-#define CON_AREA        (CON_COLS * CON_ROWS)   /* total characters */
-#define CON_SIZE        (CON_AREA * 2)          /* total bytes */
+#define TTY_QUEUE_BUFLEN    128
 
-struct tty;
+struct tty_queue {
+    unsigned char data[TTY_QUEUE_BUFLEN];
+    int head;
+    int tail;
+    int len;
+    bool empty;
+    bool full;
+};
 
-/**
- * Initializes keyboard and VGA drivers, creates virtual consoles,
- * and switches to console 0.
- */
-void console_init(void);
+struct tty {
+    int console;
+    struct tty_queue read_buf;
+    struct tty_queue write_buf;
+    int (*write)(struct tty *tty);
+    bool o_crlf;
+};
 
-int console_write(struct tty *tty);
+/* TODO: kernel tty, this is temporary */
+struct tty sys_tty;
 
-void set_console(int num);
+void tty_init(void);
+int tty_read(struct tty *tty, char *buf, int n);
+int tty_write(struct tty *tty, const char *buf, int n);
+void tty_flush(struct tty *tty);
 
-#endif /* __LYRA_CONSOLE_H */
+/* tty_queue functions */
+void tty_queue_init(struct tty_queue *q);
+unsigned char tty_queue_get(struct tty_queue *q);
+void tty_queue_put(struct tty_queue *q, unsigned char c);
+
+
+#endif /* __LYRA_TTY_H */

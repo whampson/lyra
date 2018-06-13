@@ -20,6 +20,7 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <string.h>
 #include <lyra/input.h>
 #include <lyra/console.h>
 #include <lyra/kernel.h>
@@ -94,6 +95,7 @@ const char * const ESC_SEQUENCES[24] =
 
 static bool handle_numpad(scancode_t k);
 static bool handle_nonchar(scancode_t k);
+static void add_to_queue(char c);
 
 void sendkey(keystroke_t k)
 {
@@ -173,23 +175,27 @@ void sendkey(keystroke_t k)
     }
 
 sendchar:
-    console_putchar(ch);
+    add_to_queue(ch);
 }
 
 static bool handle_numpad(scancode_t sc)
 {
+    char ch;
+
     if (!is_numpad_key(sc)) {
         return false;
     }
 
     if (sc == KB_RENTER) {
-        console_putchar('\n');
+        ch = ASCII_LF;
     }
     else {
         /* Another example of the niceties of the ASCII table.
            Use our special offset to get the ASCII value. */
-        console_putchar(sc - NUMPAD_OFFSET);
+        ch = sc - NUMPAD_OFFSET;
     }
+
+    add_to_queue(ch);
 
     return true;
 }
@@ -197,6 +203,7 @@ static bool handle_numpad(scancode_t sc)
 static bool handle_nonchar(scancode_t sc)
 {
     int isfunc, isspecial, isspecial_set2;
+    char *seq;
 
     isfunc = is_func_key(sc);
     isspecial = is_special_key(sc);
@@ -213,6 +220,20 @@ static bool handle_nonchar(scancode_t sc)
         sc -= FUNC_OFFSET;
     }
 
-    console_puts(ESC_SEQUENCES[sc]);
+    seq = (char *) ESC_SEQUENCES[sc];
+    while (*seq != '\0') {
+        add_to_queue(*seq++);
+    }
+
     return true;
+}
+
+static void add_to_queue(char c)
+{
+    if (sys_tty.read_buf.full) {
+        /* TODO: decide how to handle input buffer full.
+           Throw away the character for now. */
+        return;
+    }
+    tty_queue_put(&sys_tty.read_buf, c);
 }
