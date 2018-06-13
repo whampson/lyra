@@ -360,7 +360,6 @@ sendcmd_done:
  */
 static void kbd_flush(void)
 {
-    /* TODO: timeout */
     while (inb(PORT_CTL) & CTL_STS_OUTFULL) {
         (void)kbd_inb();
     }

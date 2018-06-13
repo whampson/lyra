@@ -114,7 +114,6 @@ static const char COLOR_TABLE[8] = {
     VGA_WHT
 };
 
-/* TODO: many of these need to be virtualized to support multiple consoles */
 static void console_defaults(void);
 static void switch_console(int old_cons, int new_cons);
 static void handle_esc(char c);

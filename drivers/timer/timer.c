@@ -93,6 +93,4 @@ void timer_do_irq(void)
     if (beep_ticks == 0) {
         pcspk_off();
     }
-
-    /* TODO: invoke scheduler */
 }

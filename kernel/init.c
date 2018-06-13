@@ -56,10 +56,6 @@ void kernel_init(void)
     irq_enable(IRQ_KEYBOARD);
     sti();
 
-    /* TODO:
-        terminal driver
-    */
-
    __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
 }
 

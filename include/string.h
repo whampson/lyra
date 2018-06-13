@@ -32,8 +32,6 @@
 typedef uint32_t size_t;
 #endif
 
-/* TODO: Some of these can definitely be optimized if need-be. */
-
 static inline char * strcpy(char *dest, const char *src)
 {
     register int i;
