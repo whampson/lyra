@@ -95,6 +95,7 @@ const char * const ESC_SEQUENCES[24] =
 
 static bool handle_numpad(scancode_t k);
 static bool handle_nonchar(scancode_t k);
+static void add_to_queue(char c);
 
 void sendkey(keystroke_t k)
 {
@@ -174,7 +175,7 @@ void sendkey(keystroke_t k)
     }
 
 sendchar:
-    tty_write(&sys_tty, &ch, 1);
+    add_to_queue(ch);
 }
 
 static bool handle_numpad(scancode_t sc)
@@ -194,7 +195,7 @@ static bool handle_numpad(scancode_t sc)
         ch = sc - NUMPAD_OFFSET;
     }
 
-    tty_write(&sys_tty, &ch, 1);
+    add_to_queue(ch);
 
     return true;
 }
@@ -219,8 +220,20 @@ static bool handle_nonchar(scancode_t sc)
         sc -= FUNC_OFFSET;
     }
 
-    seq = ESC_SEQUENCES[sc];
-    tty_write(&sys_tty, seq, strlen(seq));  /* TODO: put into read buf */
+    seq = (char *) ESC_SEQUENCES[sc];
+    while (*seq != '\0') {
+        add_to_queue(*seq++);
+    }
 
     return true;
+}
+
+static void add_to_queue(char c)
+{
+    if (sys_tty.read_buf.full) {
+        /* TODO: decide how to handle input buffer full.
+           Throw away the character for now. */
+        return;
+    }
+    tty_queue_put(&sys_tty.read_buf, c);
 }
