@@ -20,6 +20,8 @@
 #ifndef __LYRA_CONSOLE_H
 #define __LYRA_CONSOLE_H
 
+#include <lyra/tty.h>
+
 #define NUM_CONSOLES    8
 #define CON_COLS        80
 #define CON_ROWS        25
@@ -32,8 +34,7 @@
  */
 void console_init(void);
 
-int console_puts(const char *s);
-void console_putchar(char c);
+int console_write(struct tty *tty);
 
 void set_console(int num);
 

@@ -116,8 +116,9 @@ static const char COLOR_TABLE[8] = {
 
 static void console_defaults(void);
 static void switch_console(int old_cons, int new_cons);
-static void handle_esc(char c);
-static void handle_csi(char c);
+static void process_char(unsigned char c);
+static void handle_esc(unsigned char c);
+static void handle_csi(unsigned char c);
 static void scroll_up(int n);
 static void scroll_down(int n);
 static void backspace(void);
@@ -231,21 +232,26 @@ static void switch_console(int old_cons, int new_cons)
     cons[new_cons].active = 1;
 }
 
-int console_puts(const char *s)
+int console_write(struct tty *tty)
 {
-    int i;
-    char c;
+    int count;
+    unsigned char c;
 
-    i = 0;
-    while ((c = s[i]) != '\0') {
-        console_putchar(c);
-        i++;
+    if (tty == NULL) {
+        return -1;
     }
 
-    return i;
+    count = 0;
+    while (!tty->write_buf.empty) {
+        c = tty_queue_get(&tty->write_buf);
+        process_char(c);
+        count++;
+    }
+
+    return count;
 }
 
-void console_putchar(char c)
+static void process_char(unsigned char c)
 {
     int pos;
     bool update_char;
@@ -331,7 +337,7 @@ move_cursor:
     }
 }
 
-static void handle_esc(char c)
+static void handle_esc(unsigned char c)
 {
     int i;
 
@@ -362,7 +368,7 @@ static void handle_esc(char c)
     }
 }
 
-static void handle_csi(char c)
+static void handle_csi(unsigned char c)
 {
     int i;
 

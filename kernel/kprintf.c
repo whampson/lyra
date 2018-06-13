@@ -291,14 +291,16 @@ int vkprintf(const char *fmt, va_list args)
         }
 
     sendchar:
-        console_putchar(c);
+        tty_write(&sys_tty, &c, 1);
         count++;
         continue;
 
     sendfmt:
-        count += console_puts(fmtbuf);
+        count += tty_write(&sys_tty, fmtbuf, strlen(fmtbuf));
         formatting = false;
     }
+
+    tty_flush(&sys_tty);
 
     return count;
 }
@@ -307,8 +309,6 @@ static void fmt_char(char *buf, int w, bool ljust, va_list *ap)
 {
     int npad;
     unsigned char c;
-
-    // TODO: decide how to handle non-printing characters
 
     npad = w - 1;
     c = (unsigned char) va_arg(*ap, int);
