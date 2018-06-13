@@ -75,10 +75,9 @@ const char * const ESC_SEQUENCES[24] =
 
     /* "Special" keys (part 2) */
     NULL,           /* PrntSc (does this have an esc seq?) */
-    "\x1B[P",       /* Pause */
+    "\x1B[P",       /* Pause */ /* TODO: rethink this seq, translates to "delete char" */
 
     /* Function keys */
-    /* TODO: shift-func keys */
     "\x1B[11~",     /* F1 */
     "\x1B[12~",     /* F2 */
     "\x1B[13~",     /* F3 */
@@ -213,7 +212,6 @@ static bool handle_nonchar(scancode_t sc)
     else {
         sc -= FUNC_OFFSET;
     }
-
 
     console_puts(ESC_SEQUENCES[sc]);
     return true;
