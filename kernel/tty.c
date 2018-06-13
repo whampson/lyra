@@ -20,8 +20,14 @@
 #include <lyra/tty.h>
 #include <lyra/interrupt.h>
 
+static inline void putch(struct tty *tty, char c)
+{
+    tty_queue_put(&tty->write_buf, c);
+}
+
 struct tty sys_tty = {
-    .console = 0
+    .console = 0,
+    .o_crlf = 1
 };
 
 void tty_init(void)
@@ -31,19 +37,40 @@ void tty_init(void)
 
 int tty_read(struct tty *tty, char *buf, int n)
 {
-    return -1;
+    int count;
+
+    if (tty == NULL || buf == NULL || n < 0) {
+        return -1;
+    }
+
+    count = 0;
+    while (!tty->read_buf.empty && count < n) {
+        buf[count++] = tty_queue_get(&tty->read_buf);
+    }
+
+    return count;
 }
 
 int tty_write(struct tty *tty, const char *buf, int n)
 {
     int i;
+    char c;
+
+    if (tty == NULL || buf == NULL || n < 0) {
+        return -1;
+    }
 
     i = 0;
     while (i < n) {
         if (tty->write_buf.full) {
             tty_flush(tty);
         }
-        tty_queue_put(&tty->write_buf, buf[i++]);
+        c = buf[i++];
+
+        if (c == '\n' && tty->o_crlf) {
+            putch(tty, '\r');
+        }
+        putch(tty, c);
     }
 
     return i;
