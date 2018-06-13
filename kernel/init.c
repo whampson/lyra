@@ -20,6 +20,7 @@
 
 #include <lyra/kernel.h>
 #include <lyra/console.h>
+#include <lyra/tty.h>
 #include <lyra/descriptor.h>
 #include <lyra/interrupt.h>
 #include <lyra/irq.h>
@@ -50,13 +51,14 @@ void kernel_init(void)
     idt_init();
     irq_init();
     console_init();
+    tty_init();
     mem_init();
     timer_set_rate(TIMER_CH_INTR, 1000);    /* timer interrupts every 1ms */
     irq_enable(IRQ_TIMER);
     irq_enable(IRQ_KEYBOARD);
     sti();
 
-   __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
+    __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
 }
 
 
