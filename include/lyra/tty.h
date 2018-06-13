@@ -39,10 +39,11 @@ struct tty {
     struct tty_queue read_buf;
     struct tty_queue write_buf;
     int (*write)(struct tty *tty);
+    bool o_crlf;
 };
 
 /* TODO: kernel tty, this is temporary */
-extern struct tty sys_tty;
+struct tty sys_tty;
 
 void tty_init(void);
 int tty_read(struct tty *tty, char *buf, int n);

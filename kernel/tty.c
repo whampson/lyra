@@ -32,6 +32,8 @@ struct tty sys_tty = {
 
 void tty_init(void)
 {
+    tty_queue_init(&sys_tty.read_buf);
+    tty_queue_init(&sys_tty.write_buf);
     sys_tty.write = console_write;
 }
 
@@ -42,6 +44,8 @@ int tty_read(struct tty *tty, char *buf, int n)
     if (tty == NULL || buf == NULL || n < 0) {
         return -1;
     }
+
+    while (tty->read_buf.empty);
 
     count = 0;
     while (!tty->read_buf.empty && count < n) {
