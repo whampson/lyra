@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include <lyra/tty.h>
+#include <lyra/input.h>
 #include <lyra/interrupt.h>
 
 static inline void putch(struct tty *tty, char c)
@@ -27,7 +28,11 @@ static inline void putch(struct tty *tty, char c)
 
 struct tty sys_tty = {
     .console = 0,
-    .o_crlf = 1
+    .termio = {
+        .c_iflag = ICRNL,
+        .c_oflag = OPOST | ONLCR,
+        .c_lflag = ECHO
+    }
 };
 
 void tty_init(void)
@@ -40,16 +45,41 @@ void tty_init(void)
 int tty_read(struct tty *tty, char *buf, int n)
 {
     int count;
+    char c;
+    tcflag_t c_iflag;
+    tcflag_t c_lflag;
 
     if (tty == NULL || buf == NULL || n < 0) {
         return -1;
     }
 
+    c_iflag = tty->termio.c_iflag;
+    c_lflag = tty->termio.c_lflag;
+
+    /* Block until a char is input */
     while (tty->read_buf.empty);
 
     count = 0;
-    while (!tty->read_buf.empty && count < n) {
-        buf[count++] = tty_queue_get(&tty->read_buf);
+    while (!tty->read_buf.empty /*&& count < n*/) {
+        c = tty_queue_get(&tty->read_buf);
+
+        /* CR/LF translation */
+        if (!flag_set(c_iflag, IGNCR)) {
+            if (c == ASCII_LF && flag_set(c_iflag, INLCR)) {
+                c = ASCII_CR;
+            }
+            else if (c == ASCII_CR && flag_set(c_iflag, ICRNL)) {
+                c = ASCII_LF;
+            }
+        }
+
+        /* character echoing */
+        if (flag_set(c_lflag, ECHO)) {
+            tty_write(tty, &c, 1);
+            tty_flush(tty);
+        }
+
+        buf[count++] = c;
     }
 
     return count;
@@ -59,10 +89,13 @@ int tty_write(struct tty *tty, const char *buf, int n)
 {
     int i;
     char c;
+    tcflag_t c_oflag;
 
     if (tty == NULL || buf == NULL || n < 0) {
         return -1;
     }
+
+    c_oflag = tty->termio.c_oflag;
 
     i = 0;
     while (i < n) {
@@ -71,9 +104,18 @@ int tty_write(struct tty *tty, const char *buf, int n)
         }
         c = buf[i++];
 
-        if (c == '\n' && tty->o_crlf) {
-            putch(tty, '\r');
+        if (!flag_set(c_oflag, OPOST)) {
+            putch(tty, c);
+            continue;
         }
+
+        if (flag_set(c_oflag, ONLCR) && c == ASCII_LF) {
+            putch(tty, ASCII_CR);
+        }
+        if (flag_set(c_oflag, OCRNL) && c == ASCII_CR) {
+            c = ASCII_LF;
+        }
+
         putch(tty, c);
     }
 
