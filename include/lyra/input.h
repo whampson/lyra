@@ -75,7 +75,7 @@ enum kb_key {
     /* Control characters */
     KB_BACKSPACE    = ASCII_BS,
     KB_TAB          = ASCII_HT,
-    KB_ENTER        = ASCII_LF,
+    KB_ENTER        = ASCII_CR,
     KB_ESCAPE       = ASCII_ESC,
 
     /* Alphabetic, numeric, and symbolic keys */
