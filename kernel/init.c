@@ -65,8 +65,6 @@ void kernel_init(void)
     char buf[128];
     int nchars;
 
-    kprintf("Newline\naa");
-
     while ((nchars = tty_read(&sys_tty, buf, sizeof(buf))) > 0) {
         // tty_write(&sys_tty, buf, nchars);
         // tty_flush(&sys_tty);
