@@ -32,7 +32,7 @@ static inline void putch(struct tty *tty, char c)
 struct tty sys_tty = {
     .console = 0,
     .termio = {
-        .c_iflag = ICRNL,
+        .c_iflag = ICRNL | IGNCR,
         .c_oflag = OPOST | ONLCR,
         .c_lflag = ECHO
     }
@@ -43,6 +43,10 @@ void tty_init(void)
     tty_queue_init(&sys_tty.read_buf);
     tty_queue_init(&sys_tty.write_buf);
     sys_tty.write = console_write;
+
+    /* TODO: get current cursor pos from termnal device */
+    sys_tty.column = 0;
+    sys_tty.line = 0;
 }
 
 int tty_read(struct tty *tty, char *buf, int n)
@@ -69,13 +73,21 @@ int tty_read(struct tty *tty, char *buf, int n)
         c_out = c_in;
 
         /* CR/LF translation */
-        if (flag_set(c_iflag, INLCR) && c_in == ASCII_LF) {
-            c_out = ASCII_CR;
-        }
-        if (!flag_set(c_iflag, IGNCR)) {
-            if (flag_set(c_iflag, ICRNL) && c_in == ASCII_CR) {
-                c_out = ASCII_LF;
-            }
+        switch (c_in) {
+            case ASCII_CR:
+                if (flag_set(c_iflag, IGNCR)) {
+                    /* TODO: debug err wher this hangs */
+                    continue;
+                }
+                if (flag_set(c_iflag, ICRNL)) {
+                    c_out = ASCII_LF;
+                }
+                break;
+            case ASCII_LF:
+                if (flag_set(c_iflag, INLCR)) {
+                    c_out = ASCII_CR;
+                }
+                break;
         }
 
         /* character echoing */
@@ -115,11 +127,24 @@ int tty_write(struct tty *tty, const char *buf, int n)
         /* post-processing */
 
         /* CR/LF translation */
-        if (flag_set(c_oflag, ONLCR) && c_in == ASCII_LF) {
-            putch(tty, ASCII_CR);
-        }
-        if (flag_set(c_oflag, OCRNL) && c_in == ASCII_CR) {
-            c_out = ASCII_LF;
+        switch (c_in) {
+            case ASCII_CR:
+                if (flag_set(c_oflag, OCRNL)) {
+                    c_out = ASCII_LF;
+                    if (flag_set(c_oflag, ONLRET)) {
+                        tty->column = 0;
+                    }
+                }
+                break;
+            case ASCII_LF:
+                if (flag_set(c_oflag, ONLCR)) {
+                    putch(tty, ASCII_CR);
+                    tty->column = 0;
+                }
+                if (flag_set(c_oflag, ONLRET)) {
+                    tty->column = 0;
+                }
+                break;
         }
 
     do_write:

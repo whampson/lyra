@@ -41,6 +41,8 @@ struct tty {
     struct tty_queue read_buf;
     struct tty_queue write_buf;
     int (*write)(struct tty *tty);
+    int column;
+    int line;
 };
 
 /* TODO: kernel tty, this is temporary */
