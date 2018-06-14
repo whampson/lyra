@@ -23,6 +23,9 @@
 
 static inline void putch(struct tty *tty, char c)
 {
+    if (tty->write_buf.full) {
+        tty_flush(tty);
+    }
     tty_queue_put(&tty->write_buf, c);
 }
 
@@ -45,7 +48,8 @@ void tty_init(void)
 int tty_read(struct tty *tty, char *buf, int n)
 {
     int count;
-    char c;
+    char c_in;
+    char c_out;
     tcflag_t c_iflag;
     tcflag_t c_lflag;
 
@@ -60,26 +64,27 @@ int tty_read(struct tty *tty, char *buf, int n)
     while (tty->read_buf.empty);
 
     count = 0;
-    while (!tty->read_buf.empty /*&& count < n*/) {
-        c = tty_queue_get(&tty->read_buf);
+    while (!tty->read_buf.empty && count < n) {
+        c_in = tty_queue_get(&tty->read_buf);
+        c_out = c_in;
 
         /* CR/LF translation */
+        if (flag_set(c_iflag, INLCR) && c_in == ASCII_LF) {
+            c_out = ASCII_CR;
+        }
         if (!flag_set(c_iflag, IGNCR)) {
-            if (c == ASCII_LF && flag_set(c_iflag, INLCR)) {
-                c = ASCII_CR;
-            }
-            else if (c == ASCII_CR && flag_set(c_iflag, ICRNL)) {
-                c = ASCII_LF;
+            if (flag_set(c_iflag, ICRNL) && c_in == ASCII_CR) {
+                c_out = ASCII_LF;
             }
         }
 
         /* character echoing */
         if (flag_set(c_lflag, ECHO)) {
-            tty_write(tty, &c, 1);
+            tty_write(tty, &c_out, 1);
             tty_flush(tty);
         }
 
-        buf[count++] = c;
+        buf[count++] = c_out;
     }
 
     return count;
@@ -88,7 +93,8 @@ int tty_read(struct tty *tty, char *buf, int n)
 int tty_write(struct tty *tty, const char *buf, int n)
 {
     int i;
-    char c;
+    char c_in;
+    char c_out;
     tcflag_t c_oflag;
 
     if (tty == NULL || buf == NULL || n < 0) {
@@ -99,24 +105,25 @@ int tty_write(struct tty *tty, const char *buf, int n)
 
     i = 0;
     while (i < n) {
-        if (tty->write_buf.full) {
-            tty_flush(tty);
-        }
-        c = buf[i++];
+        c_in = buf[i++];
+        c_out = c_in;
 
         if (!flag_set(c_oflag, OPOST)) {
-            putch(tty, c);
-            continue;
+            goto do_write;
         }
 
-        if (flag_set(c_oflag, ONLCR) && c == ASCII_LF) {
+        /* post-processing */
+
+        /* CR/LF translation */
+        if (flag_set(c_oflag, ONLCR) && c_in == ASCII_LF) {
             putch(tty, ASCII_CR);
         }
-        if (flag_set(c_oflag, OCRNL) && c == ASCII_CR) {
-            c = ASCII_LF;
+        if (flag_set(c_oflag, OCRNL) && c_in == ASCII_CR) {
+            c_out = ASCII_LF;
         }
 
-        putch(tty, c);
+    do_write:
+        putch(tty, c_out);
     }
 
     return i;
