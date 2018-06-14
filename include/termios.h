@@ -49,7 +49,7 @@ enum oflag {
     OPOST   = (1 << 0),
     ONLCR   = (1 << 1),
     OCRNL   = (1 << 2),
-    // ONLRET  = (1 << 3)
+    ONLRET  = (1 << 3)
     /* Incomplete... */
 };
 
