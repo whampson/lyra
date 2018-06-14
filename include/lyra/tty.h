@@ -21,6 +21,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <termios.h>
 #include <lyra/console.h>
 
 #define TTY_QUEUE_BUFLEN    128
@@ -36,10 +37,10 @@ struct tty_queue {
 
 struct tty {
     int console;
+    struct termios termio;
     struct tty_queue read_buf;
     struct tty_queue write_buf;
     int (*write)(struct tty *tty);
-    bool o_crlf;
 };
 
 /* TODO: kernel tty, this is temporary */
