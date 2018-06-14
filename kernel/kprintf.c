@@ -43,15 +43,17 @@ enum fmt_state {
     S_READL
 };
 
-static void fmt_char(char *buf, int w, bool ljust, va_list *ap);
-static void fmt_string(char *buf, int w, int p, bool ljust, va_list *ap);
-static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
-                    bool ljust, va_list *ap);
+static int fmt_char(int w, bool ljust, va_list *ap);
+static int fmt_string(int w, int p, bool ljust, va_list *ap);
+static int fmt_int(enum printf_fl fl, int w, int p, bool s, int b, bool lower,
+                   bool ljust, va_list *ap);
 
+static int writechar(char c);
+static int writestr(const char *s, int len);
 
 static char * strlower(char *str);
-static size_t num2str(int val, char *str, int base, bool sign_allowed);
-static void pad(char *buf, int n, char c);
+static int num2str(int val, char *str, int base, bool sign_allowed);
+static int pad(int n, char c);
 
 int kprintf(const char *fmt, ...)
 {
@@ -71,7 +73,6 @@ int vkprintf(const char *fmt, va_list args)
     enum fmt_state state;
     int count;
     char c;
-    char fmtbuf[128];
     enum printf_fl fl;
     int w, p;
     bool ljust;
@@ -114,8 +115,9 @@ int vkprintf(const char *fmt, va_list args)
                 }
                 if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
-                fmt_int(fmtbuf, fl, w, p, true, 10, ljust, &args);
-                goto sendfmt;
+                count += fmt_int(fl, w, p, true, 10, false, ljust, &args);
+                formatting = false;
+                continue;
 
             case 'u':
                 if (!formatting) {
@@ -123,8 +125,9 @@ int vkprintf(const char *fmt, va_list args)
                 }
                 if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
-                fmt_int(fmtbuf, fl, w, p, false, 10, ljust, &args);
-                goto sendfmt;
+                count += fmt_int(fl, w, p, false, 10, false, ljust, &args);
+                formatting = false;
+                continue;
 
             case 'o':
                 if (!formatting) {
@@ -132,8 +135,9 @@ int vkprintf(const char *fmt, va_list args)
                 }
                 if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
-                fmt_int(fmtbuf, fl, w, p, false, 8, ljust, &args);
-                goto sendfmt;
+                count += fmt_int(fl, w, p, false, 8, false, ljust, &args);
+                formatting = false;
+                continue;
 
             case 'x':
             case 'X':
@@ -142,19 +146,18 @@ int vkprintf(const char *fmt, va_list args)
                 }
                 if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
-                fmt_int(fmtbuf, fl, w, p, false, 16, ljust, &args);
-                if (c == 'x') {
-                    strlower(fmtbuf);
-                }
-                goto sendfmt;
+                count += fmt_int(fl, w, p, false, 16, (c == 'x'), ljust, &args);
+                formatting = false;
+                continue;
 
             case 'c':
                 if (!formatting) {
                     goto sendchar;
                 }
                 if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
-                fmt_char(fmtbuf, w, ljust, &args);
-                goto sendfmt;
+                count += fmt_char(w, ljust, &args);
+                formatting = false;
+                continue;
 
             case 's':
                 if (!formatting) {
@@ -162,8 +165,9 @@ int vkprintf(const char *fmt, va_list args)
                 }
                 if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
-                fmt_string(fmtbuf, w, p, ljust, &args);
-                goto sendfmt;
+                count += fmt_string(w, p, ljust, &args);
+                formatting = false;
+                continue;
 
             case 'p':
                 if (!formatting) {
@@ -172,9 +176,9 @@ int vkprintf(const char *fmt, va_list args)
                 if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
                 fl |= F_PREFIX;
-                fmt_int(fmtbuf, fl, w, p, false, 16, ljust, &args);
-                strlower(fmtbuf);
-                goto sendfmt;
+                count += fmt_int(fl, w, p, false, 16, true, ljust, &args);
+                formatting = false;
+                continue;
 
 
             /* Flags */
@@ -291,13 +295,7 @@ int vkprintf(const char *fmt, va_list args)
         }
 
     sendchar:
-        tty_write(&sys_tty, &c, 1);
-        count++;
-        continue;
-
-    sendfmt:
-        count += tty_write(&sys_tty, fmtbuf, strlen(fmtbuf));
-        formatting = false;
+        count += writechar(c);
     }
 
     tty_flush(&sys_tty);
@@ -305,42 +303,41 @@ int vkprintf(const char *fmt, va_list args)
     return count;
 }
 
-static void fmt_char(char *buf, int w, bool ljust, va_list *ap)
+static int fmt_char( int w, bool ljust, va_list *ap)
 {
+    int count;
     int npad;
     unsigned char c;
 
+    count = 0;
     npad = w - 1;
     c = (unsigned char) va_arg(*ap, int);
 
     if (!ljust && w > 0) {
-        pad(buf, npad, ' ');
-        buf += npad;
+        count += pad(npad, ' ');
     }
 
-    *(buf++) = c;
+    count += writechar(c);
 
     if (ljust && w > 0) {
-        pad(buf, npad, ' ');
-        buf += npad;
+        count += pad(npad, ' ');
     }
-    *buf = '\0';
+
+    return count;
 }
 
-static void fmt_string(char *buf, int w, int p, bool ljust, va_list *ap)
+static int fmt_string(int w, int p, bool ljust, va_list *ap)
 {
-
+    int count;
     int npad;
     char *s;
-    char c;
-    size_t i;
-    size_t len;
+    int len;
 
     if (p == 0) {
-        buf[0] = '\0';
-        return;
+        return 0;
     }
 
+    count = 0;
     s = (char *) va_arg(*ap, char*);
     len = strlen(s);
 
@@ -350,26 +347,20 @@ static void fmt_string(char *buf, int w, int p, bool ljust, va_list *ap)
     npad = w - len;
 
     if (!ljust && npad > 0 && w > 0) {
-        pad(buf, npad, ' ');
-        buf += npad;
+        count += pad(npad, ' ');
     }
 
-    i = 0;
-    while (i < len && (c = s[i++]) != '\0') {
-        /* TODO: this is dangerous. String should be written directly to
-           the terminal because it's length may exceed the 128 bytes */
-        *(buf++) = c;
-    }
+    count += writestr(s, len);
 
     if (ljust && npad > 0 && w > 0) {
-        pad(buf, npad, ' ');
-        buf += npad;
+        count += pad(npad, ' ');
     }
-    *buf = '\0';
+
+    return count;
 }
 
-static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
-                    bool ljust, va_list *ap)
+static int fmt_int(enum printf_fl fl, int w, int p, bool s, int b, bool lower,
+                   bool ljust, va_list *ap)
 {
     int val;
     char padch;
@@ -378,8 +369,8 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
     int ndigit;
     bool print_plus;
     bool sign_align;
-    char tmpbuf[32];
-    size_t tmpbuflen;
+    char buf[32];
+    int buflen;
 
     padch = ' ';
     npad = 0;
@@ -390,8 +381,7 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
 
     /* A value of zero with zero precision should be blank. */
     if (p == 0 && val == 0) {
-        *buf = '\0';
-        return;
+        return 0;
     }
 
     /* A prefix should not be printed for 0. */
@@ -399,8 +389,11 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
         fl &= ~F_PREFIX;
     }
 
-    tmpbuflen = num2str(val, tmpbuf, b, s);
-    ndigit = tmpbuflen;
+    buflen = num2str(val, buf, b, s);
+    ndigit = buflen;
+    if (lower) {
+        strlower(buf);
+    }
     nchar = ndigit;
 
     if (flag_set(fl, F_ZEROPAD) && p == P_NONE) {
@@ -430,43 +423,43 @@ static void fmt_int(char *buf, enum printf_fl fl, int w, int p, bool s, int b,
     if (flag_set(fl, F_PREFIX)) {
         switch (b) {
             case 8:
-                *(buf++) = '0';
+                writechar('0');
                 break;
             case 16:
-                *(buf++) = '0';
-                *(buf++) = 'X';
+                writechar('0');
+                if (lower) {
+                    writechar('x');
+                }
+                else {
+                    writechar('X');
+                }
                 break;
         }
     }
     else if (print_plus && val >= 0) {
-        *(buf++) = '+';
+        writechar('+');
     }
     else if (sign_align && val >= 0) {
-        *(buf++) = ' ';
+        writechar(' ');
     }
 
     if (!ljust && w > nchar) {
-        pad(buf, npad, padch);
-        nchar += npad;
-        buf += npad;
+        nchar += pad(npad, padch);
     }
 
     while (p > ndigit) {
-        *(buf++) = '0';
+        writechar('0');
         ndigit++;
         nchar++;
     }
 
-    strncpy(buf, tmpbuf, sizeof(tmpbuf));
+    writestr(buf, buflen);
 
     if (ljust && w > nchar) {
-        buf += tmpbuflen;
-        pad(buf, npad, ' ');
-        nchar += npad;
-        buf += npad;
+        nchar += pad( npad, ' ');
     }
 
-    buf[nchar] = '\0';
+    return nchar;
 }
 
 static char * strlower(char *str)
@@ -483,12 +476,12 @@ static char * strlower(char *str)
 }
 
 /* itoa() but with more parameters :) */
-static size_t num2str(int val, char *str, int base, bool sign_allowed)
+static int num2str(int val, char *str, int base, bool sign_allowed)
 {
     static char lookup[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     char *str_base;
-    size_t i;
+    int i;
     bool sign;
     unsigned int uval;
 
@@ -516,7 +509,7 @@ static size_t num2str(int val, char *str, int base, bool sign_allowed)
             val = negate(val);
         }
         while (val > 0) {
-            i = (size_t) val % base;
+            i = val % base;
             *str = lookup[i];
             str++;
             val /= base;
@@ -526,7 +519,7 @@ static size_t num2str(int val, char *str, int base, bool sign_allowed)
         sign = false;
         uval = (unsigned int) val;
         while (uval > 0) {
-            i = (size_t) uval % base;
+            i = (int) uval % base;
             *str = lookup[i];
             str++;
             uval /= base;
@@ -540,7 +533,7 @@ static size_t num2str(int val, char *str, int base, bool sign_allowed)
 
     strrev(str_base);
 
-    return (size_t) (str - str_base);
+    return (int) (str - str_base);
 }
 
 int atoi(const char *str)
@@ -584,11 +577,30 @@ int atoi(const char *str)
     return val;
 }
 
-static void pad(char *buf, int n, char c)
+static int pad(int n, char c)
 {
     int i;
 
     for (i = 0; i < n; i++) {
-        buf[i] = c;
+        writechar(c);
     }
+
+    return i;
+}
+
+static int writechar(char c)
+{
+    return tty_write(&sys_tty, &c, 1);
+}
+
+static int writestr(const char *s, int len)
+{
+    int count;
+
+    count = 0;
+    while (count < len && *s != '\0') {
+        count += writechar(*(s++));
+    }
+
+    return count;
 }
