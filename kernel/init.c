@@ -60,7 +60,17 @@ void kernel_init(void)
     irq_enable(IRQ_KEYBOARD);
     sti();
 
-    mini_shell();
+    // mini_shell();
+
+    char buf[128];
+    int nchars;
+
+    kprintf("Newline\naa");
+
+    while ((nchars = tty_read(&sys_tty, buf, sizeof(buf))) > 0) {
+        // tty_write(&sys_tty, buf, nchars);
+        // tty_flush(&sys_tty);
+    }
 
     __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
 }
