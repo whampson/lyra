@@ -71,6 +71,8 @@ struct console {
     int state;
     struct gfx_attr gfxattr;
     struct cursor cursor;
+    struct cursor saved_cursor;
+    bool has_saved_cursor;
     union vga_cell *vidmem;
     char tab_width;
     char bs_char;
@@ -84,6 +86,8 @@ struct console {
 #define m_state             (cons[curr_cons].state)
 #define m_gfxattr           (cons[curr_cons].gfxattr)
 #define m_cursor            (cons[curr_cons].cursor)
+#define m_saved_cursor      (cons[curr_cons].saved_cursor)
+#define m_has_saved_cursor  (cons[curr_cons].has_saved_cursor)
 #define m_vidmem            (cons[curr_cons].vidmem)
 #define m_tab_width         (cons[curr_cons].tab_width)
 #define m_bs_char           (cons[curr_cons].bs_char)
@@ -494,8 +498,17 @@ static void handle_csi(unsigned char c)
             m_state = S_NORMAL;
             break;
         // case 'n':    /* report cursor pos (send to tty input buf) */
-        // case 's':    /* save cursor pos */
-        // case 'u':    /* restore saved cursor pos */
+        case 's':       /* save cursor pos */
+            m_saved_cursor = m_cursor;
+            m_has_saved_cursor = true;
+            m_state = S_NORMAL;
+            break;
+        case 'u':       /* restore saved cursor pos */
+            if (m_has_saved_cursor) {
+                m_cursor = m_saved_cursor;
+            }
+            m_state = S_NORMAL;
+            break;
         case ';':       /* (parameter separator) */
             if (++m_paramidx >= CSI_MAX_PARAMS) {
                 m_state = S_NORMAL;
