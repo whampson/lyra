@@ -19,13 +19,15 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
-#include <lyra/console.h>
 #include <lyra/kernel.h>
+#include <lyra/tty.h>
 
 /* Default values for parameters */
 #define W_NONE  0
 #define P_NONE  (-1)
+#define L_NONE  0
 
 enum printf_flags {
     F_NONE      = 0,
@@ -44,8 +46,10 @@ struct printf_params {
     bool use_buf;           /* 0 = write to fd, 1 = write to buf */
     bool buf_full;          /* output buffer is full (bounded = 1 only) */
     int flags;              /* formatting flags (see above) */
+    int typeid;             /* argument type */
     int w;                  /* width */
     int p;                  /* precision */
+    char l;                 /* length specifier */
     int base;               /* radix */
     bool sign;              /* format as signed number (base 10 only) */
     bool lower;             /* format using lowercase digits */
@@ -59,18 +63,31 @@ enum printf_fmt_state {
     S_READL                 /* reading length (not supported yet) */
 };
 
+enum typeid {
+    T_SHORT,
+    T_INT,
+    T_LONG,
+    T_USHORT,
+    T_UINT,
+    T_ULONG,
+    T_CHARPTR,
+    T_VOIDPTR
+};
+
 static int do_printf(struct printf_params *params, const char *f, va_list *ap);
 
 static int fmt_char(struct printf_params *params, va_list *ap);
 static int fmt_string(struct printf_params *params, va_list *ap);
 static int fmt_int(struct printf_params *params, va_list *ap);
 
+static unsigned long nextarg(int typeid, va_list *ap);
+
 static int pad(struct printf_params *params, int n, char c);
 static int writechar(struct printf_params *params, char c);
 static int writestr(struct printf_params *params, const char *str, int len);
 
 static char * strlower(char *str);
-static int num2str(int val, char *str, int base, bool sign_allowed);
+static int num2str(unsigned long val, char *str, int base, bool sign_allowed);
 
 int printf(const char *fmt, ...)
 {
@@ -86,6 +103,7 @@ int printf(const char *fmt, ...)
 
 int vprintf(const char *fmt, va_list args)
 {
+    int count;
     struct printf_params params;
 
     if (fmt == NULL) {
@@ -96,7 +114,10 @@ int vprintf(const char *fmt, va_list args)
     params.use_buf = false;
     params.bounded = false;
 
-    return do_printf(&params, fmt, &args);
+    count = do_printf(&params, fmt, &args);
+    tty_flush(&sys_tty);
+
+    return count;
 }
 
 int sprintf(char *str, const char *fmt, ...)
@@ -194,6 +215,7 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                     params->flags = F_NONE;
                     params->w = W_NONE;
                     params->p = P_NONE;
+                    params->l = L_NONE;
                     params->ljust = false;
                     continue;
                 }
@@ -206,6 +228,17 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { params->p = atoi(numptr); }
+                switch (params->l) {
+                    case 'h':
+                        params->typeid = T_SHORT;
+                        break;
+                    case 'l':
+                        params->typeid = T_LONG;
+                        break;
+                    default:
+                        params->typeid = T_INT;
+                        break;
+                }
                 params->sign = true;
                 params->base = 10;
                 count += fmt_int(params, ap);
@@ -218,6 +251,17 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { params->p = atoi(numptr); }
+                switch (params->l) {
+                    case 'h':
+                        params->typeid = T_USHORT;
+                        break;
+                    case 'l':
+                        params->typeid = T_ULONG;
+                        break;
+                    default:
+                        params->typeid = T_UINT;
+                        break;
+                }
                 params->sign = false;
                 params->base = 10;
                 count += fmt_int(params, ap);
@@ -230,6 +274,17 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { params->p = atoi(numptr); }
+                switch (params->l) {
+                    case 'h':
+                        params->typeid = T_USHORT;
+                        break;
+                    case 'l':
+                        params->typeid = T_ULONG;
+                        break;
+                    default:
+                        params->typeid = T_UINT;
+                        break;
+                }
                 params->base = 8;
                 count += fmt_int(params, ap);
                 formatting = false;
@@ -247,6 +302,17 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { params->p = atoi(numptr); }
+                switch (params->l) {
+                    case 'h':
+                        params->typeid = T_USHORT;
+                        break;
+                    case 'l':
+                        params->typeid = T_ULONG;
+                        break;
+                    default:
+                        params->typeid = T_UINT;
+                        break;
+                }
                 params->base = 16;
                 params->lower = (c == 'x');
                 count += fmt_int(params, ap);
@@ -258,6 +324,11 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                     goto sendchar;
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
+                switch (params->l) {
+                    default:
+                        params->typeid = T_INT;
+                        break;
+                }
                 count += fmt_char(params, ap);
                 formatting = false;
                 continue;
@@ -268,6 +339,11 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { params->p = atoi(numptr); }
+                switch (params->l) {
+                    default:
+                        params->typeid = T_CHARPTR;
+                        break;
+                }
                 count += fmt_string(params, ap);
                 formatting = false;
                 continue;
@@ -318,6 +394,22 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                     continue;
                 }
                 goto handle_num;
+
+            /* Length */
+            case 'h':
+            case 'l':
+                if (!formatting) {
+                    goto sendchar;
+                }
+                else if (state == S_READW && numptr != NULL) {
+                    params->w = atoi(numptr);
+                }
+                else if (state == S_READP && numptr != NULL) {
+                    params->p = atoi(numptr);
+                }
+                state = S_READL;
+                params->l = c;
+                continue;
 
             /* Special */
             case '1':
@@ -389,8 +481,6 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
         count += writechar(params, c);
     }
 
-    tty_flush(&sys_tty);
-
     return count;
 }
 
@@ -452,7 +542,7 @@ static int fmt_string(struct printf_params *params, va_list *ap)
 
 static int fmt_int(struct printf_params *params, va_list *ap)
 {
-    int val;
+    unsigned int val;
     char padch;
     int npad;
     int nchar;
@@ -467,7 +557,8 @@ static int fmt_int(struct printf_params *params, va_list *ap)
     sign_align = (flag_set(params->flags, F_SIGNALIGN) && params->base == 10);
     print_plus = (flag_set(params->flags, F_PRINTSIGN) && params->base == 10);
 
-    val = va_arg(*ap, int);
+    val = nextarg(params->typeid, ap);
+    // val = va_arg(*ap, int);
 
     /* A value of zero with zero precision should be blank. */
     if (params->p == 0 && val == 0) {
@@ -526,10 +617,10 @@ static int fmt_int(struct printf_params *params, va_list *ap)
                 break;
         }
     }
-    else if (print_plus && val >= 0) {
+    else if (print_plus && (long) val >= 0) {
         writechar(params, '+');
     }
-    else if (sign_align && val >= 0) {
+    else if (sign_align && (long) val >= 0) {
         writechar(params, ' ');
     }
 
@@ -552,6 +643,38 @@ static int fmt_int(struct printf_params *params, va_list *ap)
     return nchar;
 }
 
+static unsigned long nextarg(int typeid, va_list *ap)
+{
+    unsigned long val;
+
+    val = 0;
+    switch (typeid) {
+        case T_SHORT:
+            val = va_arg(*ap, short int);
+            break;
+        case T_INT:
+            val = va_arg(*ap, int);
+            break;
+        case T_LONG:
+            val = va_arg(*ap, long int);
+            break;
+        case T_USHORT:
+            val = va_arg(*ap, unsigned short int);
+            break;
+        case T_UINT:
+            val = va_arg(*ap, unsigned int);
+            break;
+        case T_ULONG:
+            val = va_arg(*ap, unsigned long int);
+            break;
+        case T_CHARPTR:
+            val = (unsigned long) va_arg(*ap, char*);
+            break;
+    }
+
+    return val;
+}
+
 static char * strlower(char *str)
 {
     int i;
@@ -566,14 +689,13 @@ static char * strlower(char *str)
 }
 
 /* itoa() but with more parameters :) */
-static int num2str(int val, char *str, int base, bool sign_allowed)
+static int num2str(unsigned long val, char *str, int base, bool sign_allowed)
 {
     static char lookup[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     char *str_base;
     int i;
     bool sign;
-    unsigned int uval;
 
     if (str == NULL) {
         return 0;
@@ -594,26 +716,20 @@ static int num2str(int val, char *str, int base, bool sign_allowed)
     str_base = str;
 
     if (sign_allowed && base == 10) {
-        sign = (val < 0);
+        sign = ((long) val) < 0;
         if (sign && base == 10) {
-            val = negate(val);
-        }
-        while (val > 0) {
-            i = val % base;
-            *str = lookup[i];
-            str++;
-            val /= base;
+            val = /*(long)*/ negate(val);
         }
     }
     else {
         sign = false;
-        uval = (unsigned int) val;
-        while (uval > 0) {
-            i = (int) uval % base;
-            *str = lookup[i];
-            str++;
-            uval /= base;
-        }
+    }
+
+    while (val > 0) {
+        i = (int) (val % base);
+        *str = lookup[i];
+        str++;
+        val /= base;
     }
 
     if (sign) {
