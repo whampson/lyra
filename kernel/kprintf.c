@@ -37,8 +37,8 @@ enum printf_flags {
 struct printf_params {
     int fd;                 /* file to write */
     char *buf;              /* buffer to write */
-    int pos;                /* buffer position */
-    int n;                  /* max char limit */
+    size_t pos;             /* buffer position */
+    size_t n;               /* max char limit */
     bool bounded;           /* abide by max char limit */
     bool use_buf;           /* 0 = write to fd, 1 = write to buf */
     bool buf_full;          /* output buffer is full (bounded = 1 only) */
@@ -124,12 +124,44 @@ int vsprintf(char *str, const char *fmt, va_list args)
     params.bounded = false;
 
     count = do_printf(&params, fmt, &args);
-    str[count] = '\0';      /* TODO: check that this is corect behavior */
+    str[count] = '\0';
 
     return count;
 }
 
-// int snprintf(char *str, int n, const char *fmt, ...)
+int snprintf(char *str, size_t n, const char *fmt, ...)
+{
+    int retval;
+    va_list ap;
+
+    va_start(ap, fmt);
+    retval = vsnprintf(str, n, fmt, ap);
+    va_end(ap);
+
+    return retval;
+}
+
+int vsnprintf(char *str, size_t n, const char *fmt, va_list args)
+{
+    int count;
+    struct printf_params params;
+
+    if (fmt == NULL || str == NULL) {
+        return -1;
+    }
+
+    params.buf = str;
+    params.n = n;
+    params.use_buf = true;
+    params.bounded = true;
+
+    count = do_printf(&params, fmt, &args);
+    if (n > 0) {
+        str[n - 1] = '\0';
+    }
+
+    return count;
+}
 
 static int do_printf(struct printf_params *params, const char *f, va_list *ap)
 {
@@ -173,7 +205,6 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { params->p = atoi(numptr); }
-                // count += fmt_int(fd, dest, fl, w, p, 1, 10, 0, ljust, &args);
                 params->sign = true;
                 params->base = 10;
                 count += fmt_int(params, ap);
@@ -186,7 +217,6 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { params->p = atoi(numptr); }
-                // count += fmt_int(fd, dest, fl, w, p, 0, 10, 0, ljust, &args);
                 params->sign = false;
                 params->base = 10;
                 count += fmt_int(params, ap);
@@ -199,7 +229,6 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { params->p = atoi(numptr); }
-                // count += fmt_int(fd, dest, fl, w, p, 0, 8, 0, ljust, &args);
                 params->base = 8;
                 count += fmt_int(params, ap);
                 formatting = false;
@@ -207,6 +236,9 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
 
             case 'p':
                 params->flags |= F_PREFIX;
+                goto hex;
+
+        hex:
             case 'x':
             case 'X':
                 if (!formatting) {
@@ -214,29 +246,17 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { params->p = atoi(numptr); }
-                // count += fmt_int(fd, dest, fl, w, p, 0, 16, 1, ljust, &args);
                 params->base = 16;
                 params->lower = (c == 'x');
                 count += fmt_int(params, ap);
                 formatting = false;
                 continue;
 
-            // case 'X':
-            //     if (!formatting) {
-            //         goto sendchar;
-            //     }
-            //     if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
-            //     if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
-            //     count += fmt_int(fd, dest, fl, w, p, 0, 16, 0, ljust, &args);
-            //     formatting = false;
-            //     continue;
-
             case 'c':
                 if (!formatting) {
                     goto sendchar;
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
-                // count += fmt_char(fd, dest, w, ljust, &args);
                 count += fmt_char(params, ap);
                 formatting = false;
                 continue;
@@ -247,21 +267,9 @@ static int do_printf(struct printf_params *params, const char *f, va_list *ap)
                 }
                 if (state == S_READW && numptr != NULL) { params->w = atoi(numptr); }
                 if (state == S_READP && numptr != NULL) { params->p = atoi(numptr); }
-                // count += fmt_string(fd, dest, w, p, ljust, &args);
                 count += fmt_string(params, ap);
                 formatting = false;
                 continue;
-
-            // case 'p':
-            //     if (!formatting) {
-            //         goto sendchar;
-            //     }
-            //     if (state == S_READW && numptr != NULL) { w = atoi(numptr); }
-            //     if (state == S_READP && numptr != NULL) { p = atoi(numptr); }
-            //     fl |= F_PREFIX;
-            //     count += fmt_int(fd, dest, fl, w, p, 0, 16, 1, ljust, &args);
-            //     formatting = false;
-            //     continue;
 
             /* Flags */
             case '-':
@@ -673,14 +681,20 @@ static int writechar(struct printf_params *params, char c)
 {
     int count;
 
-    /* TODO: bounds */
+    count = 0;
 
     if (params->use_buf) {
+        if (params->bounded) {
+            if (params->n > 0 && params->pos < params->n - 1) {
+                params->buf[params->pos++] = c;
+            }
+            return 1;
+        }
+
         params->buf[params->pos++] = c;
         return 1;
     }
 
-    count = 0;
     switch (params->fd) {
         case 0:
             count += tty_write(&sys_tty, &c, 1);
