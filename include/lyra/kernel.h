@@ -133,8 +133,17 @@ static inline int negate(int x)
  *      The length field is NOT_SUPPORTED at this time. May change if absolutely
  *      needed.
  */
-int kprintf(const char *fmt, ...);
-int vkprintf(const char *fmt, va_list args);
+// int kprintf(const char *fmt, ...);
+// int vkprintf(const char *fmt, va_list args);
+
+#define kprintf printf  /* Probably going to be removed later... */
+
+int printf(const char *fmt, ...);
+int vprintf(const char *fmt, va_list args);
+int sprintf(char *str, const char *fmt, ...);
+int vsprintf(char *str, const char *fmt, va_list args);
+int snprintf(char *str, size_t n, const char *fmt, ...);
+int vsnprintf(char *str, size_t n, const char *fmt, va_list args);
 
 int atoi(const char *str);
 
