@@ -88,7 +88,7 @@ interrupt_syscall:
     #call    do_syscall
     leal    s_syscall, %ebx
     pushl   %ebx
-    call    kprintf
+    call    printf
     addl    $4, %esp
     xorl    %eax, %eax
     jmp     syscall_return
