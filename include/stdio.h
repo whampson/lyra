@@ -77,8 +77,26 @@ typedef uint32_t size_t;
  *     *        - precision specified as next argument in arg list
  *
  *   length:
- *      The length field is NOT_SUPPORTED at this time. May change if absolutely
- *      needed.
+ *                di        uoxX                fFeEgGaA    c       s       p       n
+ *      (none)    int       unsigned int        N/S         int     char*   void*   N/S
+ *      hh      - N/S       N/S                 N/A         N/A     N/A     N/A     N/S
+ *      h       - short int unsigned short int  N/A         N/A     N/A     N/A     N/S
+ *      l       - long int  unsigned long int   N/A         N/S+    N/S+    N/A     N/S
+ *      ll      - N/S       N/S                 N/A         N/A     N/A     N/A     N/S
+ *      j       - N/S       N/S                 N/A         N/A     N/A     N/A     N/S
+ *      z       - N/S       N/S                 N/A         N/A     N/A     N/A     N/S
+ *      t       - N/S       N/S                 N/A         N/A     N/A     N/A     N/S
+ *      L       - N/A       N/A                 N/S         N/A     N/A     N/A     N/A
+ *
+ *      N/A (not applicable) means that the length and specifier combination is
+ *      not defined by the C standard. Using one of these combinations will
+ *      cause undefined behavior.
+ *      N/S (not supported) means that the length and specifier combination is
+ *      not functional in this implementation of printf.
+ *          A '+' indicates that the combination is partially supported.
+ *          In the case of 'lc' and 'ls', the combination will default to 'c'
+ *          and 's' respectively since wide characters are not yet supported on
+ *          this system.
  */
 
 int printf(const char *fmt, ...);
