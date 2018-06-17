@@ -71,6 +71,9 @@ struct console {
     int state;
     struct gfx_attr gfxattr;
     struct cursor cursor;
+    struct cursor saved_cursor;
+    bool has_saved_cursor;
+    bool has_saved_console;
     union vga_cell *vidmem;
     char tab_width;
     char bs_char;
@@ -84,6 +87,9 @@ struct console {
 #define m_state             (cons[curr_cons].state)
 #define m_gfxattr           (cons[curr_cons].gfxattr)
 #define m_cursor            (cons[curr_cons].cursor)
+#define m_saved_cursor      (cons[curr_cons].saved_cursor)
+#define m_has_saved_cursor  (cons[curr_cons].has_saved_cursor)
+#define m_has_saved_console (cons[curr_cons].has_saved_console)
 #define m_vidmem            (cons[curr_cons].vidmem)
 #define m_tab_width         (cons[curr_cons].tab_width)
 #define m_bs_char           (cons[curr_cons].bs_char)
@@ -91,6 +97,7 @@ struct console {
 #define m_paramidx          (cons[curr_cons].paramidx)
 
 static struct console cons[NUM_CONSOLES];
+static struct console saved_cons[NUM_CONSOLES];
 static int curr_cons;
 
 static const struct gfx_attr default_gfx = {
@@ -116,9 +123,9 @@ static const char COLOR_TABLE[8] = {
 
 static void console_defaults(void);
 static void switch_console(int old_cons, int new_cons);
-static void process_char(unsigned char c);
+static void process_char(struct tty *tty, unsigned char c);
 static void handle_esc(unsigned char c);
-static void handle_csi(unsigned char c);
+static void handle_csi(struct tty *tty, unsigned char c);
 static void scroll_up(int n);
 static void scroll_down(int n);
 static void backspace(void);
@@ -134,7 +141,15 @@ static void cursor_left(int n);
 static void erase_display(int cmd);
 static void erase_line(int cmd);
 static void csi_m(int param);
+static void csi_n(struct tty *tty, int param);
 static void set_cell_attr(union vga_attr *a);
+static void respond(struct tty *tty, const char *resp, int n);
+static void save_cursor(void);
+static void restore_cursor(void);
+static void save_console(void);
+static void restore_console(void);
+static void reset_console(void);
+static void do_console_refresh(void);
 static void do_cursor_update(void);
 
 /**
@@ -205,15 +220,16 @@ void set_console(int num)
 
 static void console_defaults(void)
 {
+    m_state = S_NORMAL;
     m_gfxattr = default_gfx;
-    m_vidmem = (union vga_cell *) VGA_FRAMEBUF;
     m_cursor.x = 0;
     m_cursor.y = 0;
     m_cursor.type = CURSOR_UNDERBAR;
     m_cursor.hidden = false;
+    m_has_saved_cursor = false;
+    m_vidmem = (union vga_cell *) VGA_FRAMEBUF;
     m_tab_width = 8;
     m_bs_char = ' ';
-    m_state = S_NORMAL;
 }
 
 static void switch_console(int old_cons, int new_cons)
@@ -242,16 +258,16 @@ int console_write(struct tty *tty)
     }
 
     count = 0;
-    while (!tty->write_buf.empty) {
-        c = tty_queue_get(&tty->write_buf);
-        process_char(c);
+    while (!tty->wr_q.empty) {
+        c = tty_queue_get(&tty->wr_q);
+        process_char(tty, c);
         count++;
     }
 
     return count;
 }
 
-static void process_char(unsigned char c)
+static void process_char(struct tty *tty, unsigned char c)
 {
     int pos;
     bool update_char;
@@ -276,7 +292,7 @@ static void process_char(unsigned char c)
             goto move_cursor;
 
         case S_CSI:
-            handle_csi(c);
+            handle_csi(tty, c);
             goto move_cursor;
 
     ctrl_char:
@@ -342,19 +358,31 @@ static void handle_esc(unsigned char c)
     int i;
 
     switch (c) {
-        // case 'c':    /* reset console */
+        case 'c':       /* reset console */
+            reset_console();
+            m_state = S_NORMAL;
+            break;
         case 'D':       /* linefeed */
             linefeed();
+            m_state = S_NORMAL;
             break;
         case 'E':       /* newline */
             carriage_return();
             linefeed();
+            m_state = S_NORMAL;
             break;
         case 'M':       /* reverse linefeed */
             reverse_linefeed();
+            m_state = S_NORMAL;
             break;
-        // case '7':    /* save console state */
-        // case '8':    /* restore console state */
+        case '7':       /* save console state */
+            save_console();
+            m_state = S_NORMAL;
+            break;
+        case '8':       /* restore console state */
+            restore_console();
+            m_state = S_NORMAL;
+            break;
         case '[':       /* (control sequence introducer) */
             for (i = 0; i < CSI_MAX_PARAMS; i++) {
                 m_csiparam[i] = PARAM_DEFAULT;
@@ -368,7 +396,7 @@ static void handle_esc(unsigned char c)
     }
 }
 
-static void handle_csi(unsigned char c)
+static void handle_csi(struct tty *tty, unsigned char c)
 {
     int i;
 
@@ -493,9 +521,21 @@ static void handle_csi(unsigned char c)
             }
             m_state = S_NORMAL;
             break;
-        // case 'n':    /* report cursor pos (send to tty input buf) */
-        // case 's':    /* save cursor pos */
-        // case 'u':    /* restore saved cursor pos */
+        case 'n':       /* device status report */
+            i = 0;
+            while (i <= m_paramidx) {
+                csi_n(tty, m_csiparam[i++]);
+            }
+            m_state = S_NORMAL;
+            break;
+        case 's':       /* save cursor pos */
+            save_cursor();
+            m_state = S_NORMAL;
+            break;
+        case 'u':       /* restore saved cursor pos */
+            restore_cursor();
+            m_state = S_NORMAL;
+            break;
         case ';':       /* (parameter separator) */
             if (++m_paramidx >= CSI_MAX_PARAMS) {
                 m_state = S_NORMAL;
@@ -777,6 +817,19 @@ static void csi_m(int param)
     }
 }
 
+static void csi_n(struct tty *tty, int param)
+{
+    char buf[16];
+    int len;
+
+    switch (param) {
+        case 6:
+            len = sprintf(buf, "\033[%d;%dR", m_cursor.y + 1, m_cursor.x + 1);
+            respond(tty, buf, len);
+            break;
+    }
+}
+
 static void set_cell_attr(union vga_attr *a)
 {
     a->fg = m_gfxattr.fg;
@@ -803,6 +856,53 @@ static void set_cell_attr(union vga_attr *a)
     if (m_gfxattr.conceal) {
         a->fg = a->bg;
     }
+}
+
+static void respond(struct tty *tty, const char *resp, int n)
+{
+    int i;
+    for (i = 0; i < n; i++) {
+        tty_queue_put(&tty->rd_q, *resp++);
+    }
+}
+
+static void save_cursor(void)
+{
+    m_saved_cursor = m_cursor;
+    m_has_saved_cursor = true;
+}
+
+static void restore_cursor(void)
+{
+    if (m_has_saved_cursor) {
+        m_cursor = m_saved_cursor;
+    }
+}
+
+static void save_console(void)
+{
+    saved_cons[curr_cons] = cons[curr_cons];
+    m_has_saved_console = true;
+}
+
+static void restore_console(void)
+{
+    if (m_has_saved_console) {
+        cons[curr_cons] = saved_cons[curr_cons];
+        do_console_refresh();
+    }
+}
+
+static void reset_console(void)
+{
+    console_defaults();
+    erase_display(2);
+    do_console_refresh();
+}
+
+static void do_console_refresh(void)
+{
+    do_cursor_update();
 }
 
 static void do_cursor_update(void)
