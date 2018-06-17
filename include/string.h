@@ -37,7 +37,7 @@ static inline char * strcpy(char *dest, const char *src)
     register int i;
 
     if (src == NULL || dest == NULL) {
-        return dest;
+        return NULL;
     }
 
     i = -1;
@@ -55,7 +55,7 @@ static inline char * strncpy(char *dest, const char *src, size_t n)
     register char c;
 
     if (src == NULL || dest == NULL) {
-        return dest;
+        return NULL;
     }
 
     i = 0;
