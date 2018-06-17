@@ -138,6 +138,7 @@ static void cursor_left(int n);
 static void erase_display(int cmd);
 static void erase_line(int cmd);
 static void csi_m(int param);
+static void csi_n(int param);
 static void set_cell_attr(union vga_attr *a);
 static void do_cursor_update(void);
 
@@ -497,7 +498,13 @@ static void handle_csi(unsigned char c)
             }
             m_state = S_NORMAL;
             break;
-        // case 'n':    /* report cursor pos (send to tty input buf) */
+        case 'n':       /* device status report */
+            i = 0;
+            while (i <= m_paramidx) {
+                csi_n(m_csiparam[i++]);
+            }
+            m_state = S_NORMAL;
+            break;
         case 's':       /* save cursor pos */
             m_saved_cursor = m_cursor;
             m_has_saved_cursor = true;
@@ -785,6 +792,22 @@ static void csi_m(int param)
             }
             else if (param >= 40 && param <= 47) {
                 m_gfxattr.bg = COLOR_TABLE[(param - 40)];
+            }
+            break;
+    }
+}
+
+static void csi_n(int param)
+{
+    char buf[16];
+    int i;
+    int len;
+
+    switch (param) {
+        case 6:
+            len = sprintf(buf, "\033[%d;%dR", m_cursor.y + 1, m_cursor.x + 1);
+            for (i = 0; i < len; i++) {
+                tty_queue_put(&sys_tty.read_buf, buf[i]);
             }
             break;
     }
