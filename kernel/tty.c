@@ -19,100 +19,103 @@
 #include <string.h>
 #include <lyra/tty.h>
 #include <lyra/input.h>
+#include <lyra/console.h>
 #include <lyra/interrupt.h>
 
-static inline void putch(struct tty *tty, char c)
+#define NUM_TTY 5
+
+static struct tty tty_table[NUM_TTY] = {
+    {
+        /* console */
+        .termio = {
+            .c_iflag = ICRNL,
+            .c_oflag = OPOST | ONLCR,
+            .c_lflag = ECHO
+        },
+        .column = 0
+    },
+    {
+        /* COM1 */
+        .termio = { 0 },
+        .column = 0
+    },
+    {
+        /* COM2 */
+        .termio = { 0 },
+        .column = 0
+    },
+    {
+        /* COM3 */
+        .termio = { 0 },
+        .column = 0
+    },
+    {
+        /* COM4 */
+        .termio = { 0 },
+        .column = 0
+    },
+};
+
+/**
+ * Get next character from TTY's input queue.
+ */
+static inline char tty_getch(struct tty *tty)
 {
-    if (tty->write_buf.full) {
-        tty_flush(tty);
-    }
-    tty_queue_put(&tty->write_buf, c);
+    return (char) tty_queue_get(&tty->rd_q);
 }
 
-struct tty sys_tty = {
-    .console = 0,
-    .termio = {
-        .c_iflag = ICRNL | IGNCR,
-        .c_oflag = OPOST | ONLCR,
-        .c_lflag = ECHO
-    }
-};
+/**
+ * Write character to TTY's output queue.
+ */
+static inline void tty_putch(struct tty *tty, char c)
+{
+    tty_queue_put(&tty->wr_q, (unsigned char) c);
+}
 
 void tty_init(void)
 {
-    tty_queue_init(&sys_tty.read_buf);
-    tty_queue_init(&sys_tty.write_buf);
-    sys_tty.write = console_write;
+    int i;
 
-    /* TODO: get current cursor pos from termnal device */
-    sys_tty.column = 0;
-    sys_tty.line = 0;
+    for (i = 0; i < NUM_TTY; i++) {
+        tty_queue_init(&tty_table[i].rd_q);
+        tty_queue_init(&tty_table[i].wr_q);
+    }
+
+    tty_table[TTY_CONSOLE].write = console_write;
 }
 
-int tty_read(struct tty *tty, char *buf, int n)
+int tty_read(int chan, char *buf, int n)
 {
     int count;
-    char c_in;
-    char c_out;
-    tcflag_t c_iflag;
-    tcflag_t c_lflag;
+    struct tty *tty;
 
-    if (tty == NULL || buf == NULL || n < 0) {
+    if (chan < 0 || chan >= NUM_TTY || buf == NULL || n < 0) {
         return -1;
     }
 
-    c_iflag = tty->termio.c_iflag;
-    c_lflag = tty->termio.c_lflag;
-
-    /* Block until a char is input */
-    while (tty->read_buf.empty);
+    tty = tty_table + chan;
 
     count = 0;
-    while (!tty->read_buf.empty && count < n) {
-        c_in = tty_queue_get(&tty->read_buf);
-        c_out = c_in;
-
-        /* CR/LF translation */
-        switch (c_in) {
-            case ASCII_CR:
-                if (flag_set(c_iflag, IGNCR)) {
-                    /* TODO: debug err wher this hangs */
-                    continue;
-                }
-                if (flag_set(c_iflag, ICRNL)) {
-                    c_out = ASCII_LF;
-                }
-                break;
-            case ASCII_LF:
-                if (flag_set(c_iflag, INLCR)) {
-                    c_out = ASCII_CR;
-                }
-                break;
-        }
-
-        /* character echoing */
-        if (flag_set(c_lflag, ECHO)) {
-            tty_write(tty, &c_out, 1);
-            tty_flush(tty);
-        }
-
-        buf[count++] = c_out;
+    while (!tty->rd_q.empty && count < n) {
+        buf[count++] = tty_getch(tty);
     }
 
     return count;
 }
 
-int tty_write(struct tty *tty, const char *buf, int n)
+int tty_write(int chan, const char *buf, int n)
 {
     int i;
     char c_in;
     char c_out;
     tcflag_t c_oflag;
+    struct tty *tty;
 
-    if (tty == NULL || buf == NULL || n < 0) {
+    if (chan < 0 || chan >= NUM_TTY || buf == NULL || n < 0) {
         return -1;
     }
 
+    tty = tty_table + chan;
     c_oflag = tty->termio.c_oflag;
 
     i = 0;
@@ -123,8 +126,6 @@ int tty_write(struct tty *tty, const char *buf, int n)
         if (!flag_set(c_oflag, OPOST)) {
             goto do_write;
         }
-
-        /* post-processing */
 
         /* CR/LF translation */
         switch (c_in) {
@@ -138,7 +139,7 @@ int tty_write(struct tty *tty, const char *buf, int n)
                 break;
             case ASCII_LF:
                 if (flag_set(c_oflag, ONLCR)) {
-                    putch(tty, ASCII_CR);
+                    tty_putch(tty, ASCII_CR);
                     tty->column = 0;
                 }
                 if (flag_set(c_oflag, ONLRET)) {
@@ -148,19 +149,57 @@ int tty_write(struct tty *tty, const char *buf, int n)
         }
 
     do_write:
-        putch(tty, c_out);
+        tty_putch(tty, c_out);
+        tty->write(tty);
     }
 
     return i;
 }
 
-void tty_flush(struct tty *tty)
+void tty_recv(int chan, char c)
 {
-    if (tty == NULL) {
+    struct tty *tty;
+    tcflag_t c_iflag;
+    tcflag_t c_lflag;
+    char c_out;
+
+    if (chan < 0 || chan >= NUM_TTY) {
         return;
     }
 
-    (void) tty->write(tty);
+    tty = tty_table + chan;
+    c_iflag = tty->termio.c_iflag;
+    c_lflag = tty->termio.c_lflag;
+
+    if (tty->rd_q.full) {
+        return;
+    }
+
+    c_out = c;
+
+    /* CR/LF translation */
+    switch (c) {
+        case ASCII_CR:
+            if (flag_set(c_iflag, IGNCR)) {
+                return;
+            }
+            if (flag_set(c_iflag, ICRNL)) {
+                c_out = ASCII_LF;
+            }
+            break;
+        case ASCII_LF:
+            if (flag_set(c_iflag, INLCR)) {
+                c_out = ASCII_CR;
+            }
+            break;
+    }
+
+    /* character echoing */
+    if (flag_set(c_lflag, ECHO)) {
+        tty_write(chan, &c_out, 1);
+    }
+
+    tty_queue_put(&tty->rd_q, c_out);
 }
 
 void tty_queue_init(struct tty_queue *q)

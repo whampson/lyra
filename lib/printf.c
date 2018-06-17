@@ -114,10 +114,7 @@ int vprintf(const char *fmt, va_list args)
     params.use_buf = false;
     params.bounded = false;
 
-    count = do_printf(&params, fmt, &args);
-    tty_flush(&sys_tty);
-
-    return count;
+    return do_printf(&params, fmt, &args);
 }
 
 int sprintf(char *str, const char *fmt, ...)
@@ -813,8 +810,8 @@ static int writechar(struct printf_params *params, char c)
     }
 
     switch (params->fd) {
-        case 0:
-            count += tty_write(&sys_tty, &c, 1);
+        case 1:
+            count += tty_write(TTY_CONSOLE, &c, 1);
             break;
     }
 

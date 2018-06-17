@@ -22,7 +22,13 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <termios.h>
-#include <lyra/console.h>
+
+/* TTY channels */
+#define TTY_CONSOLE         0
+#define TTY_COM1            1
+#define TTY_COM2            2
+#define TTY_COM3            3
+#define TTY_COM4            4
 
 #define TTY_QUEUE_BUFLEN    128
 
@@ -36,27 +42,43 @@ struct tty_queue {
 };
 
 struct tty {
-    int console;
     struct termios termio;
-    struct tty_queue read_buf;
-    struct tty_queue write_buf;
+    struct tty_queue rd_q;
+    struct tty_queue wr_q;
     int (*write)(struct tty *tty);
     int column;
-    int line;
 };
 
-/* TODO: kernel tty, this is temporary */
-struct tty sys_tty;
-
+/**
+ * Initialize TTY structs.
+ */
 void tty_init(void);
-int tty_read(struct tty *tty, char *buf, int n);
-int tty_write(struct tty *tty, const char *buf, int n);
-void tty_flush(struct tty *tty);
 
-/* tty_queue functions */
+/**
+ * Read data from a TTY's input buffer.
+ */
+int tty_read(int chan, char *buf, int n);
+
+/**
+ * Write data to a TTY's input buffer.
+ */
+int tty_write(int chan, const char *buf, int n);
+
+void tty_recv(int chan, char c);
+
+/**
+ * Set up new a new tty_queue.
+ */
 void tty_queue_init(struct tty_queue *q);
-unsigned char tty_queue_get(struct tty_queue *q);
-void tty_queue_put(struct tty_queue *q, unsigned char c);
 
+/**
+ * Get a character from a tty_queue.
+ */
+unsigned char tty_queue_get(struct tty_queue *q);
+
+/**
+ * Put a character in a tty_queue.
+ */
+void tty_queue_put(struct tty_queue *q, unsigned char c);
 
 #endif /* __LYRA_TTY_H */
