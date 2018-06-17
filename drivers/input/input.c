@@ -230,10 +230,5 @@ static bool handle_nonchar(scancode_t sc)
 
 static void add_to_queue(char c)
 {
-    if (sys_tty.read_buf.full) {
-        /* TODO: decide how to handle input buffer full.
-           Throw away the character for now. */
-        return;
-    }
-    tty_queue_put(&sys_tty.read_buf, c);
+    tty_recv(TTY_CONSOLE, c);
 }

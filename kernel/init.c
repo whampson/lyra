@@ -60,54 +60,12 @@ void kernel_init(void)
     irq_enable(IRQ_KEYBOARD);
     sti();
 
-    // mini_shell();
-
     char buf[128];
     int nchars;
 
-    while ((nchars = tty_read(&sys_tty, buf, sizeof(buf))) > 0) {
-        // tty_write(&sys_tty, buf, nchars);
-        // tty_flush(&sys_tty);
-    }
+    while ((nchars = tty_read(TTY_CONSOLE, buf, sizeof(buf))) > -1);
 
     __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
-}
-
-static void mini_shell(void)
-{
-    const char *prompt = "$ ";
-    char rd_buf[64];
-    char c;
-    int i;
-
-    i = 0;
-    memset(rd_buf, 0, 64);
-    kprintf("%s", prompt);
-
-    while (1) {
-        if (i >= 64) {
-            goto sendcmd;
-        }
-        if (tty_read(&sys_tty, &c, 1) > 0) {
-            rd_buf[i++] = c;
-        }
-        kprintf("%c", c);
-        if (c != '\n') {
-            continue;
-        }
-
-    sendcmd:
-        if (rd_buf[0] == 'h' &&
-            rd_buf[1] == 'e' &&     /* no strcmp() yet lol */
-            rd_buf[2] == 'l' &&
-            rd_buf[3] == 'l' &&
-            rd_buf[4] == 'o') {
-                kprintf("Hello, world!\n");
-            }
-        i = 0;
-        memset(rd_buf, 0, 64);
-        kprintf("%s", prompt);
-    }
 }
 
 static void ldt_init(void)
