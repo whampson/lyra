@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Lyra",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}"
+                ]
+            },
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/include"
+            ],
+            "defines": [ ],
+            "cStandard": "c11",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}
