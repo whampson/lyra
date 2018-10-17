@@ -22,9 +22,11 @@
 #define __LYRA_INIT_H
 
 #define KERNEL_ENTRY        kernel_init
-#define KERNEL_START        0x100000    /* 1 MiB */
-#define KERNEL_STACK_BASE   0x400000    /* 4 MiB */
-#define GDT_BASE            0x0500
-#define IDT_BASE            0x0600
+#define KERNEL_BASE_SEG     0x1000      /* 64 KiB */
+#define KERNEL_BASE_OFF     0x0000
+#define KERNEL_BASE         ((KERNEL_BASE_SEG << 4) + KERNEL_BASE_OFF)
+#define KERNEL_STACK        0x80000     /* 512 KiB */
+#define GDT_BASE            0xA000
+#define IDT_BASE            0xA400
 
 #endif /* __LYRA_INIT_H */

@@ -31,21 +31,30 @@ boot_img=$1
 kernel_img=$2
 out_img=$3
 
-# Compute number of sectors needed to hold kernel image
-kernel_size=$(wc -c $kernel_img)
-kernel_size=${kernel_size/%\ */}    # separate size and filename
-num_sectors=$(awk -v s=$SECTOR_SIZE -v k=$kernel_size \
-    'BEGIN { print k / s + (s - (k % s)) / s }')
+dd if=/dev/zero of=$out_img bs=512 count=2880
+mke2fs $out_img
+dd if=$boot_img of=$out_img bs=512 count=2 conv=notrunc
+sudo mkdir /tmp/lyra
+sudo mount $out_img /tmp/lyra
+sudo cp $kernel_img /tmp/lyra
+sudo umount /tmp/lyra
+sudo rm -rf /tmp/lyra
 
-# Combine boot and kernel images
-cat $boot_img $kernel_img > $out_img
-if [ $? -ne 0 ]; then
-    exit 1
-fi
+# # Compute number of sectors needed to hold kernel image
+# kernel_size=$(wc -c $kernel_img)
+# kernel_size=${kernel_size/%\ */}    # separate size and filename
+# num_sectors=$(awk -v s=$SECTOR_SIZE -v k=$kernel_size \
+#     'BEGIN { print k / s + (s - (k % s)) / s }')
 
-# Update KERNEL_NUM_SECTORS value in disk image
-printf "\x$(printf %02x $num_sectors)" |\
-    dd of=$out_img bs=1 seek=$KERNEL_NUM_SECTORS_ADDR conv=notrunc status=none
-if [ $? -ne 0 ]; then
-    exit 1
-fi
+# # Combine boot and kernel images
+# cat $boot_img $kernel_img > $out_img
+# if [ $? -ne 0 ]; then
+#     exit 1
+# fi
+
+# # Update KERNEL_NUM_SECTORS value in disk image
+# printf "\x$(printf %02x $num_sectors)" |\
+#     dd of=$out_img bs=1 seek=$KERNEL_NUM_SECTORS_ADDR conv=notrunc status=none
+# if [ $? -ne 0 ]; then
+#     exit 1
+# fi

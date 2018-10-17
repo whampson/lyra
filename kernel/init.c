@@ -116,7 +116,7 @@ static void tss_init(void)
 
     /* Populate TSS params and load task register */
     tss.ldt_selector = KERNEL_LDT;
-    tss.esp0 = KERNEL_STACK_BASE;
+    tss.esp0 = KERNEL_STACK;
     tss.ss0 = KERNEL_DS;
     ltr(KERNEL_TSS);
 }

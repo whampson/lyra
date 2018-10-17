@@ -34,7 +34,7 @@ export ASFLAGS  := $(GCC_WARNINGS) -D__ASM -m32
 export CC       := gcc
 export CFLAGS   := $(GCC_WARNINGS) -m32 -ffreestanding -fomit-frame-pointer \
                    -fno-unwind-tables -fno-asynchronous-unwind-tables       \
-				   -fno-stack-protector -std=c11 -MD
+				   -fno-stack-protector -std=c11 -MD -fno-pic
 export LD       := ld
 export LDFLAGS  :=
 export MAKEFLAGS:= --no-print-directory
@@ -46,15 +46,15 @@ export SCRIPTS  := $(PWD)/scripts
 # Build output directories
 export BIN      := $(PWD)/bin
 export OBJ      := $(PWD)/obj
-export OBJ_BOOT := $(PWD)/obj_boot
+#export OBJ_BOOT := $(PWD)/obj_boot
 
 # Linker script for kernel
 LDSCRIPT        := lyra.ld
 
 # Output binaries
-BOOTIMG         := $(BIN)/boot.bin
-BOOTELF         := $(BIN)/boot.elf
-KERNELIMG       := $(BIN)/kernel.bin
+BOOTIMG         := $(BIN)/bootldr
+BOOTELF         := $(BIN)/bootldr.elf
+KERNELIMG       := $(BIN)/kernel
 KERNELELF       := $(BIN)/kernel.elf
 OSIMG           := $(BIN)/lyra.img
 
@@ -90,15 +90,14 @@ $(info [INFO]: Optimizing build with $(OPTIMIZEFLAGS))
 CFLAGS += $(OPTIMIZEFLAGS)
 endif
 
-all: img
+all: boot kernel
 
-img: boot kernel
-	@$(SCRIPTS)/create-img.sh $(BOOTIMG) $(KERNELIMG) $(OSIMG)
+#img: boot kernel
+#	@$(SCRIPTS)/create-img.sh $(BOOTIMG) $(KERNELIMG) $(OSIMG)
 
 dirs:
 	@mkdir -p $(BIN)
 	@mkdir -p $(OBJ)
-	@mkdir -p $(OBJ_BOOT)
 
 boot: dirs
 	$(call submake, $(BOOT_DIR))
@@ -115,7 +114,6 @@ kernel_build: dirs
 clean:
 	@rm -rf $(BIN)
 	@rm -rf $(OBJ)
-	@rm -rf $(OBJ_BOOT)
 	@rm -f *.gen
 
 remake: clean all
