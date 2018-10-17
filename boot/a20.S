@@ -1,21 +1,19 @@
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# Copyright (C) 2018 Wes Hampson. All Rights Reserved.                         #
-#                                                                              #
-# This file is part of the Lyra operating system.                              #
-#                                                                              #
-# Lyra is free software: you can redistribute it and/or modify                 #
-# it under the terms of version 2 of the GNU General Public License            #
-# as published by the Free Software Foundation.                                #
-#                                                                              #
-# See LICENSE in the top-level directory for a copy of the license.            #
-# You may also visit <https://www.gnu.org/licenses/gpl-2.0.txt>.               #
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
+ * Copyright (C) 2018 Wes Hampson. All Rights Reserved.                       *
+ *                                                                            *
+ * This is free software: you can redistribute it and/or modify               *
+ * it under the terms of version 2 of the GNU General Public License          *
+ * as published by the Free Software Foundation.                              *
+ *                                                                            *
+ * See LICENSE in the top-level directory for a copy of the license.          *
+ * You may also visit <https://www.gnu.org/licenses/gpl-2.0.txt>.             *
+ *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#-------------------------------------------------------------------------------
-#   File: boot/a20.S
-# Author: Wes Hampson
-#   Desc: A20 address line initialization.
-#-------------------------------------------------------------------------------
+/*-----------------------------------------------------------------------------
+ *   File: a20.S
+ * Author: Wes Hampson
+ *   Desc: Ensures address line 20 is enabled.
+ *----------------------------------------------------------------------------*/
 
 .code16
 .section .stage2, "ax", @progbits
@@ -31,7 +29,7 @@
 #
 #   Inputs: (none)
 #  Outputs: (none)
-# Clobbers: ax, bx, cx
+# Clobbers: ax, bx, cx, fs
 ##
 .globl a20_enable
 a20_enable:
@@ -51,18 +49,12 @@ _a20_enable_loop:
     jmp     _a20_enable_loop
 
 _a20_enable_fail:
-    leaw    s_a20_enable_fail, %bx
-    call    print
-    movw    $-1, %ax
-    ret
+    leaw    s_enablefail, %si
+    jmp     fail
 
 _a20_enable_success:
     movw    $0, %ax
     ret
-
-s_a20_enable_fail:
-    .ascii  "Failed to enable A20 line!"
-    .byte   13, 10, 0
 
 _a20_enable_jmptbl:
     .word   a20_enablefunc_fast
@@ -138,44 +130,6 @@ _a20_enablefunc_fast_done:
 
 
 ##
-# Disables the A20 address line using the PS/2 controller.
-#
-#   Inputs: (none)
-#  Outputs: (none)
-# Clobbers: ax
-##
-.globl a20_disable
-a20_disable:
-    call    i8042_disable
-
-    call    i8042_out_delay
-    movb    $0xD0, %al      # cmd: read PS/2 output port
-    outb    %al, $0x64      # send cmd
-
-    call    i8042_in_delay
-    inb     $0x60, %al      # data in: output port status
-
-    # Check if A20 is already disabled
-    testb   $0x02, %al
-    jz      _a20_disable_done
-    pushw   %ax
-
-    call    i8042_out_delay
-    movb    $0xD1, %al      # cmd: write PS/2 output port
-    outb    %al, $0x64      # send cmd
-
-    call    i8042_out_delay
-    popw    %ax
-    andb    $0xFD, %al      # clear A20 bit
-    outb    %al, $0x60      # send data
-
-    call    i8042_enable
-
-_a20_disable_done:
-    ret
-
-
-##
 # Tests whether the A20 address line is enabled.
 #
 # Methodology:
@@ -189,7 +143,7 @@ _a20_disable_done:
 #   Inputs: (none)
 #  Outputs: ax set to 1 if enabled,
 #           ax set to 0 if disabled
-# Clobbers: ax, es
+# Clobbers: ax, fs
 ##
 .globl a20_test_enabled
 a20_test_enabled:
@@ -199,11 +153,11 @@ a20_test_enabled:
 
 _a20_test_loop:
     movw    $0xFFFF, %ax
-    movw    %ax, %es
-    movw    %es:0x7E0E, %bx         # read "wrapped around" address
+    movw    %ax, %fs
+    movw    %fs:0x7E0E, %bx         # read "wrapped around" address
     xorw    %ax, %ax
-    movw    %ax, %es
-    cmpw    %bx, %es:0x7DFE         # compare with bootsect ID
+    movw    %ax, %fs
+    cmpw    %bx, %fs:0x7DFE         # compare with bootsect ID
     jne     _a20_test_true
 
     # The values were equal! Ensure it wasn't a fluke.
@@ -212,7 +166,7 @@ _a20_test_loop:
     je      _a20_test_done
     decw    %cx
     rorw    $8, %bx
-    movw    %bx, %es:0x7DFE
+    movw    %bx, %fs:0x7DFE
     jmp     _a20_test_loop
 
 _a20_test_true:
@@ -222,3 +176,11 @@ _a20_test_done:
     popw    %cx
     popw    %bx
     ret
+
+
+## ===== DATA =====
+.section .data2
+
+s_enablefail:
+    #s.ascii  "A20 enable failed!"
+    .byte   0

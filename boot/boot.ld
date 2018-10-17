@@ -1,9 +1,7 @@
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*
  * Copyright (C) 2018 Wes Hampson. All Rights Reserved.                       *
  *                                                                            *
- * This file is part of the Lyra operating system.                            *
- *                                                                            *
- * Lyra is free software: you can redistribute it and/or modify               *
+ * This is free software: you can redistribute it and/or modify               *
  * it under the terms of version 2 of the GNU General Public License          *
  * as published by the Free Software Foundation.                              *
  *                                                                            *
@@ -12,60 +10,33 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- *   File: boot/boot.ld
+ *   File: boot.ld
  * Author: Wes Hampson
- *   Desc: Linker script for the boot code.
- *         Run through scripts/gen-lds.sh to resolve preprocessor directives.
  *----------------------------------------------------------------------------*/
 
-#include "boot.h"
-#include "floppy.h"
-
-OUTPUT_FORMAT("elf32-i386")
+OUTPUT_FORMAT(elf32-i386)
 OUTPUT_ARCH(i386)
-ENTRY(BOOT_ENTRY)
+ENTRY(entry)
 
 SECTIONS
 {
-    .stage1 STAGE1_START : AT (0x0000)
+    .stage1 0x7C00 : AT (0x0000)
     {
-        __DISK_INFO_START = SECTOR_SIZE - 16;
-        __MAGIC_START = SECTOR_SIZE - 2;
-
         *(.stage1)
+        *(.data1)
 
-        ASSERT(. <= __DISK_INFO_START,
-            "ERROR: Stage 1 code does not fit within bootsector!");
+        ASSERT(. <= 0x01FE, "Stage 1 does not fit inside boot sector!");
 
-        . = __DISK_INFO_START;
-        STAGE2_SECTOR = .;
-        SHORT(__STAGE2_SECTOR)
-        STAGE2_NUM_SECTORS = .;
-        SHORT(__STAGE2_NUM_SECTORS)
-        KERNEL_SECTOR = .;
-        SHORT(__KERNEL_SECTOR)
-        KERNEL_NUM_SECTORS = .;
-        SHORT(0)    /* Written during final creation of disk image. */
-
-        FILL(0x5748)
-
-        /* MBR magic number. */
-        . = __MAGIC_START;
-        SHORT(BOOTSECT_MAGIC)
+        . = 0x1FE;
+        SHORT(0xAA55)   /* boot sector magic number */
     }
 
-    __STAGE2_SECTOR = 2;
-
-    .stage2 STAGE2_START : AT ((__STAGE2_SECTOR - 1) * SECTOR_SIZE)
+    .stage2 0x7E00 : AT (0x0200)
     {
         *(.stage2)
-        . = ALIGN(SECTOR_SIZE);
-        __STAGE2_END = .;
+        *(.data2)
+
+        ASSERT(. <= 0x0200, "Stage 2 does not fit inside boot block!");
+        . = 0x0200;
     }
-
-    __STAGE2_NUM_SECTORS = (__STAGE2_END - STAGE2_START) / SECTOR_SIZE;
-    __KERNEL_SECTOR = __STAGE2_SECTOR + __STAGE2_NUM_SECTORS;
-
-    ASSERT(__STAGE2_NUM_SECTORS < SECTOR_COUNT - 1,
-        "Error: Stage 2 too large for current floppy disk driver!")
 }
