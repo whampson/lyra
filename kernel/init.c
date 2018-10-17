@@ -20,12 +20,14 @@
 
 #include <lyra/kernel.h>
 #include <lyra/console.h>
+#include <lyra/tty.h>
 #include <lyra/descriptor.h>
 #include <lyra/interrupt.h>
 #include <lyra/irq.h>
 #include <lyra/io.h>
 #include <lyra/memory.h>
 #include <drivers/timer.h>
+#include <string.h>
 
 const char * const OS_NAME = "Lyra";
 
@@ -38,6 +40,7 @@ static seg_desc_t ldt[2];
 
 static void ldt_init(void);
 static void tss_init(void);
+static void mini_shell(void);
 
 /**
  * "Fire 'er up, man!"
@@ -50,15 +53,20 @@ void kernel_init(void)
     idt_init();
     irq_init();
     console_init();
+    tty_init();
     mem_init();
     timer_set_rate(TIMER_CH_INTR, 1000);    /* timer interrupts every 1ms */
     irq_enable(IRQ_TIMER);
     irq_enable(IRQ_KEYBOARD);
     sti();
 
-   __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
-}
+    char buf[128];
+    int nchars;
 
+    while ((nchars = tty_read(TTY_CONSOLE, buf, sizeof(buf))) > -1);
+
+    __asm__ volatile (".idle: hlt; jmp .idle" : : : "memory");
+}
 
 static void ldt_init(void)
 {

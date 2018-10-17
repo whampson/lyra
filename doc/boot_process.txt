@@ -1,0 +1,54 @@
+######################################
+#          THE BOOT PROCESS          #
+#          ~~~~~~~~~~~~~~~~          #
+#                                    #
+#       Author: Wes Hampson          #
+# Last Updated: 03 August 2018       #
+######################################
+
+Contents
+  1) Lyra Boot Process
+  2) Boot Disk Layout
+  3) Boot Area Memory Layout
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1) Lyra Boot Process
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    After the PC is powered on and the BIOS has finished the power-on self-test,
+the BIOS loads the first sector of the boot disk (MBR) into memory at address
+0000:7C00 and he CPU then begins executing code from this address. This is where
+Lyra begins.
+    Lyra's bootloader is divided into two stages. The first stage is contained
+entirely within the MBR and is responsible for loading the second stage and
+kernel code into memory. The first stage is also responsible for initiating
+other pre-Protected Mode tasks: disabling interrupts, enabling A20, and
+registering the GDT [1]. Next, we move to stage 2, which is responsible for
+switching the CPU from 16-bit "Real" mode into 32-bit Protected Mode, moving the
+kernel code to a safer place (away from memory-mapped devices and BIOS data,
+before finally invoking the kernel entry point.
+    At the point, we've exited the early boot phase and have entered the kernel
+boot phase (which could arguably be referred to as stage 3). Here, the necessary
+x86 data structures are initialized (LDT, IDT, TSS), followed by the console
+subsystem and memory management subsystem [2]. Lastly, interrupts are re-enabled
+and the kernel goes into an idle state where it waits for the next device
+interrupt.
+
+Footnotes:
+----------
+[1] TODO: this is a bit confusing because while stage 1 code is responsible for
+    kicking off these subroutines, the code for these subroutines actually lives
+    in stage 2. It be more clear if after loading stage 2 and the kernel into
+    memory, we jump to a "stage 2 entry point" where we continue the pre-PM
+    initialization.
+[2] Eventually, this will also include initialization for the disk/filesystem,
+    scheduler, and will launch the first userspace process (e.g. a shell).
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2) Boot Disk Layout
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TODO
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3) Boot Area Memory Layout
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TODO

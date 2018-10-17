@@ -12,32 +12,56 @@
  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 /*-----------------------------------------------------------------------------
- *   File: include/lyra/kernel.h
+ *   File: include/termios.c
  * Author: Wes Hampson
- *   Desc: Commonly-used and convenient function prototypes and macros.
+ *   Desc: Partial implementation of POSIX standard.
  *----------------------------------------------------------------------------*/
 
-#ifndef __LYRA_CONSOLE_H
-#define __LYRA_CONSOLE_H
+#ifndef __TERMIOS_H
+#define __TERMIOS_H
 
-#include <lyra/tty.h>
+#include <stdint.h>
 
-#define NUM_CONSOLES    8
-#define CON_COLS        80
-#define CON_ROWS        25
-#define CON_AREA        (CON_COLS * CON_ROWS)   /* total characters */
-#define CON_SIZE        (CON_AREA * 2)          /* total bytes */
+#define NCCS    11      /* TODO: set NCCS */
 
-struct tty;
+typedef unsigned char cc_t;
+typedef uint16_t speed_t;
+typedef uint32_t tcflag_t;
 
-/**
- * Initializes keyboard and VGA drivers, creates virtual consoles,
- * and switches to console 0.
- */
-void console_init(void);
+struct termios {
+    tcflag_t c_iflag;
+    tcflag_t c_oflag;
+    // tcflag_t c_cflag;
+    tcflag_t c_lflag;
+    // cc_t cc_c[NCCS];
+};
 
-int console_write(struct tty *tty);
+enum iflag {
+    // BRKINT  = (1 << 0),
+    ICRNL   = (1 << 1),
+    // IGNBRK  = (1 << 2),
+    IGNCR   = (1 << 3),
+    INLCR   = (1 << 4)
+    /* Incomplete... */
+};
 
-void set_console(int num);
+enum oflag {
+    OPOST   = (1 << 0),
+    ONLCR   = (1 << 1),
+    OCRNL   = (1 << 2),
+    ONLRET  = (1 << 3)
+    /* Incomplete... */
+};
 
-#endif /* __LYRA_CONSOLE_H */
+enum lflag {
+    ECHO    = (1 << 0),
+    // ECHOE   = (1 << 1),
+    // ECHOK   = (1 << 2),
+    // ECHONL  = (1 << 3),
+    // ICANON  = (1 << 4),
+    // IEXTEN  = (1 << 5),
+    // ISIG    = (1 << 6)
+};
+
+
+#endif /* __TERMIOS_H */
